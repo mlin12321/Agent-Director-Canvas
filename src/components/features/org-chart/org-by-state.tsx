@@ -23,9 +23,12 @@ export const TEAM_STATES: ReadonlyArray<{ state: TeamState; label: I18nKey }> =
   ];
 
 /**
- * The column a team belongs in. A block comes first, then a review that
- * waits for its reviewer; a team sent back to change its work stays under
- * "changes requested" until it reports done again.
+ * The column a team belongs in. The org works a team's status out itself:
+ * blocked while its IC waits on an escalation or an agent failed, done once
+ * it has submitted its work. A block comes first, then a review that waits
+ * for its reviewer, so a team that submitted is "in review" until it is
+ * accepted; a team sent back to change its work stays under "changes
+ * requested" until it submits again.
  */
 export function teamStateOf(node: OrgNode): TeamState {
   if (node.status === "blocked") return "blocked";

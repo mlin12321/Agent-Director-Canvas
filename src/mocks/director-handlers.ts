@@ -56,6 +56,7 @@ const ESCALATIONS: Record<NodeId, OrgNode["escalations"]> = {
       title: "Session tokens: signed JWTs or opaque server-side sessions?",
       detail: "The api and worker teams disagree.",
       raised_at: "2026-11-10T09:12:00Z",
+      raised_by: "ic",
       held_by: ROOT_ID,
       handoffs: [],
     },
@@ -67,6 +68,7 @@ const ESCALATIONS: Record<NodeId, OrgNode["escalations"]> = {
       title: "Idempotency keys collide across retries",
       detail: "The fix needs a schema change outside this team's boundary.",
       raised_at: "2026-11-11T16:40:00Z",
+      raised_by: "manager",
       held_by: null,
       handoffs: [
         {
