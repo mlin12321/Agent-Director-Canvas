@@ -1,12 +1,11 @@
 import { getEffectiveLocalBackend } from "../backend-registry/active-store";
 import {
   DIRECTOR_BASE_PATH,
-  type BoundaryMemory,
   type DirectorSettings,
   type DirectorSettingsState,
   type FileEdit,
   type FileSides,
-  type NodeBlackboard,
+  type NodeMemory,
   type NodeId,
   type NodeOwnership,
   type OrgEvent,
@@ -114,8 +113,8 @@ export const DirectorClient = {
     );
   },
 
-  getNodeBlackboard(nodeId: NodeId) {
-    return requestJson<NodeBlackboard>(nodePath(nodeId, "blackboard"));
+  getNodeMemory(nodeId: NodeId) {
+    return requestJson<NodeMemory>(nodePath(nodeId, "memory"));
   },
 
   getNodeOwnership(nodeId: NodeId) {
@@ -146,19 +145,15 @@ export const DirectorClient = {
     });
   },
 
-  teach(nodeId: NodeId, rule: string) {
-    return postJson<BoundaryMemory>(nodePath(nodeId, "teach"), { rule });
-  },
-
   /**
    * Take in the org a remote of the repository has, as a merge: the tree,
-   * the blackboard and the branches of the teams' work.
+   * the team memory and the branches of the teams' work.
    */
   pullOrg(remote = "origin") {
     return postJson<OrgSync>(`${ORG_PATH}/pull`, { remote });
   },
 
-  /** Give a remote the org, the blackboard and the teams' branches. */
+  /** Give a remote the org, the team memory and the teams' branches. */
   pushOrg(remote = "origin") {
     return postJson<OrgSync>(`${ORG_PATH}/push`, { remote });
   },

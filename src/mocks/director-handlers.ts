@@ -3,13 +3,14 @@ import {
   DIRECTOR_BASE_PATH,
   type AgentRef,
   type StatusCounts,
-  type NodeBlackboard,
+  type NodeMemory,
   type NodeOwnership,
   type NodeStatus,
   type NodeId,
   type OpenEscalation,
   type OrgEvent,
   type OrgNode,
+  type Report,
   type OrgSummary,
   type Review,
   type RoutedMessage,
@@ -96,6 +97,28 @@ function zeroCounts(): StatusCounts {
     blocked: 0,
   };
 }
+
+const MOCK_REPORTS: Record<NodeId, Report[]> = {
+  payments: [
+    {
+      at: "2026-05-12T08:15:00+00:00",
+      role: "ic",
+      text: "Idempotency keys on every write.",
+    },
+  ],
+  [ROOT_ID]: [
+    {
+      at: "2026-05-11T09:00:00+00:00",
+      role: "manager",
+      text: "Split by domain: each one deploys on its own.",
+    },
+    {
+      at: "2026-05-11T11:30:00+00:00",
+      role: "ic",
+      text: "A shared schema package failed: each domain pinned its own.",
+    },
+  ],
+};
 
 const MOCK_REVIEW: Review = {
   state: "pending",
@@ -260,13 +283,10 @@ function snapshot(focusId: NodeId, full: boolean): OrgEvent | null {
   };
 }
 
-let taughtRules = new Map<NodeId, string[]>();
-
 /** The open streams, which hear about an answered escalation. */
 const subscribers = new Set<(event: OrgEvent) => void>();
 
 export function resetDirectorMockData() {
-  taughtRules = new Map();
   tree = buildMockTree();
 }
 
@@ -414,13 +434,12 @@ export const DIRECTOR_HANDLERS = [
     });
   }),
 
-  http.get(`${BASE}/org/nodes/:nodeId/blackboard`, ({ params }) => {
+  http.get(`${BASE}/org/nodes/:nodeId/memory`, ({ params }) => {
     const nodeId = String(params.nodeId);
     if (!tree.has(nodeId)) return notFound(nodeId);
-    const body: NodeBlackboard = {
+    const body: NodeMemory = {
       specs: [],
-      memory: { rules: taughtRules.get(nodeId) ?? [] },
-      autopsies: [],
+      reports: MOCK_REPORTS[nodeId] ?? [],
     };
     return HttpResponse.json(body);
   }),
@@ -464,21 +483,5 @@ export const DIRECTOR_HANDLERS = [
       collisions_checked: true,
     };
     return HttpResponse.json(body);
-  }),
-
-  http.post(`${BASE}/org/nodes/:nodeId/teach`, async ({ params, request }) => {
-    const nodeId = String(params.nodeId);
-    if (!tree.has(nodeId)) return notFound(nodeId);
-    const payload = (await request.json()) as { rule?: unknown } | null;
-    const rule = typeof payload?.rule === "string" ? payload.rule.trim() : "";
-    if (!rule) {
-      return HttpResponse.json(
-        { detail: "`rule` must be a non-empty string" },
-        { status: 400 },
-      );
-    }
-    const rules = taughtRules.get(nodeId) ?? [];
-    if (!rules.includes(rule)) taughtRules.set(nodeId, [...rules, rule]);
-    return HttpResponse.json({ rules: taughtRules.get(nodeId) ?? [] });
   }),
 ];

@@ -22,8 +22,8 @@ import {
 import type {
   AgentRef,
   Escalation,
-  Autopsy,
-  NodeBlackboard,
+  NodeMemory,
+  Report,
   NodeOwnership,
   NodeStatus,
   OrgEvent,
@@ -151,32 +151,13 @@ function streamHandler() {
   });
 }
 
-function blackboardHandlers(
-  initialRules: string[] = [],
-  autopsies: Autopsy[] = [],
-) {
-  let rules = initialRules;
-  const taught: Array<{ nodeId: string; rule: string }> = [];
+function memoryHandlers(reports: Report[] = []) {
   server.use(
-    http.get("*/api/director/org/nodes/:nodeId/blackboard", () => {
-      const body: NodeBlackboard = {
-        specs: [],
-        memory: { rules },
-        autopsies,
-      };
+    http.get("*/api/director/org/nodes/:nodeId/memory", () => {
+      const body: NodeMemory = { specs: [], reports };
       return HttpResponse.json(body);
     }),
-    http.post(
-      "*/api/director/org/nodes/:nodeId/teach",
-      async ({ params, request }) => {
-        const { rule } = (await request.json()) as { rule: string };
-        taught.push({ nodeId: String(params.nodeId), rule });
-        rules = [...rules, rule];
-        return HttpResponse.json({ rules });
-      },
-    ),
   );
-  return taught;
 }
 
 // Now and then the first request of a test is not intercepted and goes to
@@ -1285,7 +1266,7 @@ describe("OrgChartView", () => {
     ] as const)(
       "says how the server holds the team to its boundary (%s)",
       async (enforcement, text) => {
-        blackboardHandlers();
+        memoryHandlers();
         server.use(
           http.get("*/api/director/org", () =>
             HttpResponse.json({
@@ -1310,7 +1291,7 @@ describe("OrgChartView", () => {
     );
 
     it("opens when the team the page is on is clicked, on its first agent, and closes again", async () => {
-      blackboardHandlers();
+      memoryHandlers();
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("auth");
@@ -1338,7 +1319,7 @@ describe("OrgChartView", () => {
 
     it("opens from the whole-org view too", async () => {
       useOrgChartStore.setState({ view: "full" });
-      blackboardHandlers();
+      memoryHandlers();
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId="oauth" />);
       await findCard("oauth");
@@ -1351,7 +1332,7 @@ describe("OrgChartView", () => {
     });
 
     it("mounts the conversation view targeted at the agent picked", async () => {
-      blackboardHandlers();
+      memoryHandlers();
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId="auth" />, {
         navigation: { conversationId: "route-conversation" },
@@ -1371,7 +1352,7 @@ describe("OrgChartView", () => {
     });
 
     it("closes on Escape, and when the page moves to another team", async () => {
-      blackboardHandlers();
+      memoryHandlers();
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("auth");
@@ -1387,71 +1368,43 @@ describe("OrgChartView", () => {
       expect(screen.queryByRole("dialog")).toBeNull();
     });
 
-    it("shows the boundary's rules and saves a newly taught one", async () => {
-      const taught = blackboardHandlers(["Never log tokens."]);
+    it("lists what the team's two agents reported, and by whom", async () => {
+      memoryHandlers([
+        {
+          at: "2026-11-12T10:00:00+00:00",
+          role: "manager",
+          text: "Sessions in memory were lost on every restart.",
+        },
+        {
+          at: "2026-11-12T11:00:00+00:00",
+          role: "ic",
+          text: "Tokens are never logged.",
+          compacted: true,
+        },
+      ]);
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("auth");
       await user.click(currentCard());
 
-      const memory = await screen.findByRole("region", {
-        name: "ORG_CHART$MEMORY_TITLE",
+      const reports = await screen.findByRole("region", {
+        name: "ORG_CHART$REPORTS_TITLE",
       });
-      expect(
-        await within(memory).findByText("Never log tokens."),
-      ).toBeInTheDocument();
-      expect(
-        screen.queryByRole("region", { name: "ORG_CHART$AUTOPSIES_TITLE" }),
-      ).toBeNull();
-      const save = within(memory).getByRole("button", {
-        name: "ORG_CHART$TEACH_SUBMIT",
-      });
-      expect(save).toBeDisabled();
+      const [first, second] = await within(reports).findAllByRole("listitem");
 
-      await user.type(
-        within(memory).getByLabelText("ORG_CHART$TEACH_LABEL"),
-        "  Rotate keys weekly.  ",
+      expect(first).toHaveTextContent(
+        "Sessions in memory were lost on every restart.",
       );
-      await user.click(save);
-
-      expect(
-        await within(memory).findByText("Rotate keys weekly."),
-      ).toBeInTheDocument();
-      expect(taught).toEqual([{ nodeId: "auth", rule: "Rotate keys weekly." }]);
-      expect(
-        within(memory).getByLabelText("ORG_CHART$TEACH_LABEL"),
-      ).toHaveValue("");
+      expect(first).toHaveTextContent("ORG_CHART$ROLE_MANAGER");
+      expect(first).not.toHaveTextContent("ORG_CHART$REPORT_COMPACTED");
+      expect(second).toHaveTextContent("Tokens are never logged.");
+      expect(second).toHaveTextContent("ORG_CHART$ROLE_IC");
+      expect(second).toHaveTextContent("ORG_CHART$REPORT_COMPACTED");
+      expect(within(reports).queryByRole("textbox")).toBeNull();
     });
 
-    it("lists what failed in the boundary before, and where the discarded work is", async () => {
-      blackboardHandlers(
-        [],
-        [
-          {
-            node_id: "auth",
-            at: "2026-11-12T10:00:00+00:00",
-            approach: "Sessions in memory",
-            why_failed: "Lost on every restart.",
-            saved_ref: "refs/agents/pruned/auth/20261112T100000Z",
-          },
-        ],
-      );
-      const user = userEvent.setup();
-      renderWithProviders(<OrgChartView nodeId="auth" />);
-      await findCard("auth");
-      await user.click(currentCard());
-
-      const failed = await screen.findByRole("region", {
-        name: "ORG_CHART$AUTOPSIES_TITLE",
-      });
-
-      expect(failed).toHaveTextContent("Sessions in memory");
-      expect(failed).toHaveTextContent("Lost on every restart.");
-      expect(failed).toHaveTextContent("ORG_CHART$AUTOPSY_SAVED");
-    });
-
-    it("says so when there are no rules yet", async () => {
-      blackboardHandlers();
+    it("says so when the team has reported nothing yet", async () => {
+      memoryHandlers();
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("auth");
@@ -1459,38 +1412,14 @@ describe("OrgChartView", () => {
       await user.click(currentCard());
 
       expect(
-        await screen.findByText("ORG_CHART$MEMORY_EMPTY"),
+        await screen.findByText("ORG_CHART$REPORTS_EMPTY"),
       ).toBeInTheDocument();
     });
 
-    it("keeps the draft and reports the failure when saving a rule fails", async () => {
-      blackboardHandlers();
+    it("explains when the team's memory cannot be read", async () => {
       server.use(
-        http.post("*/api/director/org/nodes/:nodeId/teach", () =>
-          HttpResponse.json({ detail: "boom" }, { status: 500 }),
-        ),
-      );
-      const user = userEvent.setup();
-      renderWithProviders(<OrgChartView nodeId="auth" />);
-      await findCard("auth");
-      await user.click(currentCard());
-      const field = await screen.findByLabelText("ORG_CHART$TEACH_LABEL");
-
-      await user.type(field, "A rule");
-      await user.click(
-        screen.getByRole("button", { name: "ORG_CHART$TEACH_SUBMIT" }),
-      );
-
-      expect(await screen.findByRole("alert")).toHaveTextContent(
-        "ORG_CHART$TEACH_ERROR",
-      );
-      expect(field).toHaveValue("A rule");
-    });
-
-    it("explains when the boundary memory cannot be read", async () => {
-      server.use(
-        http.get("*/api/director/org/nodes/:nodeId/blackboard", () =>
-          HttpResponse.json({ detail: "No blackboard" }, { status: 503 }),
+        http.get("*/api/director/org/nodes/:nodeId/memory", () =>
+          HttpResponse.json({ detail: "No team memory" }, { status: 503 }),
         ),
       );
       const user = userEvent.setup();
@@ -1500,9 +1429,8 @@ describe("OrgChartView", () => {
       await user.click(currentCard());
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "ORG_CHART$MEMORY_UNAVAILABLE",
+        "ORG_CHART$REPORTS_UNAVAILABLE",
       );
-      expect(screen.queryByLabelText("ORG_CHART$TEACH_LABEL")).toBeNull();
     });
   });
 
@@ -1752,7 +1680,7 @@ describe("OrgChartView", () => {
     });
 
     it("says in the team's details where the review stands and what was found", async () => {
-      blackboardHandlers();
+      memoryHandlers();
       store.upsert({
         ...input("auth", "root", "working", "services/auth"),
         review: REVIEW,
@@ -1781,7 +1709,7 @@ describe("OrgChartView", () => {
     });
 
     it("says when the automated review found nothing, and when it did not run", async () => {
-      blackboardHandlers();
+      memoryHandlers();
       store.upsert({
         ...input("auth", "root", "done", "services/auth"),
         review: { ...REVIEW, state: "pending", round: 1, automated: [] },
@@ -1816,7 +1744,7 @@ describe("OrgChartView", () => {
     });
 
     it("shows no review for a team that has reported nothing", async () => {
-      blackboardHandlers();
+      memoryHandlers();
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("auth");
@@ -1832,15 +1760,13 @@ describe("OrgChartView", () => {
   });
 
   describe("what a team works to", () => {
-    function specHandlers(blackboard: Partial<NodeBlackboard>) {
+    function specHandlers(memory: Partial<NodeMemory>) {
       server.use(
-        http.get("*/api/director/org/nodes/:nodeId/blackboard", () =>
+        http.get("*/api/director/org/nodes/:nodeId/memory", () =>
           HttpResponse.json({
             specs: [],
-            memory: { rules: [] },
-            autopsies: [],
-            ...blackboard,
-          } satisfies NodeBlackboard),
+            ...memory,
+          } satisfies NodeMemory),
         ),
       );
     }
@@ -1896,7 +1822,7 @@ describe("OrgChartView", () => {
     });
 
     it("says whose conversation a message goes to, once that agent has one", async () => {
-      blackboardHandlers();
+      memoryHandlers();
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("auth");
@@ -1940,7 +1866,7 @@ describe("OrgChartView", () => {
       remote: "origin",
       result: "up_to_date",
       merge: null,
-      blackboard: null,
+      memory: null,
       branches: [],
       put_aside: [],
     };
@@ -1958,7 +1884,7 @@ describe("OrgChartView", () => {
           return HttpResponse.json({
             ...SYNCED,
             result: "merged",
-            blackboard: {
+            memory: {
               remote: "origin",
               head: "abc",
               changed: true,
@@ -1981,12 +1907,12 @@ describe("OrgChartView", () => {
 
       await user.click(
         within(await sharing()).getByRole("button", {
-          name: "ORG_CHART$BLACKBOARD_PULL",
+          name: "ORG_CHART$SYNC_PULL",
         }),
       );
 
-      const outcome = await screen.findByText(/ORG_CHART\$BLACKBOARD_PULLED/);
-      expect(outcome).toHaveTextContent("ORG_CHART$BLACKBOARD_KEPT_LOCAL");
+      const outcome = await screen.findByText(/ORG_CHART\$SYNC_PULLED/);
+      expect(outcome).toHaveTextContent("ORG_CHART$SYNC_KEPT_LOCAL");
       expect(outcome).toHaveTextContent("ORG_CHART$SYNC_DIVERGED");
       expect(asked).toEqual([{ remote: "origin" }]);
     });
@@ -2006,29 +1932,30 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId="root" />);
       const group = await sharing();
       const push = within(group).getByRole("button", {
-        name: "ORG_CHART$BLACKBOARD_PUSH",
+        name: "ORG_CHART$SYNC_PUSH",
       });
 
       await user.click(push);
       expect(
-        await screen.findByText("ORG_CHART$BLACKBOARD_PUSHED"),
+        await screen.findByText("ORG_CHART$SYNC_PUSHED"),
       ).toBeInTheDocument();
 
       await user.click(
         within(group).getByRole("button", {
-          name: "ORG_CHART$BLACKBOARD_PULL",
+          name: "ORG_CHART$SYNC_PULL",
         }),
       );
       expect(
-        await screen.findByText("ORG_CHART$BLACKBOARD_UP_TO_DATE"),
+        await screen.findByText("ORG_CHART$SYNC_UP_TO_DATE"),
       ).toBeInTheDocument();
 
       fail = 502;
       await user.click(push);
-      expect(
-        await screen.findByText("ORG_CHART$BLACKBOARD_ERROR"),
-      ).toHaveAttribute("role", "alert");
-      expect(screen.queryByText("ORG_CHART$BLACKBOARD_UP_TO_DATE")).toBeNull();
+      expect(await screen.findByText("ORG_CHART$SYNC_ERROR")).toHaveAttribute(
+        "role",
+        "alert",
+      );
+      expect(screen.queryByText("ORG_CHART$SYNC_UP_TO_DATE")).toBeNull();
 
       // The remote has what is not here, or a merge waits.
       fail = 409;
@@ -2052,7 +1979,7 @@ describe("OrgChartView", () => {
 });
 
 describe("mock mode", () => {
-  it("renders both views from the built-in mock handlers and remembers a taught rule", async () => {
+  it("renders both views from the built-in mock handlers and shows what a team reported", async () => {
     // No per-test stream handler: this exercises the default mock handlers.
     server.resetHandlers();
     const user = userEvent.setup();
@@ -2076,13 +2003,6 @@ describe("mock mode", () => {
     expect(cardIds()).toHaveLength(17);
 
     await user.click(currentCard());
-    await user.type(
-      await screen.findByLabelText("ORG_CHART$TEACH_LABEL"),
-      "Idempotency keys on every write.",
-    );
-    await user.click(
-      screen.getByRole("button", { name: "ORG_CHART$TEACH_SUBMIT" }),
-    );
 
     expect(
       await screen.findByText("Idempotency keys on every write."),
