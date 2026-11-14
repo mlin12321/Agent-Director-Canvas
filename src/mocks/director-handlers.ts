@@ -16,6 +16,7 @@ import {
   type RoutedMessage,
   type RouteMessageRequest,
   type TeamMatch,
+  type Thread,
 } from "#/api/director/types";
 
 /**
@@ -116,6 +117,40 @@ const MOCK_REPORTS: Record<NodeId, Report[]> = {
       at: "2026-05-11T11:30:00+00:00",
       role: "ic",
       text: "A shared schema package failed: each domain pinned its own.",
+    },
+  ],
+};
+
+const MOCK_THREADS: Record<NodeId, Thread[]> = {
+  [ROOT_ID]: [
+    {
+      manager_node_id: ROOT_ID,
+      ic_node_id: ROOT_ID,
+      messages: [
+        {
+          at: "2026-05-11T08:40:00+00:00",
+          sender: "ic",
+          text: [
+            "Payments and Identity can be built side by side.",
+            "",
+            "```teams",
+            "contracts: Identity issues the session token Payments checks.",
+            "teams:",
+            "  - name: Payments",
+            "    path: payments",
+            "    instruction: Take card payments.",
+            "  - name: Identity",
+            "    path: identity",
+            "    instruction: Sign users in.",
+            "```",
+          ].join("\n"),
+        },
+        {
+          at: "2026-05-11T08:55:00+00:00",
+          sender: "manager",
+          text: "Approved as written.",
+        },
+      ],
     },
   ],
 };
@@ -442,6 +477,12 @@ export const DIRECTOR_HANDLERS = [
       reports: MOCK_REPORTS[nodeId] ?? [],
     };
     return HttpResponse.json(body);
+  }),
+
+  http.get(`${BASE}/org/nodes/:nodeId/messages`, ({ params }) => {
+    const nodeId = String(params.nodeId);
+    if (!tree.has(nodeId)) return notFound(nodeId);
+    return HttpResponse.json(MOCK_THREADS[nodeId] ?? []);
   }),
 
   http.get(`${BASE}/org/nodes/:nodeId/ownership`, ({ params }) => {
