@@ -65,9 +65,10 @@ export interface EscalationHandoff {
 }
 
 /**
- * Something a node cannot settle itself. It goes to the node above, which
- * settles it or passes it up in turn; it waits on the human only once every
- * node above the one that raised it has passed it up.
+ * Something an agent of a node cannot settle itself. It goes to the agent of
+ * the same role in the node above (an IC's to the IC there, a Manager's to
+ * the Manager), which settles it or passes it up in turn; it waits on the
+ * human only once every node above the one that raised it has passed it up.
  */
 export interface Escalation {
   /** Unique within the node that raised it. */
@@ -77,6 +78,8 @@ export interface Escalation {
   detail: string;
   /** ISO 8601 timestamp. */
   raised_at: string;
+  /** Which agent of the node raised it; the answer goes back to that one. */
+  raised_by: AgentRole;
   /** The node working on it now; `null` when it waits on the human. */
   held_by: NodeId | null;
   /** The nodes that passed it up, nearest to the one that raised it first. */

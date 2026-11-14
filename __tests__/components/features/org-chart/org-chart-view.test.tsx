@@ -86,6 +86,7 @@ const TOKEN_DECISION: Escalation = {
   title: "Pick a token format",
   detail: "JWT or opaque?",
   raised_at: "2026-11-10T00:00:00Z",
+  raised_by: "ic",
   held_by: "auth",
   handoffs: [],
 };
@@ -96,6 +97,7 @@ const DOUBLE_CHARGE: Escalation = {
   title: "Retries charge twice",
   detail: "",
   raised_at: "2026-11-11T00:00:00Z",
+  raised_by: "manager",
   held_by: null,
   handoffs: [
     {
@@ -1022,6 +1024,16 @@ describe("OrgChartView", () => {
       expect(added).toHaveTextContent("auth team: Affects billing too");
       expect(added).toHaveTextContent("root team: A product call");
       expect(added).toHaveTextContent("ORG_CHART$ESCALATION_DECISION");
+      // An IC raised it, a Manager the one that was already there: each
+      // answer is said to go to that agent.
+      expect(
+        within(added).getByPlaceholderText("ORG_CHART$ESCALATION_ANSWER_TO_IC"),
+      ).toBeInTheDocument();
+      expect(
+        within(escalations()).getByPlaceholderText(
+          "ORG_CHART$ESCALATION_ANSWER_TO_MANAGER",
+        ),
+      ).toBeInTheDocument();
       await waitFor(() => expect(badge("auth")).toBe("1"));
       expect(badge("root")).toBe("2");
 

@@ -88,7 +88,12 @@ function EscalationCard({ item }: { item: OpenEscalation }) {
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           rows={2}
-          placeholder={t(I18nKey.ORG_CHART$ESCALATION_ANSWER_PLACEHOLDER)}
+          placeholder={t(
+            escalation.raised_by === "manager"
+              ? I18nKey.ORG_CHART$ESCALATION_ANSWER_TO_MANAGER
+              : I18nKey.ORG_CHART$ESCALATION_ANSWER_TO_IC,
+            { team: titles.get(item.node_id) ?? item.node_id },
+          )}
           className="rounded-md border border-border-input bg-field p-2 text-sm text-field-foreground"
         />
         {answer.isError ? (
