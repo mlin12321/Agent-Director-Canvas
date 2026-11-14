@@ -123,8 +123,8 @@ export const AUTOMATION_WEBHOOK_QUERY_KEYS = {
 
 export const DIRECTOR_QUERY_KEYS = {
   org: (backendId: string) => ["director", "org", backendId] as const,
-  blackboard: (backendId: string, nodeId: string) =>
-    ["director", "blackboard", backendId, nodeId] as const,
+  memory: (backendId: string, nodeId: string) =>
+    ["director", "memory", backendId, nodeId] as const,
   ownership: (backendId: string, nodeId: string) =>
     ["director", "ownership", backendId, nodeId] as const,
   changes: (backendId: string, nodeId: string) =>

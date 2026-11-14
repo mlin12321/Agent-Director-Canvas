@@ -43613,113 +43613,77 @@
     "ca": "Aquest agent encara no té cap conversa activa.",
     "id": "Agen ini belum memiliki percakapan aktif."
   },
-  "ORG_CHART$MEMORY_TITLE": {
-    "en": "Boundary memory",
-    "zh-CN": "边界记忆",
-    "zh-TW": "邊界記憶",
-    "de": "Grenz-Gedächtnis",
-    "ko-KR": "경계 메모리",
-    "no": "Grenseminne",
-    "it": "Memoria del confine",
-    "pt": "Memória do limite",
-    "es": "Memoria del límite",
-    "ar": "ذاكرة الحدود",
-    "fr": "Mémoire du périmètre",
-    "tr": "Sınır belleği",
-    "ja": "境界メモリ",
-    "uk": "Пам'ять межі",
-    "ca": "Memòria del límit",
-    "id": "Memori batas"
+  "ORG_CHART$REPORTS_TITLE": {
+    "en": "Team reports",
+    "zh-CN": "团队报告",
+    "zh-TW": "團隊報告",
+    "de": "Team-Berichte",
+    "ko-KR": "팀 보고",
+    "no": "Teamrapporter",
+    "it": "Rapporti del team",
+    "pt": "Relatórios da equipe",
+    "es": "Informes del equipo",
+    "ar": "تقارير الفريق",
+    "fr": "Rapports de l'équipe",
+    "tr": "Ekip raporları",
+    "ja": "チームのレポート",
+    "uk": "Звіти команди",
+    "ca": "Informes de l'equip",
+    "id": "Laporan tim"
   },
-  "ORG_CHART$MEMORY_EMPTY": {
-    "en": "No rules taught yet.",
-    "zh-CN": "尚未教授任何规则。",
-    "zh-TW": "尚未教授任何規則。",
-    "de": "Noch keine Regeln hinterlegt.",
-    "ko-KR": "아직 학습된 규칙이 없습니다.",
-    "no": "Ingen regler er lært ennå.",
-    "it": "Nessuna regola insegnata.",
-    "pt": "Nenhuma regra ensinada ainda.",
-    "es": "Aún no se ha enseñado ninguna regla.",
-    "ar": "لم تُعلَّم أي قواعد بعد.",
-    "fr": "Aucune règle enseignée pour l'instant.",
-    "tr": "Henüz öğretilmiş kural yok.",
-    "ja": "まだルールは登録されていません。",
-    "uk": "Правил ще не додано.",
-    "ca": "Encara no s'ha ensenyat cap regla.",
-    "id": "Belum ada aturan yang diajarkan."
+  "ORG_CHART$REPORTS_EMPTY": {
+    "en": "This team's agents have recorded nothing yet.",
+    "zh-CN": "该团队的代理尚未记录任何内容。",
+    "zh-TW": "此團隊的代理尚未記錄任何內容。",
+    "de": "Die Agenten dieses Teams haben noch nichts festgehalten.",
+    "ko-KR": "이 팀의 에이전트가 아직 기록한 내용이 없습니다.",
+    "no": "Agentene i dette teamet har ikke notert noe ennå.",
+    "it": "Gli agenti di questo team non hanno ancora registrato nulla.",
+    "pt": "Os agentes desta equipe ainda não registraram nada.",
+    "es": "Los agentes de este equipo aún no han registrado nada.",
+    "ar": "لم يسجّل وكلاء هذا الفريق أي شيء بعد.",
+    "fr": "Les agents de cette équipe n'ont encore rien consigné.",
+    "tr": "Bu ekibin ajanları henüz bir şey kaydetmedi.",
+    "ja": "このチームのエージェントはまだ何も記録していません。",
+    "uk": "Агенти цієї команди ще нічого не записали.",
+    "ca": "Els agents d'aquest equip encara no han registrat res.",
+    "id": "Agen tim ini belum mencatat apa pun."
   },
-  "ORG_CHART$MEMORY_UNAVAILABLE": {
-    "en": "Boundary memory is unavailable. The director may not be attached to a git repository.",
-    "zh-CN": "边界记忆不可用。Director 可能未关联 git 仓库。",
-    "zh-TW": "邊界記憶無法使用。Director 可能未連結 git 儲存庫。",
-    "de": "Das Grenz-Gedächtnis ist nicht verfügbar. Der Director ist möglicherweise mit keinem Git-Repository verbunden.",
-    "ko-KR": "경계 메모리를 사용할 수 없습니다. Director가 git 저장소에 연결되지 않았을 수 있습니다.",
-    "no": "Grenseminnet er utilgjengelig. Director er kanskje ikke koblet til et git-repo.",
-    "it": "La memoria del confine non è disponibile. Il director potrebbe non essere collegato a un repository git.",
-    "pt": "A memória do limite está indisponível. O director pode não estar vinculado a um repositório git.",
-    "es": "La memoria del límite no está disponible. Es posible que el director no esté vinculado a un repositorio git.",
-    "ar": "ذاكرة الحدود غير متاحة. قد لا تكون خدمة Director مرتبطة بمستودع git.",
-    "fr": "La mémoire du périmètre est indisponible. Le director n'est peut-être pas rattaché à un dépôt git.",
-    "tr": "Sınır belleği kullanılamıyor. Director bir git deposuna bağlı olmayabilir.",
-    "ja": "境界メモリを利用できません。Director が git リポジトリに接続されていない可能性があります。",
-    "uk": "Пам'ять межі недоступна. Можливо, director не під'єднано до git-репозиторію.",
-    "ca": "La memòria del límit no està disponible. Pot ser que el director no estigui vinculat a un repositori git.",
-    "id": "Memori batas tidak tersedia. Director mungkin tidak terhubung ke repositori git."
+  "ORG_CHART$REPORTS_UNAVAILABLE": {
+    "en": "Team reports are unavailable. The director may not be attached to a git repository.",
+    "zh-CN": "团队报告不可用。Director 可能未关联到 git 仓库。",
+    "zh-TW": "團隊報告無法使用。Director 可能未連結至 git 儲存庫。",
+    "de": "Team-Berichte sind nicht verfügbar. Der Director ist möglicherweise mit keinem Git-Repository verbunden.",
+    "ko-KR": "팀 보고를 사용할 수 없습니다. Director가 git 저장소에 연결되어 있지 않을 수 있습니다.",
+    "no": "Teamrapporter er ikke tilgjengelige. Director er kanskje ikke knyttet til et git-repositorium.",
+    "it": "I rapporti del team non sono disponibili. Il Director potrebbe non essere collegato a un repository git.",
+    "pt": "Os relatórios da equipe não estão disponíveis. O Director pode não estar ligado a um repositório git.",
+    "es": "Los informes del equipo no están disponibles. Puede que el Director no esté vinculado a un repositorio git.",
+    "ar": "تقارير الفريق غير متاحة. قد لا يكون Director مرتبطًا بمستودع git.",
+    "fr": "Les rapports de l'équipe sont indisponibles. Le Director n'est peut-être rattaché à aucun dépôt git.",
+    "tr": "Ekip raporları kullanılamıyor. Director bir git deposuna bağlı olmayabilir.",
+    "ja": "チームのレポートを利用できません。Director が git リポジトリに接続されていない可能性があります。",
+    "uk": "Звіти команди недоступні. Можливо, Director не під'єднано до git-репозиторію.",
+    "ca": "Els informes de l'equip no estan disponibles. Pot ser que el Director no estigui vinculat a cap repositori git.",
+    "id": "Laporan tim tidak tersedia. Director mungkin tidak terhubung ke repositori git."
   },
-  "ORG_CHART$TEACH_LABEL": {
-    "en": "Teach a rule",
-    "zh-CN": "教授规则",
-    "zh-TW": "教授規則",
-    "de": "Regel beibringen",
-    "ko-KR": "규칙 가르치기",
-    "no": "Lær bort en regel",
-    "it": "Insegna una regola",
-    "pt": "Ensinar uma regra",
-    "es": "Enseñar una regla",
-    "ar": "تعليم قاعدة",
-    "fr": "Enseigner une règle",
-    "tr": "Kural öğret",
-    "ja": "ルールを教える",
-    "uk": "Навчити правила",
-    "ca": "Ensenya una regla",
-    "id": "Ajarkan aturan"
-  },
-  "ORG_CHART$TEACH_SUBMIT": {
-    "en": "Save rule",
-    "zh-CN": "保存规则",
-    "zh-TW": "儲存規則",
-    "de": "Regel speichern",
-    "ko-KR": "규칙 저장",
-    "no": "Lagre regel",
-    "it": "Salva regola",
-    "pt": "Salvar regra",
-    "es": "Guardar regla",
-    "ar": "حفظ القاعدة",
-    "fr": "Enregistrer la règle",
-    "tr": "Kuralı kaydet",
-    "ja": "ルールを保存",
-    "uk": "Зберегти правило",
-    "ca": "Desa la regla",
-    "id": "Simpan aturan"
-  },
-  "ORG_CHART$TEACH_ERROR": {
-    "en": "Could not save the rule.",
-    "zh-CN": "无法保存规则。",
-    "zh-TW": "無法儲存規則。",
-    "de": "Die Regel konnte nicht gespeichert werden.",
-    "ko-KR": "규칙을 저장할 수 없습니다.",
-    "no": "Kunne ikke lagre regelen.",
-    "it": "Impossibile salvare la regola.",
-    "pt": "Não foi possível salvar a regra.",
-    "es": "No se pudo guardar la regla.",
-    "ar": "تعذّر حفظ القاعدة.",
-    "fr": "Impossible d'enregistrer la règle.",
-    "tr": "Kural kaydedilemedi.",
-    "ja": "ルールを保存できませんでした。",
-    "uk": "Не вдалося зберегти правило.",
-    "ca": "No s'ha pogut desar la regla.",
-    "id": "Tidak dapat menyimpan aturan."
+  "ORG_CHART$REPORT_COMPACTED": {
+    "en": "summary of earlier reports",
+    "zh-CN": "早期报告的摘要",
+    "zh-TW": "先前報告的摘要",
+    "de": "Zusammenfassung früherer Berichte",
+    "ko-KR": "이전 보고의 요약",
+    "no": "sammendrag av tidligere rapporter",
+    "it": "riepilogo dei rapporti precedenti",
+    "pt": "resumo de relatórios anteriores",
+    "es": "resumen de informes anteriores",
+    "ar": "ملخص التقارير السابقة",
+    "fr": "résumé des rapports précédents",
+    "tr": "önceki raporların özeti",
+    "ja": "以前のレポートの要約",
+    "uk": "підсумок попередніх звітів",
+    "ca": "resum d'informes anteriors",
+    "id": "ringkasan laporan sebelumnya"
   },
   "ORG_CHART$STATUS": {
     "en": "Status:",
@@ -44513,42 +44477,6 @@
     "ca": "Té feina confirmada en conflicte amb la d'un altre equip",
     "id": "Memiliki pekerjaan ter-commit yang konflik dengan tim lain"
   },
-  "ORG_CHART$AUTOPSIES_TITLE": {
-    "en": "What failed here before",
-    "zh-CN": "此处之前失败的尝试",
-    "zh-TW": "此處先前失敗的嘗試",
-    "de": "Was hier schon gescheitert ist",
-    "ko-KR": "이전에 여기서 실패한 시도",
-    "no": "Hva som har feilet her før",
-    "it": "Cosa è già fallito qui",
-    "pt": "O que já falhou aqui",
-    "es": "Lo que ya falló aquí",
-    "ar": "ما فشل هنا من قبل",
-    "fr": "Ce qui a déjà échoué ici",
-    "tr": "Burada daha önce başarısız olanlar",
-    "ja": "ここで以前に失敗したこと",
-    "uk": "Що тут уже не вдалося",
-    "ca": "El que ja ha fallat aquí",
-    "id": "Yang pernah gagal di sini"
-  },
-  "ORG_CHART$AUTOPSY_SAVED": {
-    "en": "discarded changes kept in git as {{ref}}",
-    "zh-CN": "丢弃的更改保存在 git 的 {{ref}}",
-    "zh-TW": "捨棄的變更保存在 git 的 {{ref}}",
-    "de": "verworfene Änderungen in git unter {{ref}} aufbewahrt",
-    "ko-KR": "폐기된 변경 사항은 git의 {{ref}}에 보관됨",
-    "no": "forkastede endringer er bevart i git som {{ref}}",
-    "it": "modifiche scartate conservate in git come {{ref}}",
-    "pt": "alterações descartadas guardadas no git como {{ref}}",
-    "es": "cambios descartados guardados en git como {{ref}}",
-    "ar": "التغييرات المهملة محفوظة في git باسم {{ref}}",
-    "fr": "modifications abandonnées conservées dans git sous {{ref}}",
-    "tr": "atılan değişiklikler git'te {{ref}} olarak saklandı",
-    "ja": "破棄された変更は git の {{ref}} に保存されています",
-    "uk": "відкинуті зміни збережено в git як {{ref}}",
-    "ca": "canvis descartats desats a git com a {{ref}}",
-    "id": "perubahan yang dibuang disimpan di git sebagai {{ref}}"
-  },
   "ORG_CHART$SPEC_TITLE": {
     "en": "Spec and contracts",
     "zh-CN": "规格与契约",
@@ -44837,7 +44765,7 @@
     "ca": "El que l'IC revisor vol canviar",
     "id": "Yang ingin diubah oleh IC peninjau"
   },
-  "ORG_CHART$BLACKBOARD_PULL": {
+  "ORG_CHART$SYNC_PULL": {
     "en": "Pull",
     "zh-CN": "拉取",
     "zh-TW": "拉取",
@@ -44855,7 +44783,7 @@
     "ca": "Pull",
     "id": "Tarik"
   },
-  "ORG_CHART$BLACKBOARD_PUSH": {
+  "ORG_CHART$SYNC_PUSH": {
     "en": "Push",
     "zh-CN": "推送",
     "zh-TW": "推送",
@@ -44873,7 +44801,7 @@
     "ca": "Push",
     "id": "Dorong"
   },
-  "ORG_CHART$BLACKBOARD_PULLED": {
+  "ORG_CHART$SYNC_PULLED": {
     "en": "Took in changes from {{remote}}.",
     "zh-CN": "已合入来自 {{remote}} 的更改。",
     "zh-TW": "已合入來自 {{remote}} 的變更。",
@@ -44891,7 +44819,7 @@
     "ca": "S'han incorporat els canvis de {{remote}}.",
     "id": "Perubahan dari {{remote}} telah diambil."
   },
-  "ORG_CHART$BLACKBOARD_UP_TO_DATE": {
+  "ORG_CHART$SYNC_UP_TO_DATE": {
     "en": "Nothing new on {{remote}}.",
     "zh-CN": "{{remote}} 上没有新内容。",
     "zh-TW": "{{remote}} 上沒有新內容。",
@@ -44909,7 +44837,7 @@
     "ca": "Res de nou a {{remote}}.",
     "id": "Tidak ada yang baru di {{remote}}."
   },
-  "ORG_CHART$BLACKBOARD_PUSHED": {
+  "ORG_CHART$SYNC_PUSHED": {
     "en": "Pushed to {{remote}}.",
     "zh-CN": "已推送到 {{remote}}。",
     "zh-TW": "已推送到 {{remote}}。",
@@ -44927,7 +44855,7 @@
     "ca": "Enviat a {{remote}}.",
     "id": "Didorong ke {{remote}}."
   },
-  "ORG_CHART$BLACKBOARD_KEPT_LOCAL": {
+  "ORG_CHART$SYNC_KEPT_LOCAL": {
     "en": "Both sides changed these; yours were kept: {{paths}}",
     "zh-CN": "双方都修改了以下文件；已保留您的版本：{{paths}}",
     "zh-TW": "雙方都修改了以下檔案；已保留您的版本：{{paths}}",
@@ -44945,7 +44873,7 @@
     "ca": "Tots dos costats els han canviat; s'han conservat els vostres: {{paths}}",
     "id": "Kedua sisi mengubah ini; milik Anda dipertahankan: {{paths}}"
   },
-  "ORG_CHART$BLACKBOARD_ERROR": {
+  "ORG_CHART$SYNC_ERROR": {
     "en": "Could not share with the remote.",
     "zh-CN": "无法与远程仓库共享。",
     "zh-TW": "無法與遠端共享。",

@@ -8,11 +8,11 @@ const BUTTON =
   "flex h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-md px-2 text-xs text-text-secondary hover:bg-surface-raised hover:text-contrast disabled:opacity-40 disabled:hover:bg-transparent";
 
 const OUTCOME_KEYS = {
-  up_to_date: I18nKey.ORG_CHART$BLACKBOARD_UP_TO_DATE,
-  fast_forward: I18nKey.ORG_CHART$BLACKBOARD_PULLED,
-  merged: I18nKey.ORG_CHART$BLACKBOARD_PULLED,
+  up_to_date: I18nKey.ORG_CHART$SYNC_UP_TO_DATE,
+  fast_forward: I18nKey.ORG_CHART$SYNC_PULLED,
+  merged: I18nKey.ORG_CHART$SYNC_PULLED,
   conflicts: I18nKey.ORG_CHART$SYNC_CONFLICTS,
-  pushed: I18nKey.ORG_CHART$BLACKBOARD_PUSHED,
+  pushed: I18nKey.ORG_CHART$SYNC_PUSHED,
 } satisfies Record<SyncResult["result"], I18nKey>;
 
 /**
@@ -47,7 +47,7 @@ export function OrgSync({
   // about the pull that began it.
   const result =
     sync.data?.result === "conflicts" && !merging ? undefined : sync.data;
-  const keptLocal = result?.blackboard?.kept_local ?? [];
+  const keptLocal = result?.memory?.kept_local ?? [];
   const diverged = (result?.branches ?? []).filter(
     (branch) => branch.result === "diverged",
   );
@@ -70,7 +70,7 @@ export function OrgSync({
           onClick={() => sync.mutate("pull")}
           className={BUTTON}
         >
-          {t(I18nKey.ORG_CHART$BLACKBOARD_PULL)}
+          {t(I18nKey.ORG_CHART$SYNC_PULL)}
         </button>
         {canPush ? (
           <button
@@ -79,7 +79,7 @@ export function OrgSync({
             onClick={() => sync.mutate("push")}
             className={BUTTON}
           >
-            {t(I18nKey.ORG_CHART$BLACKBOARD_PUSH)}
+            {t(I18nKey.ORG_CHART$SYNC_PUSH)}
           </button>
         ) : null}
       </div>
@@ -88,7 +88,7 @@ export function OrgSync({
           {t(
             refused
               ? I18nKey.ORG_CHART$SYNC_REFUSED
-              : I18nKey.ORG_CHART$BLACKBOARD_ERROR,
+              : I18nKey.ORG_CHART$SYNC_ERROR,
           )}
         </span>
       ) : null}
@@ -98,7 +98,7 @@ export function OrgSync({
           {keptLocal.length > 0 ? (
             <span className="text-feedback-warning">
               {" "}
-              {t(I18nKey.ORG_CHART$BLACKBOARD_KEPT_LOCAL, {
+              {t(I18nKey.ORG_CHART$SYNC_KEPT_LOCAL, {
                 paths: keptLocal.join(", "),
               })}
             </span>

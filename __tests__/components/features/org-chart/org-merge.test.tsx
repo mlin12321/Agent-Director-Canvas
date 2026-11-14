@@ -43,7 +43,7 @@ const DONE: SyncResult = {
   remote: "origin",
   result: "merged",
   merge: null,
-  blackboard: null,
+  memory: null,
   branches: [],
   put_aside: [],
 };
@@ -183,7 +183,7 @@ describe("OrgSync", () => {
     const { rerender } = renderWithProviders(<OrgSync merging />);
 
     await user.click(
-      screen.getByRole("button", { name: "ORG_CHART$BLACKBOARD_PULL" }),
+      screen.getByRole("button", { name: "ORG_CHART$SYNC_PULL" }),
     );
     expect(
       await screen.findByText("ORG_CHART$SYNC_CONFLICTS"),
@@ -221,15 +221,15 @@ describe("StartOrgNotice", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "ORG_CHART$BLACKBOARD_PULL" }),
+      screen.getByRole("button", { name: "ORG_CHART$SYNC_PULL" }),
     );
 
     expect(
-      await screen.findByText("ORG_CHART$BLACKBOARD_PULLED"),
+      await screen.findByText("ORG_CHART$SYNC_PULLED"),
     ).toBeInTheDocument();
     expect(asked).toEqual(["pull"]);
     expect(
-      screen.queryByRole("button", { name: "ORG_CHART$BLACKBOARD_PUSH" }),
+      screen.queryByRole("button", { name: "ORG_CHART$SYNC_PUSH" }),
     ).toBeNull();
   });
 });
