@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { OrgNode } from "#/api/director/types";
 import { MarkdownRenderer } from "#/components/features/markdown/markdown-renderer";
-import { useNodeBlackboard } from "#/hooks/query/use-node-blackboard";
+import { useNodeMemory } from "#/hooks/query/use-node-memory";
 import { I18nKey } from "#/i18n/declaration";
 
 function Document({ title, text }: { title: string; text: string }) {
@@ -27,9 +27,9 @@ interface SpecAndContractsProps {
  */
 export function SpecAndContracts({ node }: SpecAndContractsProps) {
   const { t } = useTranslation("openhands");
-  const blackboard = useNodeBlackboard(node.id);
-  if (!blackboard.data) return null;
-  const { specs, contracts = [] } = blackboard.data;
+  const memory = useNodeMemory(node.id);
+  if (!memory.data) return null;
+  const { specs, contracts = [] } = memory.data;
 
   return (
     <section

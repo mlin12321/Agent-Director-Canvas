@@ -8,7 +8,7 @@ import type {
 } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
-import { BoundaryMemory } from "./boundary-memory";
+import { TeamReports } from "./team-reports";
 import { ReviewSummary } from "./review-summary";
 import { SpecAndContracts } from "./spec-and-contracts";
 import { StartAgain } from "./start-again";
@@ -108,7 +108,7 @@ export function AgentInspectorDrawer({
         <StartAgain node={node} />
         {node.review ? <ReviewSummary review={node.review} /> : null}
         <SpecAndContracts node={node} />
-        <BoundaryMemory node={node} />
+        <TeamReports node={node} />
       </div>
 
       <div

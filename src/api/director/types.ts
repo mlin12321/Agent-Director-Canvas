@@ -340,17 +340,15 @@ export interface OpenEscalation {
   path: Array<{ id: NodeId; title: string }>;
 }
 
-export interface Autopsy {
-  node_id: NodeId;
+/** Something an agent recorded for itself and the other agent of its team. */
+export interface Report {
+  /** ISO 8601 timestamp. */
   at: string;
-  approach: string;
-  why_failed: string;
-  /** The git ref that holds the uncommitted changes the prune discarded. */
-  saved_ref?: string | null;
-}
-
-export interface BoundaryMemory {
-  rules: string[];
+  /** Which agent of the team wrote it. */
+  role: AgentRole;
+  text: string;
+  /** True for the one report a model wrote in place of earlier ones. */
+  compacted?: boolean;
 }
 
 export interface InheritedSpec {
@@ -372,12 +370,12 @@ export interface BoundaryContracts {
   own: boolean;
 }
 
-export interface NodeBlackboard {
+export interface NodeMemory {
   /** The spec of the node's own boundary, when it has one. */
   specs: InheritedSpec[];
   contracts?: BoundaryContracts[];
-  memory: BoundaryMemory;
-  autopsies: Autopsy[];
+  /** What the team's own two agents recorded, oldest first. */
+  reports?: Report[];
 }
 
 /** A direct report, as the owner of a directory. */
@@ -459,19 +457,19 @@ export interface NodeOwnership {
  * tree that waits on the human. Node events are limited to that same set of
  * nodes; an `escalations` event carries the whole new list.
  */
-/** What a pull or a push of the blackboard did. */
-export interface BlackboardSync {
+/** What a pull or a push of the team memory did. */
+export interface MemorySync {
   remote: string;
-  /** The local blackboard's commit afterwards; `null` when it is empty. */
+  /** The local team memory's commit afterwards; `null` when it is empty. */
   head: string | null;
-  /** The local blackboard took in remote changes. */
+  /** The local team memory took in remote changes. */
   changed: boolean;
   /**
    * Specs and contracts both sides had changed. The local text was kept;
-   * the remote text is in the blackboard's history.
+   * the remote text is in the team memory's history.
    */
   kept_local: string[];
-  /** The remote now has the local blackboard. */
+  /** The remote now has the local team memory. */
   pushed: boolean;
 }
 
@@ -486,7 +484,7 @@ export interface OrgConflict {
   /** Names the conflict in a resolve request. */
   id: string;
   kind: "field" | "team" | "file";
-  /** The team; "" for a file of the blackboard. */
+  /** The team; "" for a file of the team memory. */
   node_id: NodeId;
   title: string;
   /** The field, or the file's path. */
@@ -518,7 +516,7 @@ export interface OrgSync {
   result: "up_to_date" | "fast_forward" | "merged" | "conflicts" | "pushed";
   /** The merge waiting for choices, when `result` is `conflicts`. */
   merge: OrgMerge | null;
-  blackboard: BlackboardSync | null;
+  memory: MemorySync | null;
   branches: BranchSync[];
   /** Unfinished work dropped because its team was changed. */
   put_aside: RecoveryItem[];
