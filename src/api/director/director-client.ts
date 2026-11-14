@@ -18,6 +18,7 @@ import {
   type RouteMessageRequest,
   type Side,
   type TeamChanges,
+  type Thread,
   type TeamMatch,
 } from "./types";
 
@@ -115,6 +116,15 @@ export const DirectorClient = {
 
   getNodeMemory(nodeId: NodeId) {
     return requestJson<NodeMemory>(nodePath(nodeId, "memory"));
+  },
+
+  /**
+   * The threads a team's agents take part in: its IC and Manager with each
+   * other, its Manager with the ICs directly below, and the Manager above
+   * with its IC.
+   */
+  getNodeMessages(nodeId: NodeId) {
+    return requestJson<Thread[]>(nodePath(nodeId, "messages"));
   },
 
   getNodeOwnership(nodeId: NodeId) {
