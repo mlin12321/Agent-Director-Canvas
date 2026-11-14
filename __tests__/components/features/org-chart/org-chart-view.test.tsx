@@ -31,6 +31,7 @@ import type {
   OrgSync,
   Review,
   SplitProposal,
+  Thread,
 } from "#/api/director/types";
 import { subscribeOrgTree } from "#/api/director/director-client";
 import * as activeStore from "#/api/backend-registry/active-store";
@@ -151,12 +152,15 @@ function streamHandler() {
   });
 }
 
-function memoryHandlers(reports: Report[] = []) {
+function memoryHandlers(reports: Report[] = [], threads: Thread[] = []) {
   server.use(
     http.get("*/api/director/org/nodes/:nodeId/memory", () => {
       const body: NodeMemory = { specs: [], reports };
       return HttpResponse.json(body);
     }),
+    http.get("*/api/director/org/nodes/:nodeId/messages", () =>
+      HttpResponse.json(threads),
+    ),
   );
 }
 
@@ -1153,8 +1157,8 @@ describe("OrgChartView", () => {
             },
           ],
           contracts: "",
-          status: "refine_requested",
-          feedback: "Overlaps with auth",
+          status: "approved",
+          replaces: ["auth"],
           proposed_at: "2026-11-12T00:00:00Z",
         }),
       );
@@ -1170,7 +1174,7 @@ describe("OrgChartView", () => {
 
       const tip = await screen.findByRole("tooltip");
       expect(
-        within(tip).getByText("ORG_CHART$SPLIT_REFINE_REQUESTED"),
+        within(tip).getByText("ORG_CHART$SPLIT_APPROVED"),
       ).toBeInTheDocument();
       expect(within(tip).getByText("indexer, query")).toBeInTheDocument();
     });
@@ -1416,9 +1420,81 @@ describe("OrgChartView", () => {
       ).toBeInTheDocument();
     });
 
+    it("shows what the ICs and Managers around the team wrote, by thread", async () => {
+      const at = "2026-11-12T10:00:00+00:00";
+      memoryHandlers(
+        [],
+        [
+          {
+            manager_node_id: "auth",
+            ic_node_id: "auth",
+            messages: [
+              {
+                at,
+                sender: "ic",
+                text: "Sessions could be a team of its own.",
+              },
+              {
+                at: "2026-11-12T10:05:00+00:00",
+                sender: "manager",
+                text: "Agreed.",
+              },
+            ],
+          },
+          {
+            manager_node_id: "auth",
+            ic_node_id: "sessions",
+            messages: [{ at, sender: "manager", text: "Where do you stand?" }],
+          },
+          {
+            manager_node_id: "root",
+            ic_node_id: "auth",
+            messages: [{ at, sender: "manager", text: "Search waits on you." }],
+          },
+        ],
+      );
+      const user = userEvent.setup();
+      renderWithProviders(<OrgChartView nodeId="auth" />);
+      await findCard("auth");
+      await user.click(currentCard());
+
+      const messages = await screen.findByRole("region", {
+        name: "ORG_CHART$MESSAGES_TITLE",
+      });
+      const [own, below, above] = within(messages).getAllByRole("group");
+
+      expect(own).toHaveAccessibleName("ORG_CHART$MESSAGES_OWN");
+      const [asked, answered] = within(own).getAllByRole("listitem");
+      expect(asked).toHaveTextContent("Sessions could be a team of its own.");
+      expect(asked).toHaveTextContent("ORG_CHART$ROLE_IC");
+      expect(answered).toHaveTextContent("Agreed.");
+      expect(answered).toHaveTextContent("ORG_CHART$ROLE_MANAGER");
+      expect(below).toHaveAccessibleName("ORG_CHART$MESSAGES_BELOW");
+      expect(below).toHaveTextContent("Where do you stand?");
+      expect(above).toHaveAccessibleName("ORG_CHART$MESSAGES_ABOVE");
+      expect(above).toHaveTextContent("Search waits on you.");
+      expect(within(messages).queryByRole("textbox")).toBeNull();
+    });
+
+    it("says so when nobody around the team has written yet", async () => {
+      memoryHandlers();
+      const user = userEvent.setup();
+      renderWithProviders(<OrgChartView nodeId="auth" />);
+      await findCard("auth");
+
+      await user.click(currentCard());
+
+      expect(
+        await screen.findByText("ORG_CHART$MESSAGES_EMPTY"),
+      ).toBeInTheDocument();
+    });
+
     it("explains when the team's memory cannot be read", async () => {
       server.use(
         http.get("*/api/director/org/nodes/:nodeId/memory", () =>
+          HttpResponse.json({ detail: "No team memory" }, { status: 503 }),
+        ),
+        http.get("*/api/director/org/nodes/:nodeId/messages", () =>
           HttpResponse.json({ detail: "No team memory" }, { status: 503 }),
         ),
       );

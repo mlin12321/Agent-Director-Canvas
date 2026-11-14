@@ -4,10 +4,12 @@ import { useTranslation } from "react-i18next";
 import type {
   AgentRole,
   BoundaryEnforcement,
+  NodeId,
   OrgNode,
 } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
+import { TeamMessages } from "./team-messages";
 import { TeamReports } from "./team-reports";
 import { ReviewSummary } from "./review-summary";
 import { SpecAndContracts } from "./spec-and-contracts";
@@ -40,6 +42,8 @@ const TAB_CHOSEN_CLASS =
 
 interface AgentInspectorDrawerProps {
   node: OrgNode;
+  /** The teams known to the page, to name the other side of a thread. */
+  nodes?: ReadonlyMap<NodeId, OrgNode>;
   /**
    * How far the server holds teams to their boundaries, once known. What the
    * team's own node says comes first.
@@ -51,6 +55,7 @@ interface AgentInspectorDrawerProps {
 /** One team's details: its boundary memory and its agents' conversations. */
 export function AgentInspectorDrawer({
   node,
+  nodes,
   enforcement,
   onClose,
 }: AgentInspectorDrawerProps) {
@@ -109,6 +114,7 @@ export function AgentInspectorDrawer({
         {node.review ? <ReviewSummary review={node.review} /> : null}
         <SpecAndContracts node={node} />
         <TeamReports node={node} />
+        <TeamMessages node={node} nodes={nodes} />
       </div>
 
       <div

@@ -85,7 +85,7 @@ export interface Escalation {
 
 export type StatusCounts = Record<NodeStatus, number>;
 
-export type SplitStatus = "proposed" | "refine_requested" | "approved";
+export type SplitStatus = "proposed" | "approved";
 
 /** A sub-team an IC proposes to hand part of its boundary to. */
 export interface SplitChild {
@@ -99,13 +99,19 @@ export interface SplitChild {
   task: string;
 }
 
-/** An IC's proposal to split its boundary, for its Manager to decide. */
+/**
+ * The sub-teams an IC proposed in a message to its Manager, which approves
+ * them as written or answers with a message.
+ */
 export interface SplitProposal {
   children: SplitChild[];
   contracts: string;
   status: SplitStatus;
-  /** What the Manager wants changed, when it asked. */
-  feedback: string;
+  /**
+   * The sub-teams the node has now that the proposed ones take the place of.
+   * Their own sub-teams stay.
+   */
+  replaces?: NodeId[];
   /** ISO 8601 timestamp. */
   proposed_at: string;
 }
@@ -349,6 +355,25 @@ export interface Report {
   text: string;
   /** True for the one report a model wrote in place of earlier ones. */
   compacted?: boolean;
+}
+
+/** One message between a Manager and an IC. */
+export interface ThreadMessage {
+  /** ISO 8601 timestamp. */
+  at: string;
+  /** Which of the two wrote it. */
+  sender: AgentRole;
+  text: string;
+}
+
+/**
+ * What one Manager and one IC have said to each other, oldest first. The IC
+ * is the Manager's own, or the IC of a team directly below it.
+ */
+export interface Thread {
+  manager_node_id: NodeId;
+  ic_node_id: NodeId;
+  messages: ThreadMessage[];
 }
 
 export interface InheritedSpec {

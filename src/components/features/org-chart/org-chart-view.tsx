@@ -332,6 +332,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
         <AgentInspectorDrawer
           key={current.id}
           node={current}
+          nodes={nodes}
           enforcement={org.data?.boundary_enforcement}
           onClose={closeDetails}
         />
