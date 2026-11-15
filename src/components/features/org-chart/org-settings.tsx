@@ -24,6 +24,7 @@ const DEFAULTS = {
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
   manager_check_ic_escalations: 3,
+  manager_check_sent_back: 3,
 };
 const INPUT = "rounded-md border border-border bg-canvas-base px-3 py-2";
 
@@ -98,6 +99,9 @@ function SettingsForm({
   const [escalations, setEscalations] = React.useState(
     shown(state.manager_check_ic_escalations),
   );
+  const [sentBack, setSentBack] = React.useState(
+    shown(state.manager_check_sent_back),
+  );
   const profiles = useAgentProfiles({ enabled: allowed !== undefined }).data;
   // A profile that was allowed and has since been deleted can still be
   // unticked.
@@ -123,6 +127,9 @@ function SettingsForm({
         ...(escalations === undefined
           ? {}
           : { manager_check_ic_escalations: Number(escalations) }),
+        ...(sentBack === undefined
+          ? {}
+          : { manager_check_sent_back: Number(sentBack) }),
       }),
     onSuccess: (saved) => {
       queryClient.setQueryData(DIRECTOR_QUERY_KEYS.settings(backend.id), saved);
@@ -301,6 +308,15 @@ function SettingsForm({
               onChange={setEscalations}
             />
           )}
+          {sentBack === undefined ? null : (
+            <CountField
+              label={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_SENT_BACK)}
+              help={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_CHECK_HELP)}
+              value={sentBack}
+              disabled={save.isPending}
+              onChange={setSentBack}
+            />
+          )}
           {state.max_concurrent_runs !== null ? (
             <p className="text-xs text-muted">
               {t(I18nKey.ORG_CHART$SETTINGS_RUNS, {
@@ -331,6 +347,8 @@ function SettingsForm({
                   setReviews(String(DEFAULTS.manager_check_accepted_reviews));
                 if (escalations !== undefined)
                   setEscalations(String(DEFAULTS.manager_check_ic_escalations));
+                if (sentBack !== undefined)
+                  setSentBack(String(DEFAULTS.manager_check_sent_back));
               }}
             >
               {t(I18nKey.ORG_CHART$SETTINGS_RESET)}
@@ -401,6 +419,7 @@ export function OrgSettings() {
             settings.data.stall_check_minutes,
             settings.data.manager_check_accepted_reviews,
             settings.data.manager_check_ic_escalations,
+            settings.data.manager_check_sent_back,
           ].join(":")}
           state={settings.data}
           onClose={() => setIsOpen(false)}

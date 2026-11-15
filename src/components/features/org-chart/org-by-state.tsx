@@ -6,11 +6,19 @@ import { NodeCard } from "./node-card";
 
 /** Where a team stands, as one of the board's columns. */
 export type TeamState =
-  /** Not working: not started yet, or with nothing to do just now. */
-  "idle" | "working" | "in_review" | "changes_requested" | "blocked" | "done";
+  /** Set up and given no task yet: it has no agents. */
+  | "not_started"
+  /** Started, with nothing to do just now. */
+  | "idle"
+  | "working"
+  | "in_review"
+  | "changes_requested"
+  | "blocked"
+  | "done";
 
 export const TEAM_STATES: ReadonlyArray<{ state: TeamState; label: I18nKey }> =
   [
+    { state: "not_started", label: I18nKey.ORG_CHART$TEAM_NOT_STARTED },
     { state: "idle", label: I18nKey.ORG_CHART$STATE_IDLE },
     { state: "working", label: I18nKey.ORG_CHART$STATE_WORKING },
     { state: "in_review", label: I18nKey.ORG_CHART$STATE_IN_REVIEW },
@@ -28,7 +36,8 @@ export const TEAM_STATES: ReadonlyArray<{ state: TeamState; label: I18nKey }> =
  * it has submitted its work. A block comes first, then a review that waits
  * for its reviewer, so a team that submitted is "in review" until it is
  * accepted; a team sent back to change its work stays under "changes
- * requested" until it submits again.
+ * requested" until it submits again. A team without agents was set up and
+ * has not been given its task.
  */
 export function teamStateOf(node: OrgNode): TeamState {
   if (node.status === "blocked") return "blocked";
@@ -36,7 +45,8 @@ export function teamStateOf(node: OrgNode): TeamState {
   if (review === "pending" || review === "unreviewed") return "in_review";
   if (node.status === "done") return "done";
   if (review === "changes_requested") return "changes_requested";
-  return node.status === "working" ? "working" : "idle";
+  if (node.status === "working") return "working";
+  return node.agents.length === 0 ? "not_started" : "idle";
 }
 
 interface OrgByStateProps {

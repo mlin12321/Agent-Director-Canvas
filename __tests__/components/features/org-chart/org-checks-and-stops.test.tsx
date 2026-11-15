@@ -178,6 +178,40 @@ describe("the checks in the settings", () => {
     ).toHaveValue(3);
   });
 
+  it("shows and saves how often work is sent back before a Manager looks", async () => {
+    const saved = settingsHandlers({ ...STATE, manager_check_sent_back: 4 });
+    const user = userEvent.setup();
+    renderWithProviders(<OrgSettings />);
+    const modal = await openSettings(user);
+    const sentBack = within(modal).getByLabelText(
+      /ORG_CHART\$SETTINGS_MANAGER_SENT_BACK/,
+    );
+    expect(sentBack).toHaveValue(4);
+
+    await user.click(
+      within(modal).getByRole("button", { name: "ORG_CHART$SETTINGS_RESET" }),
+    );
+    expect(sentBack).toHaveValue(3);
+    await user.clear(sentBack);
+    await user.type(sentBack, "0");
+    await user.click(
+      within(modal).getByRole("button", { name: "BUTTON$SAVE" }),
+    );
+
+    await waitFor(() =>
+      expect(saved).toEqual([
+        {
+          max_agents: 64,
+          max_depth: 8,
+          stall_check_minutes: 120,
+          manager_check_accepted_reviews: 5,
+          manager_check_ic_escalations: 3,
+          manager_check_sent_back: 0,
+        },
+      ]),
+    );
+  });
+
   it("offers no checks, and saves none, on a server without them", async () => {
     const saved = settingsHandlers({
       max_agents: 64,
@@ -195,6 +229,9 @@ describe("the checks in the settings", () => {
     ).toBeNull();
     expect(
       within(modal).queryByLabelText(/ORG_CHART\$SETTINGS_MANAGER_REVIEWS/),
+    ).toBeNull();
+    expect(
+      within(modal).queryByLabelText(/ORG_CHART\$SETTINGS_MANAGER_SENT_BACK/),
     ).toBeNull();
     await user.click(
       within(modal).getByRole("button", { name: "BUTTON$SAVE" }),
