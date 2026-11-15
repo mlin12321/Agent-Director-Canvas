@@ -64,7 +64,7 @@ export const NodeCard = React.memo(function NodeCard({
 
   // A team whose IC already works says what it delivers, even while its
   // Manager still waits to start.
-  const waiting = node.waiting_to_start === true && node.status !== "working";
+  const waiting = node.waiting_to_start && node.status !== "working";
   // A team that was set up and has been given no task has no agents.
   const notStarted = node.agents.length === 0;
   // An agent that was working when the org was paused.

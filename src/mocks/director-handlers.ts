@@ -32,8 +32,8 @@ const BASE = `*${DIRECTOR_BASE_PATH}`;
 const ROOT_ID = "root";
 
 const POD: AgentRef[] = [
-  { role: "ic", conversation_id: null, status: "working" },
-  { role: "manager", conversation_id: null, status: "idle" },
+  { role: "ic", conversation_id: null, status: "working", kind: "openhands" },
+  { role: "manager", conversation_id: null, status: "idle", kind: "openhands" },
 ];
 
 const DOMAINS: Array<{ name: string; status: NodeStatus }> = [
@@ -238,6 +238,8 @@ function buildMockTree() {
         escalations: ESCALATIONS[id] ?? [],
         pending_split: null,
         review: module.status === "done" ? MOCK_REVIEW : null,
+        waiting_to_start: false,
+        old_specs: [],
         descendant_counts: zeroCounts(),
         escalation_count: waitingOnHuman(id),
       });
@@ -262,6 +264,9 @@ function buildMockTree() {
       spec_summary: `Interface contracts between the ${domain.name} services.`,
       escalations: own,
       pending_split: null,
+      review: null,
+      waiting_to_start: false,
+      old_specs: [],
       descendant_counts: { ...moduleCounts },
       escalation_count: waitingOnHuman(domain.name) + below,
     });
@@ -281,6 +286,9 @@ function buildMockTree() {
     spec_summary: "Owns cross-domain contracts and the release plan.",
     escalations: [],
     pending_split: null,
+    review: null,
+    waiting_to_start: false,
+    old_specs: [],
     descendant_counts: rootCounts,
     escalation_count: Object.keys(ESCALATIONS).reduce(
       (sum, id) => sum + waitingOnHuman(id),
@@ -350,6 +358,8 @@ function snapshot(focusId: NodeId, full: boolean): OrgEvent | null {
     focus_id: focusId,
     nodes: [...nodes.values()],
     escalations: escalationsWaiting(),
+    paused: null,
+    merging: false,
   };
 }
 
@@ -415,6 +425,7 @@ export const DIRECTOR_HANDLERS = [
       is_git_repository: true,
       fixture: true,
       boundary_enforcement: "sandbox",
+      paused: null,
     };
     return HttpResponse.json(body);
   }),
@@ -510,6 +521,8 @@ export const DIRECTOR_HANDLERS = [
     const body: NodeMemory = {
       specs: MOCK_SPECS[nodeId] ?? [],
       reports: MOCK_REPORTS[nodeId] ?? [],
+      former_teams: [],
+      history: [],
     };
     return HttpResponse.json(body);
   }),

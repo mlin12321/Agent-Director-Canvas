@@ -215,6 +215,7 @@ describe("StartOrgNotice", () => {
             is_git_repository: true,
             fixture: false,
             boundary_enforcement: "checks",
+            paused: null,
           } satisfies OrgSummary
         }
       />,

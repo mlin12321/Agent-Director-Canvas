@@ -46097,24 +46097,6 @@
     "ca": "Es comproven quan un equip es divideix. Els equips que ja existeixen es mantenen, fins i tot per sobre d'un límit.",
     "id": "Diperiksa saat sebuah tim dipecah. Tim yang sudah ada tetap dipertahankan, meski melebihi batas."
   },
-  "ORG_CHART$SETTINGS_MAX_AGENTS": {
-    "en": "Most agents in a team and the teams below it",
-    "zh-CN": "一个团队及其下属团队的智能体上限",
-    "zh-TW": "一個團隊及其下屬團隊的代理上限",
-    "de": "Höchstzahl an Agenten in einem Team und den Teams darunter",
-    "ko-KR": "한 팀과 그 아래 팀들의 최대 에이전트 수",
-    "no": "Flest agenter i et team og teamene under det",
-    "it": "Numero massimo di agenti in un team e nei team sottostanti",
-    "pt": "Máximo de agentes em uma equipe e nas equipes abaixo dela",
-    "es": "Máximo de agentes en un equipo y en los equipos por debajo",
-    "ar": "أقصى عدد من الوكلاء في فريق والفرق التي تحته",
-    "fr": "Nombre maximal d'agents dans une équipe et les équipes en dessous",
-    "tr": "Bir ekipte ve altındaki ekiplerde en fazla ajan sayısı",
-    "ja": "チームとその配下のチームのエージェント数の上限",
-    "uk": "Найбільше агентів у команді та командах під нею",
-    "ca": "Màxim d'agents en un equip i en els equips de sota",
-    "id": "Jumlah agen terbanyak dalam sebuah tim dan tim di bawahnya"
-  },
   "ORG_CHART$SETTINGS_MAX_TEAMS": {
     "en": "Most teams in a team and the teams below it",
     "zh-CN": "一个团队连同其下属团队的团队数上限",
@@ -46294,24 +46276,6 @@
     "uk": "Вона описує, як працювала та команда. IC цієї команди отримав вказівку переписати її.",
     "ca": "Diu com treballava aquell equip. A l'IC d'aquest equip se li ha indicat que la reescrigui.",
     "id": "Isinya cara kerja tim itu. IC tim ini diminta menulis ulang."
-  },
-  "ORG_CHART$SETTINGS_AGENTS_NOW": {
-    "en": "The org has {{count}} now.",
-    "zh-CN": "组织目前有 {{count}} 个。",
-    "zh-TW": "組織目前有 {{count}} 個。",
-    "de": "Die Organisation hat jetzt {{count}}.",
-    "ko-KR": "현재 조직에는 {{count}}개가 있습니다.",
-    "no": "Organisasjonen har {{count}} nå.",
-    "it": "L'organizzazione ne ha {{count}} ora.",
-    "pt": "A organização tem {{count}} agora.",
-    "es": "La organización tiene {{count}} ahora.",
-    "ar": "لدى المنظمة {{count}} الآن.",
-    "fr": "L'organisation en compte {{count}} actuellement.",
-    "tr": "Organizasyonda şu anda {{count}} var.",
-    "ja": "現在、組織には {{count}} あります。",
-    "uk": "Зараз в організації {{count}}.",
-    "ca": "L'organització en té {{count}} ara.",
-    "id": "Organisasi kini memiliki {{count}}."
   },
   "ORG_CHART$SETTINGS_MAX_DEPTH": {
     "en": "Most levels of teams",

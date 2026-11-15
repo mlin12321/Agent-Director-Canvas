@@ -18,23 +18,17 @@ import { I18nKey } from "#/i18n/declaration";
 
 const DEFAULTS = {
   max_teams: 32,
-  max_agents: 64,
   max_depth: 8,
   allowed_profiles: [],
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
-  manager_check_ic_escalations: 3,
+  manager_check_ic_setbacks: 3,
 };
 const INPUT = "rounded-md border border-border bg-canvas-base px-3 py-2";
 
 function whole(text: string, least: number) {
   const value = Number(text);
   return text.trim() !== "" && Number.isInteger(value) && value >= least;
-}
-
-/** The text of a setting; undefined on a server that has no such setting. */
-function shown(value: number | undefined) {
-  return value === undefined ? undefined : String(value);
 }
 
 function CountField({
@@ -78,51 +72,39 @@ function SettingsForm({
   const { t } = useTranslation("openhands");
   const { backend } = useActiveBackend();
   const queryClient = useQueryClient();
-  // A server that limits teams says so; an older one limits agents.
-  const byTeam = state.max_teams !== undefined;
   const sizeId = React.useId();
   const infoId = React.useId();
-  const [size, setSize] = React.useState(
-    String(state.max_teams ?? state.max_agents),
-  );
+  const [size, setSize] = React.useState(String(state.max_teams));
   const [depth, setDepth] = React.useState(String(state.max_depth));
-  // Absent on a server that cannot give a sub-team another agent.
   const [allowed, setAllowed] = React.useState(state.allowed_profiles);
-  // Absent on a server that cannot pause an org.
   const [resumes, setResumes] = React.useState(state.resume_on_start);
-  // Each absent on a server without that check; 0 turns a check off.
-  const [stall, setStall] = React.useState(shown(state.stall_check_minutes));
+  // 0 turns a check off.
+  const [stall, setStall] = React.useState(String(state.stall_check_minutes));
   const [reviews, setReviews] = React.useState(
-    shown(state.manager_check_accepted_reviews),
+    String(state.manager_check_accepted_reviews),
   );
-  const [escalations, setEscalations] = React.useState(
-    shown(state.manager_check_ic_escalations),
+  const [setbacks, setSetbacks] = React.useState(
+    String(state.manager_check_ic_setbacks),
   );
-  const profiles = useAgentProfiles({ enabled: allowed !== undefined }).data;
+  const profiles = useAgentProfiles().data;
   // A profile that was allowed and has since been deleted can still be
   // unticked.
   const names = [
     ...new Set([
       ...(profiles?.profiles.map((profile) => profile.name) ?? []),
-      ...(allowed ?? []),
+      ...allowed,
     ]),
   ];
   const save = useMutation({
     mutationFn: () =>
       DirectorClient.updateSettings({
-        ...(byTeam
-          ? { max_teams: Number(size) }
-          : { max_agents: Number(size) }),
+        max_teams: Number(size),
         max_depth: Number(depth),
-        ...(allowed ? { allowed_profiles: allowed } : {}),
-        ...(resumes === undefined ? {} : { resume_on_start: resumes }),
-        ...(stall === undefined ? {} : { stall_check_minutes: Number(stall) }),
-        ...(reviews === undefined
-          ? {}
-          : { manager_check_accepted_reviews: Number(reviews) }),
-        ...(escalations === undefined
-          ? {}
-          : { manager_check_ic_escalations: Number(escalations) }),
+        allowed_profiles: allowed,
+        resume_on_start: resumes,
+        stall_check_minutes: Number(stall),
+        manager_check_accepted_reviews: Number(reviews),
+        manager_check_ic_setbacks: Number(setbacks),
       }),
     onSuccess: (saved) => {
       queryClient.setQueryData(DIRECTOR_QUERY_KEYS.settings(backend.id), saved);
@@ -131,11 +113,9 @@ function SettingsForm({
     meta: { disableToast: true },
   });
   const valid =
-    whole(size, byTeam ? 1 : 2) &&
+    whole(size, 1) &&
     whole(depth, 1) &&
-    [stall, reviews, escalations].every(
-      (count) => count === undefined || whole(count, 0),
-    );
+    [stall, reviews, setbacks].every((count) => whole(count, 0));
 
   return (
     <ModalBackdrop
@@ -164,37 +144,31 @@ function SettingsForm({
                 label names the field alone. */}
             <span className="flex items-center gap-1.5">
               <label htmlFor={sizeId}>
-                {t(
-                  byTeam
-                    ? I18nKey.ORG_CHART$SETTINGS_MAX_TEAMS
-                    : I18nKey.ORG_CHART$SETTINGS_MAX_AGENTS,
-                )}
+                {t(I18nKey.ORG_CHART$SETTINGS_MAX_TEAMS)}
               </label>
-              {byTeam ? (
-                <Tooltip
-                  content={t(I18nKey.ORG_CHART$SETTINGS_TEAMS_INFO)}
-                  placement="top"
-                  classNames={{ content: "max-w-xs break-normal" }}
+              <Tooltip
+                content={t(I18nKey.ORG_CHART$SETTINGS_TEAMS_INFO)}
+                placement="top"
+                classNames={{ content: "max-w-xs break-normal" }}
+              >
+                <button
+                  type="button"
+                  data-testid="org-settings-teams-info"
+                  aria-label={t(I18nKey.ORG_CHART$SETTINGS_TEAMS_INFO_LABEL)}
+                  aria-describedby={infoId}
+                  className="flex text-muted hover:text-contrast"
                 >
-                  <button
-                    type="button"
-                    data-testid="org-settings-teams-info"
-                    aria-label={t(I18nKey.ORG_CHART$SETTINGS_TEAMS_INFO_LABEL)}
-                    aria-describedby={infoId}
-                    className="flex text-muted hover:text-contrast"
-                  >
-                    <Info width={14} height={14} aria-hidden="true" />
-                    <span id={infoId} className="sr-only">
-                      {t(I18nKey.ORG_CHART$SETTINGS_TEAMS_INFO)}
-                    </span>
-                  </button>
-                </Tooltip>
-              ) : null}
+                  <Info width={14} height={14} aria-hidden="true" />
+                  <span id={infoId} className="sr-only">
+                    {t(I18nKey.ORG_CHART$SETTINGS_TEAMS_INFO)}
+                  </span>
+                </button>
+              </Tooltip>
             </span>
             <input
               id={sizeId}
               type="number"
-              min={byTeam ? 1 : 2}
+              min={1}
               step={1}
               required
               value={size}
@@ -203,13 +177,7 @@ function SettingsForm({
               className={INPUT}
             />
             <span className="text-xs text-muted">
-              {byTeam
-                ? t(I18nKey.ORG_CHART$SETTINGS_TEAMS_NOW, {
-                    count: state.teams ?? 0,
-                  })
-                : t(I18nKey.ORG_CHART$SETTINGS_AGENTS_NOW, {
-                    count: state.agents,
-                  })}
+              {t(I18nKey.ORG_CHART$SETTINGS_TEAMS_NOW, { count: state.teams })}
             </span>
           </div>
           <label className="flex flex-col gap-2 text-sm">
@@ -231,7 +199,7 @@ function SettingsForm({
           <p className="text-xs text-muted">
             {t(I18nKey.ORG_CHART$SETTINGS_SCOPE)}
           </p>
-          {allowed && names.length > 0 ? (
+          {names.length > 0 ? (
             <fieldset className="flex flex-col gap-2 text-sm">
               <legend className="mb-2">
                 {t(I18nKey.ORG_CHART$SETTINGS_PROFILES)}
@@ -258,49 +226,41 @@ function SettingsForm({
               </span>
             </fieldset>
           ) : null}
-          {resumes === undefined ? null : (
-            <label className="flex flex-col gap-2 text-sm">
-              <span className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={resumes}
-                  disabled={save.isPending}
-                  onChange={(event) => setResumes(event.target.checked)}
-                />
-                {t(I18nKey.ORG_CHART$SETTINGS_RESUME_ON_START)}
-              </span>
-              <span className="text-xs text-muted">
-                {t(I18nKey.ORG_CHART$SETTINGS_RESUME_ON_START_HELP)}
-              </span>
-            </label>
-          )}
-          {stall === undefined ? null : (
-            <CountField
-              label={t(I18nKey.ORG_CHART$SETTINGS_STALL_MINUTES)}
-              help={t(I18nKey.ORG_CHART$SETTINGS_STALL_MINUTES_HELP)}
-              value={stall}
-              disabled={save.isPending}
-              onChange={setStall}
-            />
-          )}
-          {reviews === undefined ? null : (
-            <CountField
-              label={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_REVIEWS)}
-              help={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_CHECK_HELP)}
-              value={reviews}
-              disabled={save.isPending}
-              onChange={setReviews}
-            />
-          )}
-          {escalations === undefined ? null : (
-            <CountField
-              label={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_ESCALATIONS)}
-              help={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_CHECK_HELP)}
-              value={escalations}
-              disabled={save.isPending}
-              onChange={setEscalations}
-            />
-          )}
+          <label className="flex flex-col gap-2 text-sm">
+            <span className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={resumes}
+                disabled={save.isPending}
+                onChange={(event) => setResumes(event.target.checked)}
+              />
+              {t(I18nKey.ORG_CHART$SETTINGS_RESUME_ON_START)}
+            </span>
+            <span className="text-xs text-muted">
+              {t(I18nKey.ORG_CHART$SETTINGS_RESUME_ON_START_HELP)}
+            </span>
+          </label>
+          <CountField
+            label={t(I18nKey.ORG_CHART$SETTINGS_STALL_MINUTES)}
+            help={t(I18nKey.ORG_CHART$SETTINGS_STALL_MINUTES_HELP)}
+            value={stall}
+            disabled={save.isPending}
+            onChange={setStall}
+          />
+          <CountField
+            label={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_REVIEWS)}
+            help={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_CHECK_HELP)}
+            value={reviews}
+            disabled={save.isPending}
+            onChange={setReviews}
+          />
+          <CountField
+            label={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_ESCALATIONS)}
+            help={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_CHECK_HELP)}
+            value={setbacks}
+            disabled={save.isPending}
+            onChange={setSetbacks}
+          />
           {state.max_concurrent_runs !== null ? (
             <p className="text-xs text-muted">
               {t(I18nKey.ORG_CHART$SETTINGS_RUNS, {
@@ -319,18 +279,13 @@ function SettingsForm({
               variant="secondary"
               isDisabled={save.isPending}
               onClick={() => {
-                setSize(
-                  String(byTeam ? DEFAULTS.max_teams : DEFAULTS.max_agents),
-                );
+                setSize(String(DEFAULTS.max_teams));
                 setDepth(String(DEFAULTS.max_depth));
-                if (allowed) setAllowed(DEFAULTS.allowed_profiles);
-                if (resumes !== undefined) setResumes(false);
-                if (stall !== undefined)
-                  setStall(String(DEFAULTS.stall_check_minutes));
-                if (reviews !== undefined)
-                  setReviews(String(DEFAULTS.manager_check_accepted_reviews));
-                if (escalations !== undefined)
-                  setEscalations(String(DEFAULTS.manager_check_ic_escalations));
+                setAllowed(DEFAULTS.allowed_profiles);
+                setResumes(false);
+                setStall(String(DEFAULTS.stall_check_minutes));
+                setReviews(String(DEFAULTS.manager_check_accepted_reviews));
+                setSetbacks(String(DEFAULTS.manager_check_ic_setbacks));
               }}
             >
               {t(I18nKey.ORG_CHART$SETTINGS_RESET)}
@@ -359,10 +314,7 @@ function SettingsForm({
   );
 }
 
-/**
- * The limits on the teams the org may still add. Nothing is shown for a
- * server that has no such settings.
- */
+/** The limits on the teams the org may still add. */
 export function OrgSettings() {
   const { t } = useTranslation("openhands");
   const { backend } = useActiveBackend();
@@ -394,13 +346,12 @@ export function OrgSettings() {
         <SettingsForm
           key={[
             settings.data.max_teams,
-            settings.data.max_agents,
             settings.data.max_depth,
-            ...(settings.data.allowed_profiles ?? []),
+            ...settings.data.allowed_profiles,
             settings.data.resume_on_start,
             settings.data.stall_check_minutes,
             settings.data.manager_check_accepted_reviews,
-            settings.data.manager_check_ic_escalations,
+            settings.data.manager_check_ic_setbacks,
           ].join(":")}
           state={settings.data}
           onClose={() => setIsOpen(false)}

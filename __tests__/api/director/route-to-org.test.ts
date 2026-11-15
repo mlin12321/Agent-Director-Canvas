@@ -8,8 +8,11 @@ const SUMMARY: OrgSummary = {
   root_id: null,
   node_count: 0,
   repo_path: "/work/shop",
+  directory: "",
   is_git_repository: true,
   fixture: false,
+  boundary_enforcement: "sandbox",
+  paused: null,
 };
 const ROUTED: RoutedMessage = {
   node_id: "root",

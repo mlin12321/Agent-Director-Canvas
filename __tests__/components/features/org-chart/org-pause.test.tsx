@@ -155,14 +155,27 @@ describe("a team whose agent was paused while working", () => {
     worktree_path: "/repo",
     branch: "main",
     agents: [
-      { role: "ic", conversation_id: "c1", status: "paused" },
-      { role: "manager", conversation_id: "c2", status: "idle" },
+      {
+        role: "ic",
+        conversation_id: "c1",
+        status: "paused",
+        kind: "openhands",
+      },
+      {
+        role: "manager",
+        conversation_id: "c2",
+        status: "idle",
+        kind: "openhands",
+      },
     ],
     status: "idle",
     headline: "Serves the checkout API",
     spec_summary: "",
     escalations: [],
     pending_split: null,
+    review: null,
+    waiting_to_start: false,
+    old_specs: [],
     child_ids: [],
     descendant_counts: { idle: 0, working: 0, done: 0, blocked: 0 },
     escalation_count: 0,
@@ -195,11 +208,16 @@ describe("a team whose agent was paused while working", () => {
 
 describe("the setting to resume on start", () => {
   const STATE: DirectorSettingsState = {
-    max_agents: 64,
+    max_teams: 32,
     max_depth: 8,
-    agents: 4,
+    teams: 2,
     depth: 2,
     max_concurrent_runs: 10,
+    allowed_profiles: [],
+    resume_on_start: false,
+    stall_check_minutes: 120,
+    manager_check_accepted_reviews: 5,
+    manager_check_ic_setbacks: 3,
   };
 
   function settings(state: DirectorSettingsState) {
@@ -220,7 +238,7 @@ describe("the setting to resume on start", () => {
   }
 
   it("is saved with the limits", async () => {
-    const saved = settings({ ...STATE, resume_on_start: false });
+    const saved = settings(STATE);
     const user = userEvent.setup();
     renderWithProviders(<OrgSettings />);
     await user.click(
@@ -237,22 +255,16 @@ describe("the setting to resume on start", () => {
 
     await waitFor(() =>
       expect(saved).toEqual([
-        { max_agents: 64, max_depth: 8, resume_on_start: true },
+        {
+          max_teams: 32,
+          max_depth: 8,
+          allowed_profiles: [],
+          resume_on_start: true,
+          stall_check_minutes: 120,
+          manager_check_accepted_reviews: 5,
+          manager_check_ic_setbacks: 3,
+        },
       ]),
     );
-  });
-
-  it("is not offered by a server that cannot pause an org", async () => {
-    settings(STATE);
-    const user = userEvent.setup();
-    renderWithProviders(<OrgSettings />);
-    await user.click(
-      await screen.findByRole("button", { name: "ORG_CHART$SETTINGS" }),
-    );
-    const modal = await screen.findByTestId("org-settings-modal");
-
-    expect(
-      within(modal).queryByLabelText(/ORG_CHART\$SETTINGS_RESUME_ON_START/),
-    ).toBeNull();
   });
 });
