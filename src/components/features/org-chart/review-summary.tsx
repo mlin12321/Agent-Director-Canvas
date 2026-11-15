@@ -89,6 +89,11 @@ export function ReviewSummary({ review }: ReviewSummaryProps) {
         {t(I18nKey.ORG_CHART$REVIEW)}
       </h3>
       <p className="text-xs text-text-secondary">{label(review)}</p>
+      {review.passed_up ? (
+        <p className="text-xs text-muted">
+          {t(I18nKey.ORG_CHART$REVIEW_PASSED_UP)}
+        </p>
+      ) : null}
       {review.summary ? (
         <p className="text-xs text-muted">{review.summary}</p>
       ) : null}

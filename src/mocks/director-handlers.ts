@@ -154,6 +154,19 @@ const MOCK_THREADS: Record<NodeId, Thread[]> = {
         },
       ],
     },
+    {
+      // What the IC wrote to the IC of a team below; these go one way.
+      manager_node_id: ROOT_ID,
+      ic_node_id: "payments",
+      ic_to_ic: true,
+      messages: [
+        {
+          at: "2026-05-12T09:30:00+00:00",
+          sender: "ic",
+          text: "Start with card payments only; refunds can follow.",
+        },
+      ],
+    },
   ],
 };
 

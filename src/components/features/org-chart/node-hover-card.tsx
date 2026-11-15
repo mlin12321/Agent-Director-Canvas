@@ -55,6 +55,11 @@ export function NodeHoverCard({ node }: NodeHoverCardProps) {
       <dl className="flex flex-col gap-1">
         <Row label={t(I18nKey.ORG_CHART$STATUS)}>
           <StatusBadge status={node.status} />
+          {node.stopped ? (
+            <span className="ml-1.5 rounded-sm border border-border px-1 text-[11px] text-feedback-warning">
+              {t(I18nKey.ORG_CHART$STOPPED)}
+            </span>
+          ) : null}
         </Row>
         {node.review ? (
           <Row label={t(I18nKey.ORG_CHART$REVIEW)}>
@@ -91,6 +96,12 @@ export function NodeHoverCard({ node }: NodeHoverCardProps) {
                     : "";
                 return `${t(ROLE_LABEL_KEYS[agent.role])} (${agent.status}${external})`;
               })
+              // A Manager starts when something is first written to it.
+              .concat(
+                node.agents.some((agent) => agent.role === "manager")
+                  ? []
+                  : [t(I18nKey.ORG_CHART$MANAGER_NOT_STARTED)],
+              )
               .join(", ")}
           </Row>
         ) : null}
@@ -100,6 +111,13 @@ export function NodeHoverCard({ node }: NodeHoverCardProps) {
           </Row>
         ) : null}
       </dl>
+      {node.stopped ? (
+        <p className="border-t border-border pt-2 text-text-secondary">
+          {t(I18nKey.ORG_CHART$STOPPED_REASON, {
+            reason: node.stopped.reason,
+          })}
+        </p>
+      ) : null}
       {node.pending_split ? (
         // A split the team's Manager has not approved, or is carrying out.
         <div className="flex flex-col gap-0.5 border-t border-border pt-2">

@@ -24,6 +24,16 @@ export function TeamMessages({ node, nodes }: TeamMessagesProps) {
 
   const titleOf = (id: NodeId) => nodes?.get(id)?.title ?? id;
   const heading = (thread: Thread) => {
+    if (thread.ic_to_ic) {
+      // One way: the IC of `manager_node_id` writes to the IC below it.
+      return thread.ic_node_id === node.id
+        ? t(I18nKey.ORG_CHART$MESSAGES_IC_ABOVE, {
+            team: titleOf(thread.manager_node_id),
+          })
+        : t(I18nKey.ORG_CHART$MESSAGES_IC_BELOW, {
+            team: titleOf(thread.ic_node_id),
+          });
+    }
     if (thread.manager_node_id !== node.id) {
       return t(I18nKey.ORG_CHART$MESSAGES_ABOVE, {
         team: titleOf(thread.manager_node_id),
@@ -52,7 +62,7 @@ export function TeamMessages({ node, nodes }: TeamMessagesProps) {
       ) : (
         messages.data.map((thread) => (
           <div
-            key={`${thread.manager_node_id}/${thread.ic_node_id}`}
+            key={`${thread.manager_node_id}/${thread.ic_node_id}/${thread.ic_to_ic ? "ic" : "manager"}`}
             role="group"
             aria-label={heading(thread)}
             className="flex flex-col gap-1.5"
