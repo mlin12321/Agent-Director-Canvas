@@ -496,7 +496,8 @@ export type TeamEventKind =
   | "woken"
   | "proposed"
   | "approved"
-  | "declined";
+  | "declined"
+  | "needed";
 
 /** Something that became of a team directly below a team. */
 export interface TeamEvent {
@@ -514,8 +515,14 @@ export interface TeamEvent {
    * the server's words.
    */
   detail?: string;
-  /** The directories a proposal was for. Absent on an older server. */
+  /**
+   * The directories a proposal was for; on `needed`, the file in the other
+   * team's directory. Absent on an older server.
+   */
   paths?: string[];
+  /** On `needed`, the team beside this one whose directory it needed. */
+  other_id?: string;
+  other?: string;
 }
 
 /** A team that was removed from below a team, and what it left. */
