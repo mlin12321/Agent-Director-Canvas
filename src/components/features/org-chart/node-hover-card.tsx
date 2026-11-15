@@ -56,7 +56,7 @@ export function NodeHoverCard({ node }: NodeHoverCardProps) {
         <Row label={t(I18nKey.ORG_CHART$STATUS)}>
           <StatusBadge status={node.status} />
           {node.stopped ? (
-            <span className="ml-1.5 rounded-sm border border-border px-1 text-[11px] text-feedback-warning">
+            <span className="ml-1.5 rounded-sm border border-border px-1 text-2xs text-feedback-warning">
               {t(I18nKey.ORG_CHART$STOPPED)}
             </span>
           ) : null}
