@@ -11,6 +11,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { ProposedTeams } from "./proposed-teams";
 import { TeamMessages } from "./team-messages";
+import { TeamRecord } from "./team-record";
 import { TeamReports } from "./team-reports";
 import { ReviewSummary } from "./review-summary";
 import { SpecAndContracts } from "./spec-and-contracts";
@@ -72,8 +73,12 @@ export function AgentInspectorDrawer({
     node.agents.at(0) ??
     null;
   const handOver = agent?.hand_over ?? null;
+  // A hand-over that could not be started has no conversation to show.
+  const handOverLost = handOver?.status === "lost";
   const conversationId =
-    inHandOver && handOver ? handOver.conversation_id : agent?.conversation_id;
+    inHandOver && handOver && !handOverLost
+      ? handOver.conversation_id
+      : agent?.conversation_id;
 
   const held = node.boundary_enforcement ?? enforcement;
 
@@ -130,6 +135,7 @@ export function AgentInspectorDrawer({
         {node.review ? <ReviewSummary review={node.review} /> : null}
         <SpecAndContracts node={node} />
         <TeamReports node={node} />
+        <TeamRecord node={node} />
         <TeamMessages node={node} nodes={nodes} />
       </div>
 
@@ -220,22 +226,29 @@ export function AgentInspectorDrawer({
           </button>
           <button
             type="button"
-            aria-pressed={inHandOver}
+            aria-pressed={inHandOver && !handOverLost}
+            disabled={handOverLost}
             onClick={() => setInHandOver(true)}
             className={cn(
               TAB_CLASS,
               "text-xs",
-              inHandOver ? TAB_CHOSEN_CLASS : null,
+              inHandOver && !handOverLost ? TAB_CHOSEN_CLASS : null,
+              handOverLost ? "hover:bg-transparent" : null,
             )}
           >
             {t(I18nKey.ORG_CHART$HAND_OVER_MODE)}
             <span className="text-muted">{handOver.status}</span>
           </button>
+          {handOverLost ? (
+            <p role="status" className="w-full text-xs text-feedback-warning">
+              {t(I18nKey.ORG_CHART$HAND_OVER_LOST)}
+            </p>
+          ) : null}
         </div>
       ) : null}
       {!showsChanges && conversationId ? (
         <p className="border-b border-border px-3 py-1.5 text-xs text-muted">
-          {inHandOver && handOver
+          {inHandOver && handOver && !handOverLost
             ? t(I18nKey.ORG_CHART$HAND_OVER_MODE_HELP)
             : t(I18nKey.ORG_CHART$MESSAGE_AGENT_HINT, {
                 role: agent ? t(ROLE_LABEL_KEYS[agent.role]) : "",

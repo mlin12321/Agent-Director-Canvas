@@ -288,6 +288,12 @@ export interface DirectorSettings {
    * off.
    */
   manager_check_ic_escalations?: number;
+  /**
+   * After how many times its IC sent back the work one team directly below
+   * has in hand a Manager is woken to look at its teams. 0 turns the check
+   * off.
+   */
+  manager_check_sent_back?: number;
 }
 
 /** The settings, beside what the org has now. */
@@ -481,12 +487,51 @@ export interface BoundaryContracts {
   own: boolean;
 }
 
+export type TeamEventKind =
+  | "set_up"
+  | "accepted"
+  | "sent_back"
+  | "stalled"
+  | "stopped"
+  | "replaced"
+  | "pruned"
+  | "woken";
+
+/** Something that became of a team directly below a team. */
+export interface TeamEvent {
+  at: string;
+  kind: TeamEventKind;
+  /** Empty when the event is about no single team. */
+  team_id?: string;
+  team?: string;
+  /** For `woken`, why the Manager was woken, in the server's words. */
+  detail?: string;
+}
+
+/** A team that was removed from below a team, and what it left. */
+export interface FormerTeam {
+  id: NodeId;
+  title: string;
+  path: string;
+  purpose: string;
+  ended: "replaced" | "pruned";
+  at: string;
+  /** Its agents' reports as one report. */
+  compacted_report?: string;
+  /** The contracts between its own sub-teams. */
+  contracts?: string;
+}
+
 export interface NodeMemory {
   /** The spec of the node's own boundary, when it has one. */
   specs: InheritedSpec[];
   contracts?: BoundaryContracts[];
   /** What the team's own two agents recorded, oldest first. */
   reports?: Report[];
+  /** The teams removed from directly below it. Absent on an older server. */
+  former_teams?: FormerTeam[];
+  /** What became of the teams directly below it. Absent on an older server. */
+  history?: TeamEvent[];
 }
 
 /** A direct report, as the owner of a directory. */

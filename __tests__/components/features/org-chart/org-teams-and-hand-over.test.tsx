@@ -12,6 +12,10 @@ import { NodeCard } from "#/components/features/org-chart/node-card";
 import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { SpecAndContracts } from "#/components/features/org-chart/spec-and-contracts";
+import {
+  countsOf,
+  TeamRecord,
+} from "#/components/features/org-chart/team-record";
 import { TeamReports } from "#/components/features/org-chart/team-reports";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
@@ -249,6 +253,33 @@ describe("an IC in hand-over mode", () => {
     ).toBeInTheDocument();
   });
 
+  it("says so when the hand-over could not be started, and opens nothing", () => {
+    memoryHandlers();
+    const lost = {
+      ...NOT_STARTED,
+      agents: [
+        {
+          role: "ic",
+          conversation_id: null,
+          status: "idle",
+          hand_over: { conversation_id: "side-1", status: "lost" },
+        },
+      ],
+    } as unknown as OrgNode;
+    renderWithProviders(
+      <AgentInspectorDrawer node={lost} onClose={() => {}} />,
+    );
+
+    const mode = screen.getByRole("button", {
+      name: /ORG_CHART\$HAND_OVER_MODE/,
+    });
+    expect(mode).toBeDisabled();
+    expect(mode).toHaveTextContent("lost");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "ORG_CHART$HAND_OVER_LOST",
+    );
+  });
+
   it("shows no switch for an IC that has no hand-over", () => {
     memoryHandlers();
     const plain = {
@@ -321,5 +352,99 @@ describe("what a team is given of the teams before it", () => {
 
     expect(await screen.findByText("ORG_CHART$SPEC_OPEN")).toBeInTheDocument();
     expect(screen.queryByText("ORG_CHART$SPEC_OLD_HELP")).toBeNull();
+  });
+});
+
+describe("the record of the teams below a team", () => {
+  const at = (minute: number) =>
+    `2026-11-14T10:${String(minute).padStart(2, "0")}:00+00:00`;
+  const HISTORY: NodeMemory["history"] = [
+    { at: at(0), kind: "set_up", team_id: "api", team: "API" },
+    { at: at(1), kind: "sent_back", team_id: "api", team: "API" },
+    { at: at(2), kind: "sent_back", team_id: "api", team: "API" },
+    { at: at(3), kind: "accepted", team_id: "api", team: "API" },
+    { at: at(4), kind: "set_up", team_id: "web", team: "Web" },
+    { at: at(5), kind: "stalled", team_id: "web", team: "Web" },
+    {
+      at: at(6),
+      kind: "woken",
+      detail: "your IC has sent back the work of 'API' 3 times.",
+    },
+    { at: at(7), kind: "replaced", team_id: "api", team: "API" },
+    { at: at(8), kind: "set_up", team_id: "api", team: "Orders" },
+    { at: at(9), kind: "stopped", team_id: "api", team: "Orders" },
+  ];
+
+  it("counts each team, and a team set up in an old place apart from it", () => {
+    const none = { accepted: 0, sentBack: 0, stalled: 0, stopped: 0 };
+    expect(countsOf(HISTORY ?? [])).toEqual([
+      {
+        ...none,
+        id: "api",
+        team: "API",
+        accepted: 1,
+        sentBack: 2,
+        ended: "replaced",
+      },
+      { ...none, id: "web", team: "Web", stalled: 1, ended: null },
+      { ...none, id: "api", team: "Orders", stopped: 1, ended: null },
+    ]);
+  });
+
+  it("shows the counts, why the Manager was woken and the removed teams", async () => {
+    memoryHandlers({
+      specs: [],
+      reports: [],
+      history: HISTORY,
+      former_teams: [
+        {
+          id: "api",
+          title: "API",
+          path: "services/api",
+          purpose: "Serve the checkout API",
+          ended: "replaced",
+          at: at(7),
+          compacted_report: "Chose SQLite.",
+          contracts: "db serves http",
+        },
+      ],
+    });
+    renderWithProviders(<TeamRecord node={NOT_STARTED} />);
+
+    const record = await screen.findByRole("region", {
+      name: "ORG_CHART$TEAM_RECORD_TITLE",
+    });
+    expect(within(record).getByText("Orders")).toBeInTheDocument();
+    expect(within(record).getByText("Web")).toBeInTheDocument();
+    // The teams that are there now; API is gone and is not among them.
+    expect(within(record).queryByText("API")).toBeNull();
+    expect(
+      within(record).getAllByText("ORG_CHART$TEAM_RECORD_LINE"),
+    ).toHaveLength(2);
+    expect(
+      within(record).getByText("ORG_CHART$TEAM_RECORD_WOKEN"),
+    ).toBeInTheDocument();
+    const removed = screen.getByRole("region", {
+      name: "ORG_CHART$FORMER_TEAMS_TITLE",
+    });
+    expect(removed).toHaveTextContent("API");
+    expect(removed).toHaveTextContent("services/api");
+    expect(removed).toHaveTextContent("ORG_CHART$FORMER_TEAM_REPLACED");
+    expect(removed).toHaveTextContent("Chose SQLite.");
+    // What was counted of it while it was there.
+    expect(removed).toHaveTextContent("ORG_CHART$TEAM_RECORD_LINE");
+    expect(removed).toHaveTextContent("db serves http");
+  });
+
+  it("shows nothing for a team with no record, as on an older server", async () => {
+    memoryHandlers();
+    const { container } = renderWithProviders(
+      <TeamRecord node={NOT_STARTED} />,
+    );
+
+    await waitFor(() => expect(container).toBeEmptyDOMElement());
+    expect(
+      screen.queryByRole("region", { name: "ORG_CHART$TEAM_RECORD_TITLE" }),
+    ).toBeNull();
   });
 });

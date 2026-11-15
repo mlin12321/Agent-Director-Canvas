@@ -78,6 +78,8 @@ describe("teamStateOf", () => {
     [team("a", "done", { review: "accepted" }), "done"],
     [team("a", "done"), "done"],
     [team("a", "working", { review: "accepted" }), "working"],
+    [{ ...team("a", "idle"), agents: [] }, "not_started"],
+    [{ ...team("a", "blocked"), agents: [] }, "blocked"],
   ])("puts %# in its column", (node, expected) => {
     expect(teamStateOf(node)).toBe(expected);
   });
@@ -109,6 +111,22 @@ describe("OrgByState", () => {
     expect(screen.getByTestId("org-state-count-done")).toHaveTextContent("1");
     expect(
       screen.getByRole("region", { name: "ORG_CHART$STATE_IN_REVIEW" }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the teams that were given no task apart from the idle ones", () => {
+    renderWithProviders(
+      board([
+        team("root", "working"),
+        { ...team("api", "idle"), agents: [] },
+        team("web", "idle"),
+      ]),
+    );
+
+    expect(column("not_started")).toEqual(["api"]);
+    expect(column("idle")).toEqual(["web"]);
+    expect(
+      screen.getByRole("region", { name: "ORG_CHART$TEAM_NOT_STARTED" }),
     ).toBeInTheDocument();
   });
 
