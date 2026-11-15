@@ -27,6 +27,25 @@ export function ProposedTeams({ proposal, nodes }: ProposedTeamsProps) {
       <p className="text-xs text-text-secondary">
         {proposal.children.map((child) => child.title).join(", ")}
       </p>
+      {proposal.reason ? (
+        <p className="whitespace-pre-wrap break-words text-xs text-muted">
+          {proposal.reason}
+        </p>
+      ) : null}
+      {proposal.children.some((child) => child.reason) ? (
+        // Why the IC wants each team, where it said.
+        <ul className="flex flex-col gap-0.5 text-xs text-muted">
+          {proposal.children
+            .filter((child) => child.reason)
+            .map((child) => (
+              <li key={child.path} className="break-words">
+                <span className="text-text-secondary">{child.title}</span>
+                {": "}
+                {child.reason}
+              </li>
+            ))}
+        </ul>
+      ) : null}
       {keeps ? (
         <p className="text-xs text-muted">
           {t(I18nKey.ORG_CHART$SPLIT_KEEPS, { teams: keeps })}

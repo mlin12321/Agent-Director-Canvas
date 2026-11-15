@@ -43523,24 +43523,6 @@
     "ca": "L'IC en mode de traspàs: una conversa a part iniciada per traspassar el que van deixar els equips eliminats. No comparteix res amb la conversa principal de l'IC.",
     "id": "IC dalam mode serah terima: percakapan sampingan yang dimulai untuk meneruskan apa yang ditinggalkan tim yang dihapus. Tidak berbagi apa pun dengan percakapan utama IC."
   },
-  "ORG_CHART$SETTINGS_MANAGER_SENT_BACK": {
-    "en": "Times one team's work is sent back before a Manager looks at its teams",
-    "zh-CN": "同一团队的工作被退回多少次后管理者查看其团队",
-    "zh-TW": "同一團隊的工作被退回多少次後管理者查看其團隊",
-    "de": "Wie oft die Arbeit eines Teams zurückgegeben wird, bevor ein Manager seine Teams ansieht",
-    "ko-KR": "한 팀의 작업이 몇 번 반려되면 매니저가 팀을 살펴보는지",
-    "no": "Antall ganger ett teams arbeid sendes tilbake før en Manager ser på teamene sine",
-    "it": "Quante volte il lavoro di un team viene rimandato indietro prima che un Manager guardi i suoi team",
-    "pt": "Quantas vezes o trabalho de uma equipe é devolvido antes de um Manager olhar suas equipes",
-    "es": "Veces que se devuelve el trabajo de un equipo antes de que un Manager revise sus equipos",
-    "ar": "عدد مرات إعادة عمل فريق واحد قبل أن ينظر المدير في فرقه",
-    "fr": "Nombre de renvois du travail d'une équipe avant qu'un Manager regarde ses équipes",
-    "tr": "Bir ekibin işi kaç kez geri gönderilince Manager ekiplerine bakar",
-    "ja": "1 つのチームの作業が何回差し戻されたらマネージャーがチームを確認するか",
-    "uk": "Скільки разів роботу однієї команди повертають, перш ніж Manager перегляне свої команди",
-    "ca": "Vegades que es retorna la feina d'un equip abans que un Manager revisi els seus equips",
-    "id": "Berapa kali pekerjaan satu tim dikembalikan sebelum Manager melihat tim-timnya"
-  },
   "ORG_CHART$TEAM_RECORD_TITLE": {
     "en": "Record of its teams",
     "zh-CN": "下属团队的记录",
