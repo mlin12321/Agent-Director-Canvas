@@ -37,8 +37,8 @@ const DIRECTOR_TOKENS: Partial<Record<AgentServerUICssVariableName, string>> = {
   // Light gray marks an area within a panel. The grays stay close to the
   // page so that outlines can be soft and still stand apart from them.
   "--oh-color-base-secondary": "#F7F7F7",
-  "--oh-surface-raised": "#F3F3F3",
-  "--oh-surface-deep": "#F3F3F3",
+  "--oh-surface-raised": "#F7F7F7",
+  "--oh-surface-deep": "#F7F7F7",
   "--oh-color-tertiary": "#F2F2F2",
   "--oh-interactive-hover": "#E0E0E0",
   "--oh-interactive-hover-low": "#EBEBEB",
