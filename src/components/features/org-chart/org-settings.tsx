@@ -1,11 +1,12 @@
 import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings } from "lucide-react";
+import { Info, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DirectorClient } from "#/api/director/director-client";
 import type { DirectorSettingsState } from "#/api/director/types";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
+import { Tooltip } from "#/components/shared/tooltip";
 import {
   MODAL_MAX_WIDTH_VIEWPORT,
   ModalBody,
@@ -16,6 +17,7 @@ import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import { I18nKey } from "#/i18n/declaration";
 
 const DEFAULTS = {
+  max_teams: 32,
   max_agents: 64,
   max_depth: 8,
   allowed_profiles: [],
@@ -76,7 +78,13 @@ function SettingsForm({
   const { t } = useTranslation("openhands");
   const { backend } = useActiveBackend();
   const queryClient = useQueryClient();
-  const [agents, setAgents] = React.useState(String(state.max_agents));
+  // A server that limits teams says so; an older one limits agents.
+  const byTeam = state.max_teams !== undefined;
+  const sizeId = React.useId();
+  const infoId = React.useId();
+  const [size, setSize] = React.useState(
+    String(state.max_teams ?? state.max_agents),
+  );
   const [depth, setDepth] = React.useState(String(state.max_depth));
   // Absent on a server that cannot give a sub-team another agent.
   const [allowed, setAllowed] = React.useState(state.allowed_profiles);
@@ -102,7 +110,9 @@ function SettingsForm({
   const save = useMutation({
     mutationFn: () =>
       DirectorClient.updateSettings({
-        max_agents: Number(agents),
+        ...(byTeam
+          ? { max_teams: Number(size) }
+          : { max_agents: Number(size) }),
         max_depth: Number(depth),
         ...(allowed ? { allowed_profiles: allowed } : {}),
         ...(resumes === undefined ? {} : { resume_on_start: resumes }),
@@ -121,7 +131,7 @@ function SettingsForm({
     meta: { disableToast: true },
   });
   const valid =
-    whole(agents, 2) &&
+    whole(size, byTeam ? 1 : 2) &&
     whole(depth, 1) &&
     [stall, reviews, escalations].every(
       (count) => count === undefined || whole(count, 0),
@@ -149,24 +159,59 @@ function SettingsForm({
             if (valid && !save.isPending) save.mutate();
           }}
         >
-          <label className="flex flex-col gap-2 text-sm">
-            {t(I18nKey.ORG_CHART$SETTINGS_MAX_AGENTS)}
+          <div className="flex flex-col gap-2 text-sm">
+            {/* The mark sits beside the label, not in it, so that the
+                label names the field alone. */}
+            <span className="flex items-center gap-1.5">
+              <label htmlFor={sizeId}>
+                {t(
+                  byTeam
+                    ? I18nKey.ORG_CHART$SETTINGS_MAX_TEAMS
+                    : I18nKey.ORG_CHART$SETTINGS_MAX_AGENTS,
+                )}
+              </label>
+              {byTeam ? (
+                <Tooltip
+                  content={t(I18nKey.ORG_CHART$SETTINGS_TEAMS_INFO)}
+                  placement="top"
+                  classNames={{ content: "max-w-xs break-normal" }}
+                >
+                  <button
+                    type="button"
+                    data-testid="org-settings-teams-info"
+                    aria-label={t(I18nKey.ORG_CHART$SETTINGS_TEAMS_INFO_LABEL)}
+                    aria-describedby={infoId}
+                    className="flex text-muted hover:text-contrast"
+                  >
+                    <Info width={14} height={14} aria-hidden="true" />
+                    <span id={infoId} className="sr-only">
+                      {t(I18nKey.ORG_CHART$SETTINGS_TEAMS_INFO)}
+                    </span>
+                  </button>
+                </Tooltip>
+              ) : null}
+            </span>
             <input
+              id={sizeId}
               type="number"
-              min={2}
+              min={byTeam ? 1 : 2}
               step={1}
               required
-              value={agents}
+              value={size}
               disabled={save.isPending}
-              onChange={(event) => setAgents(event.target.value)}
+              onChange={(event) => setSize(event.target.value)}
               className={INPUT}
             />
             <span className="text-xs text-muted">
-              {t(I18nKey.ORG_CHART$SETTINGS_AGENTS_NOW, {
-                count: state.agents,
-              })}
+              {byTeam
+                ? t(I18nKey.ORG_CHART$SETTINGS_TEAMS_NOW, {
+                    count: state.teams ?? 0,
+                  })
+                : t(I18nKey.ORG_CHART$SETTINGS_AGENTS_NOW, {
+                    count: state.agents,
+                  })}
             </span>
-          </label>
+          </div>
           <label className="flex flex-col gap-2 text-sm">
             {t(I18nKey.ORG_CHART$SETTINGS_MAX_DEPTH)}
             <input
@@ -274,7 +319,9 @@ function SettingsForm({
               variant="secondary"
               isDisabled={save.isPending}
               onClick={() => {
-                setAgents(String(DEFAULTS.max_agents));
+                setSize(
+                  String(byTeam ? DEFAULTS.max_teams : DEFAULTS.max_agents),
+                );
                 setDepth(String(DEFAULTS.max_depth));
                 if (allowed) setAllowed(DEFAULTS.allowed_profiles);
                 if (resumes !== undefined) setResumes(false);
@@ -346,6 +393,7 @@ export function OrgSettings() {
       {isOpen ? (
         <SettingsForm
           key={[
+            settings.data.max_teams,
             settings.data.max_agents,
             settings.data.max_depth,
             ...(settings.data.allowed_profiles ?? []),

@@ -159,6 +159,12 @@ export function AgentInspectorDrawer({
             ) : null}
           </button>
         ))}
+        {node.agents.length === 0 ? (
+          // A team starts when something is first sent to it.
+          <span className={cn(TAB_CLASS, "text-muted hover:bg-transparent")}>
+            {t(I18nKey.ORG_CHART$TEAM_NOT_STARTED)}
+          </span>
+        ) : null}
         {node.agents.length > 0 &&
         !node.agents.some((candidate) => candidate.role === "manager") ? (
           // A Manager starts when something is first written to it.
@@ -205,7 +211,11 @@ export function AgentInspectorDrawer({
           </React.Suspense>
         ) : (
           <p className="p-6 text-center text-sm text-muted">
-            {t(I18nKey.ORG_CHART$NO_CONVERSATION)}
+            {t(
+              node.agents.length === 0
+                ? I18nKey.ORG_CHART$TEAM_NOT_STARTED_HELP
+                : I18nKey.ORG_CHART$NO_CONVERSATION,
+            )}
           </p>
         )}
       </div>

@@ -4,12 +4,25 @@ import { MarkdownRenderer } from "#/components/features/markdown/markdown-render
 import { useNodeMemory } from "#/hooks/query/use-node-memory";
 import { I18nKey } from "#/i18n/declaration";
 
-function Document({ title, text }: { title: string; text: string }) {
+function Document({
+  title,
+  text,
+  note,
+}: {
+  title: string;
+  text: string;
+  note?: string;
+}) {
   return (
     <details className="rounded-md border border-border">
       <summary className="cursor-pointer px-2 py-1 text-xs text-contrast">
         {title}
       </summary>
+      {note ? (
+        <p className="border-t border-border px-2 py-1 text-xs text-muted">
+          {note}
+        </p>
+      ) : null}
       <div className="max-h-64 overflow-auto border-t border-border px-2 py-1 text-xs text-text-secondary">
         <MarkdownRenderer includeStandard>{text}</MarkdownRenderer>
       </div>
@@ -42,13 +55,23 @@ export function SpecAndContracts({ node }: SpecAndContractsProps) {
       {specs.length === 0 ? (
         <p className="text-xs text-muted">{t(I18nKey.ORG_CHART$SPEC_EMPTY)}</p>
       ) : (
-        specs.map((spec) => (
-          <Document
-            key={spec.path}
-            title={t(I18nKey.ORG_CHART$SPEC_OPEN)}
-            text={spec.spec}
-          />
-        ))
+        specs.map((spec) => {
+          // A spec a team before left says how that team worked.
+          let title = t(I18nKey.ORG_CHART$SPEC_OPEN);
+          if (spec.old) {
+            title = spec.left_by
+              ? t(I18nKey.ORG_CHART$SPEC_OLD, { team: spec.left_by })
+              : t(I18nKey.ORG_CHART$SPEC_OLD_UNKNOWN);
+          }
+          return (
+            <Document
+              key={`${spec.path}:${spec.old === true}`}
+              title={title}
+              text={spec.spec}
+              note={spec.old ? t(I18nKey.ORG_CHART$SPEC_OLD_HELP) : undefined}
+            />
+          );
+        })
       )}
       {contracts.map((agreed) => (
         <Document

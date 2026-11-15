@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw";
 import {
   DIRECTOR_BASE_PATH,
   type AgentRef,
+  type InheritedSpec,
   type StatusCounts,
   type NodeMemory,
   type NodeOwnership,
@@ -101,8 +102,27 @@ function zeroCounts(): StatusCounts {
   };
 }
 
+// A spec the team that had the directory before left; it is shown as old.
+const MOCK_SPECS: Record<NodeId, InheritedSpec[]> = {
+  payments: [
+    {
+      path: "services/payments",
+      spec: "# Billing\n\nOne service for charges and refunds.",
+      readonly: false,
+      old: true,
+      left_by: "billing domain",
+    },
+  ],
+};
+
 const MOCK_REPORTS: Record<NodeId, Report[]> = {
   payments: [
+    {
+      at: "2026-05-12T08:00:00+00:00",
+      role: "ic",
+      text: "Billing settled on one ledger table; keep it.",
+      handed_over: true,
+    },
     {
       at: "2026-05-12T08:15:00+00:00",
       role: "ic",
@@ -488,7 +508,7 @@ export const DIRECTOR_HANDLERS = [
     const nodeId = String(params.nodeId);
     if (!tree.has(nodeId)) return notFound(nodeId);
     const body: NodeMemory = {
-      specs: [],
+      specs: MOCK_SPECS[nodeId] ?? [],
       reports: MOCK_REPORTS[nodeId] ?? [],
     };
     return HttpResponse.json(body);

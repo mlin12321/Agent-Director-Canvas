@@ -299,7 +299,16 @@ describe("NodeCard", () => {
     isolation: "worktree",
     worktree_path: ".",
     branch: "agents/auth",
-    agents: [],
+    // A team with no agents has not started; this one has.
+    agents: [
+      {
+        role: "ic",
+        conversation_id: null,
+        status: "idle",
+        kind: "openhands",
+        acp_server: null,
+      },
+    ],
     status: "idle",
     spec_summary: "",
     headline: "Token refresh",
