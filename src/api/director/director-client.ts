@@ -6,6 +6,7 @@ import {
   type FileEdit,
   type FileSides,
   type NodeMemory,
+  type OrgHistory,
   type NodeId,
   type NodeOwnership,
   type OrgEvent,
@@ -112,6 +113,17 @@ export const DirectorClient = {
       ),
       { answer },
     );
+  },
+
+  /**
+   * What became of the teams of the whole org, newest first.
+   *
+   * @param before Only events before this time, to read further back.
+   */
+  getOrgHistory(limit: number, before?: string) {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (before) params.set("before", before);
+    return requestJson<OrgHistory>(`${ORG_PATH}/history?${params}`);
   },
 
   getNodeMemory(nodeId: NodeId) {
