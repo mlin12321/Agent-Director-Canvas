@@ -142,9 +142,6 @@ function SettingsForm({
         <h2 className="text-lg font-semibold">
           {t(I18nKey.ORG_CHART$SETTINGS)}
         </h2>
-        <p className="text-sm text-muted">
-          {t(I18nKey.ORG_CHART$SETTINGS_SCOPE)}
-        </p>
         <form
           className="flex flex-col gap-4"
           onSubmit={(event) => {
@@ -186,6 +183,9 @@ function SettingsForm({
               {t(I18nKey.ORG_CHART$SETTINGS_DEPTH_NOW, { count: state.depth })}
             </span>
           </label>
+          <p className="text-xs text-muted">
+            {t(I18nKey.ORG_CHART$SETTINGS_SCOPE)}
+          </p>
           {allowed && names.length > 0 ? (
             <fieldset className="flex flex-col gap-2 text-sm">
               <legend className="mb-2">
