@@ -14,11 +14,30 @@ interface Counts {
   sentBack: number;
   stalled: number;
   stopped: number;
+  /**
+   * Its tasks: work that was accepted, or the work in hand once its IC's
+   * escalations on it reached the number that wakes the Manager.
+   */
+  tasks: number;
+  /** The tasks that were accepted without reaching that number. */
+  succeeded: number;
   /** How the team ended, when it is gone. */
   ended: "replaced" | "pruned" | null;
 }
 
 const WOKEN_SHOWN = 3;
+const DECISIONS_SHOWN = 5;
+const DECISION_KEYS = {
+  proposed: I18nKey.ORG_CHART$TEAM_RECORD_PROPOSED,
+  approved: I18nKey.ORG_CHART$TEAM_RECORD_APPROVED,
+  declined: I18nKey.ORG_CHART$TEAM_RECORD_DECLINED,
+} as const;
+
+function isDecision(
+  event: TeamEvent,
+): event is TeamEvent & { kind: keyof typeof DECISION_KEYS } {
+  return event.kind in DECISION_KEYS;
+}
 
 /**
  * What is counted of each team the events are of, in the order the teams
@@ -28,6 +47,8 @@ const WOKEN_SHOWN = 3;
 export function countsOf(events: readonly TeamEvent[]): Counts[] {
   const all: Counts[] = [];
   const latest = new Map<string, Counts>();
+  // The teams whose escalations reached the number on the work in hand.
+  const reached = new Set<Counts>();
   for (const event of events) {
     const id = event.team_id ?? "";
     if (id) {
@@ -40,13 +61,24 @@ export function countsOf(events: readonly TeamEvent[]): Counts[] {
           sentBack: 0,
           stalled: 0,
           stopped: 0,
+          tasks: 0,
+          succeeded: 0,
           ended: null,
         };
         all.push(kept);
         latest.set(id, kept);
       }
-      if (event.kind === "accepted") kept.accepted += 1;
-      else if (event.kind === "sent_back") kept.sentBack += 1;
+      if (event.kind === "accepted") {
+        kept.accepted += 1;
+        // Work on which the number was reached is a task already.
+        if (!reached.delete(kept)) {
+          kept.tasks += 1;
+          kept.succeeded += 1;
+        }
+      } else if (event.kind === "woken") {
+        if (!reached.has(kept)) kept.tasks += 1;
+        reached.add(kept);
+      } else if (event.kind === "sent_back") kept.sentBack += 1;
       else if (event.kind === "stalled") kept.stalled += 1;
       else if (event.kind === "stopped") kept.stopped += 1;
       else if (event.kind === "replaced" || event.kind === "pruned")
@@ -57,7 +89,9 @@ export function countsOf(events: readonly TeamEvent[]): Counts[] {
 }
 
 function counted(team: Counts) {
-  return team.accepted + team.sentBack + team.stalled + team.stopped > 0;
+  return (
+    team.accepted + team.sentBack + team.stalled + team.stopped + team.tasks > 0
+  );
 }
 
 /**
@@ -82,6 +116,20 @@ export function TeamRecord({ node }: TeamRecordProps) {
       stalled: team.stalled,
       stopped: team.stopped,
     });
+  const rate = (team: Counts) =>
+    team.tasks > 0 ? (
+      <span
+        className="text-muted"
+        title={t(I18nKey.ORG_CHART$TEAM_RECORD_SUCCESS_HELP)}
+      >
+        {t(I18nKey.ORG_CHART$TEAM_RECORD_SUCCESS, {
+          succeeded: team.succeeded,
+          tasks: team.tasks,
+          percent: Math.round((100 * team.succeeded) / team.tasks),
+        })}
+      </span>
+    ) : null;
+  const decisions = history.filter(isDecision).slice(-DECISIONS_SHOWN);
   const countsOfFormer = (id: string, title: string) =>
     all.find(
       (team) => team.ended !== null && team.id === id && team.team === title,
@@ -92,7 +140,7 @@ export function TeamRecord({ node }: TeamRecordProps) {
 
   return (
     <>
-      {counts.length > 0 || woken.length > 0 ? (
+      {counts.length > 0 || woken.length > 0 || decisions.length > 0 ? (
         <section
           aria-label={t(I18nKey.ORG_CHART$TEAM_RECORD_TITLE)}
           className="flex flex-col gap-2"
@@ -105,6 +153,17 @@ export function TeamRecord({ node }: TeamRecordProps) {
               <li key={team.id} className="flex flex-col">
                 <span className="text-contrast">{team.team}</span>
                 <span className="text-muted">{line(team)}</span>
+                {rate(team)}
+              </li>
+            ))}
+            {decisions.map((event) => (
+              <li key={`${event.kind}-${event.at}`} className="flex flex-col">
+                <span className="whitespace-pre-wrap break-words">
+                  {t(DECISION_KEYS[event.kind], { teams: event.detail ?? "" })}
+                </span>
+                <time dateTime={event.at} className="text-muted">
+                  {new Date(event.at).toLocaleString()}
+                </time>
               </li>
             ))}
             {woken.map((event) => (
@@ -154,7 +213,10 @@ export function TeamRecord({ node }: TeamRecordProps) {
                         {team.purpose}
                       </p>
                       {record && counted(record) ? (
-                        <p className="text-muted">{line(record)}</p>
+                        <p className="flex flex-col text-muted">
+                          <span>{line(record)}</span>
+                          {rate(record)}
+                        </p>
                       ) : null}
                       {team.compacted_report ? (
                         <>

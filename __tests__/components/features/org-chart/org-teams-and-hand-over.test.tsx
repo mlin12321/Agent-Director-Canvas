@@ -373,10 +373,28 @@ describe("the record of the teams below a team", () => {
     { at: at(7), kind: "replaced", team_id: "api", team: "API" },
     { at: at(8), kind: "set_up", team_id: "api", team: "Orders" },
     { at: at(9), kind: "stopped", team_id: "api", team: "Orders" },
+    // The limit reached on one piece of work, twice, and that work accepted.
+    { at: at(10), kind: "woken", team_id: "web", team: "Web", detail: "x" },
+    { at: at(11), kind: "woken", team_id: "web", team: "Web", detail: "y" },
+    { at: at(12), kind: "accepted", team_id: "web", team: "Web" },
+    { at: at(13), kind: "accepted", team_id: "web", team: "Web" },
+    {
+      at: at(14),
+      kind: "declined",
+      detail: "Search (services/search). Reason: Too small for a team.",
+      paths: ["services/search"],
+    },
   ];
 
   it("counts each team, and a team set up in an old place apart from it", () => {
-    const none = { accepted: 0, sentBack: 0, stalled: 0, stopped: 0 };
+    const none = {
+      accepted: 0,
+      sentBack: 0,
+      stalled: 0,
+      stopped: 0,
+      tasks: 0,
+      succeeded: 0,
+    };
     expect(countsOf(HISTORY ?? [])).toEqual([
       {
         ...none,
@@ -384,9 +402,21 @@ describe("the record of the teams below a team", () => {
         team: "API",
         accepted: 1,
         sentBack: 2,
+        tasks: 1,
+        succeeded: 1,
         ended: "replaced",
       },
-      { ...none, id: "web", team: "Web", stalled: 1, ended: null },
+      {
+        ...none,
+        id: "web",
+        team: "Web",
+        stalled: 1,
+        accepted: 2,
+        // The limit reached twice on one piece of work is one task.
+        tasks: 2,
+        succeeded: 1,
+        ended: null,
+      },
       { ...none, id: "api", team: "Orders", stopped: 1, ended: null },
     ]);
   });
@@ -422,7 +452,14 @@ describe("the record of the teams below a team", () => {
       within(record).getAllByText("ORG_CHART$TEAM_RECORD_LINE"),
     ).toHaveLength(2);
     expect(
-      within(record).getByText("ORG_CHART$TEAM_RECORD_WOKEN"),
+      within(record).getAllByText("ORG_CHART$TEAM_RECORD_WOKEN"),
+    ).toHaveLength(3);
+    // Only Web has had a task among the teams that are there.
+    expect(
+      within(record).getAllByText("ORG_CHART$TEAM_RECORD_SUCCESS"),
+    ).toHaveLength(1);
+    expect(
+      within(record).getByText("ORG_CHART$TEAM_RECORD_DECLINED"),
     ).toBeInTheDocument();
     const removed = screen.getByRole("region", {
       name: "ORG_CHART$FORMER_TEAMS_TITLE",

@@ -495,7 +495,8 @@ export type TeamEventKind =
   | "pruned"
   | "woken"
   | "proposed"
-  | "approved";
+  | "approved"
+  | "declined";
 
 /** Something that became of a team directly below a team. */
 export interface TeamEvent {
@@ -507,8 +508,14 @@ export interface TeamEvent {
    */
   team_id?: string;
   team?: string;
-  /** For `woken`, why the Manager was woken, in the server's words. */
+  /**
+   * For `woken`, why the Manager was woken; for `proposed`, `approved` and
+   * `declined`, the sub-teams, and for `declined` the Manager's reason. In
+   * the server's words.
+   */
   detail?: string;
+  /** The directories a proposal was for. Absent on an older server. */
+  paths?: string[];
 }
 
 /** A team that was removed from below a team, and what it left. */
