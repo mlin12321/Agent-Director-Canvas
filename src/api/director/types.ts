@@ -13,6 +13,16 @@ export type NodeId = string;
  */
 export type AgentRole = "ic" | "manager";
 
+/**
+ * An IC in hand-over mode: beside its main conversation it has one the
+ * director started to pass on what removed teams left. It shares nothing
+ * with the main conversation.
+ */
+export interface HandOverMode {
+  conversation_id: string;
+  status: string;
+}
+
 export type NodeStatus = "idle" | "working" | "done" | "blocked";
 
 /** `worktree`: own git worktree. `shared`: same directory as the parent. */
@@ -28,6 +38,8 @@ export interface Boundary {
 
 export interface AgentRef {
   role: AgentRole;
+  /** Set on an IC that is, or last was, in hand-over mode. */
+  hand_over?: HandOverMode | null;
   /** `null` until the director has started a conversation for this agent. */
   conversation_id: string | null;
   status: string;

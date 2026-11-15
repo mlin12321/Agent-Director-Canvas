@@ -206,6 +206,65 @@ describe("a team that has not been given a task", () => {
   });
 });
 
+describe("an IC in hand-over mode", () => {
+  it("stays one agent, with a switch between its two conversations", async () => {
+    memoryHandlers();
+    const handing = {
+      ...NOT_STARTED,
+      agents: [
+        {
+          role: "ic",
+          conversation_id: null,
+          status: "idle",
+          hand_over: { conversation_id: "side-1", status: "working" },
+        },
+      ],
+    } as unknown as OrgNode;
+    const user = userEvent.setup();
+    renderWithProviders(
+      <AgentInspectorDrawer node={handing} onClose={() => {}} />,
+    );
+
+    // No tab of its own: the team has the agents it had.
+    const agents = screen.getByRole("group", { name: "ORG_CHART$AGENTS" });
+    expect(within(agents).getAllByRole("button")).toHaveLength(2);
+    const modes = screen.getByRole("group", {
+      name: "ORG_CHART$HAND_OVER_MODE",
+    });
+    const main = within(modes).getByRole("button", {
+      name: "ORG_CHART$MAIN_CONVERSATION",
+    });
+    const mode = within(modes).getByRole("button", {
+      name: /ORG_CHART\$HAND_OVER_MODE/,
+    });
+    expect(main).toHaveAttribute("aria-pressed", "true");
+    expect(mode).toHaveTextContent("working");
+    expect(screen.queryByText("ORG_CHART$HAND_OVER_MODE_HELP")).toBeNull();
+
+    await user.click(mode);
+
+    expect(mode).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByText("ORG_CHART$HAND_OVER_MODE_HELP"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows no switch for an IC that has no hand-over", () => {
+    memoryHandlers();
+    const plain = {
+      ...NOT_STARTED,
+      agents: [{ role: "ic", conversation_id: null, status: "idle" }],
+    } as unknown as OrgNode;
+    renderWithProviders(
+      <AgentInspectorDrawer node={plain} onClose={() => {}} />,
+    );
+
+    expect(
+      screen.queryByRole("group", { name: "ORG_CHART$HAND_OVER_MODE" }),
+    ).toBeNull();
+  });
+});
+
 describe("what a team is given of the teams before it", () => {
   it("marks what the IC above handed over among its reports", async () => {
     memoryHandlers({
