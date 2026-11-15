@@ -14,6 +14,7 @@ import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-insp
 import { NodeCard } from "#/components/features/org-chart/node-card";
 import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
+import { ProposedTeams } from "#/components/features/org-chart/proposed-teams";
 import { ReviewSummary } from "#/components/features/org-chart/review-summary";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
@@ -178,40 +179,6 @@ describe("the checks in the settings", () => {
     ).toHaveValue(3);
   });
 
-  it("shows and saves how often work is sent back before a Manager looks", async () => {
-    const saved = settingsHandlers({ ...STATE, manager_check_sent_back: 4 });
-    const user = userEvent.setup();
-    renderWithProviders(<OrgSettings />);
-    const modal = await openSettings(user);
-    const sentBack = within(modal).getByLabelText(
-      /ORG_CHART\$SETTINGS_MANAGER_SENT_BACK/,
-    );
-    expect(sentBack).toHaveValue(4);
-
-    await user.click(
-      within(modal).getByRole("button", { name: "ORG_CHART$SETTINGS_RESET" }),
-    );
-    expect(sentBack).toHaveValue(3);
-    await user.clear(sentBack);
-    await user.type(sentBack, "0");
-    await user.click(
-      within(modal).getByRole("button", { name: "BUTTON$SAVE" }),
-    );
-
-    await waitFor(() =>
-      expect(saved).toEqual([
-        {
-          max_agents: 64,
-          max_depth: 8,
-          stall_check_minutes: 120,
-          manager_check_accepted_reviews: 5,
-          manager_check_ic_escalations: 3,
-          manager_check_sent_back: 0,
-        },
-      ]),
-    );
-  });
-
   it("offers no checks, and saves none, on a server without them", async () => {
     const saved = settingsHandlers({
       max_agents: 64,
@@ -229,9 +196,6 @@ describe("the checks in the settings", () => {
     ).toBeNull();
     expect(
       within(modal).queryByLabelText(/ORG_CHART\$SETTINGS_MANAGER_REVIEWS/),
-    ).toBeNull();
-    expect(
-      within(modal).queryByLabelText(/ORG_CHART\$SETTINGS_MANAGER_SENT_BACK/),
     ).toBeNull();
     await user.click(
       within(modal).getByRole("button", { name: "BUTTON$SAVE" }),
@@ -361,6 +325,46 @@ describe("proposed sub-teams", () => {
     expect(
       within(proposal).getByText("ORG_CHART$SPLIT_REPLACES"),
     ).toBeInTheDocument();
+  });
+
+  it("show why the IC wants the teams, where it said", () => {
+    const child = {
+      path: "shop/api",
+      writable: [],
+      readonly: [],
+      isolation: "shared" as const,
+      task: "Take orders.",
+    };
+    renderWithProviders(
+      <ProposedTeams
+        proposal={{
+          children: [
+            {
+              ...child,
+              title: "Orders",
+              reason: "The order rules stand alone.",
+            },
+            { ...child, title: "Pages", path: "shop/web" },
+          ],
+          contracts: "",
+          reason: "Orders and pages change for different reasons.",
+          status: "proposed",
+          proposed_at: "2026-11-15T10:00:00+00:00",
+        }}
+      />,
+    );
+
+    const proposal = screen.getByRole("region", {
+      name: "ORG_CHART$SPLIT_PROPOSED",
+    });
+    expect(proposal).toHaveTextContent(
+      "Orders and pages change for different reasons.",
+    );
+    const reasons = within(proposal).getAllByRole("listitem");
+    expect(reasons).toHaveLength(1);
+    expect(reasons[0]).toHaveTextContent(
+      "Orders: The order rules stand alone.",
+    );
   });
 
   it("say nothing of kept or replaced teams for a first proposal", () => {

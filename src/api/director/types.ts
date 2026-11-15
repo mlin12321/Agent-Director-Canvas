@@ -112,6 +112,8 @@ export interface SplitChild {
   isolation: IsolationMode;
   /** What the sub-team is to deliver. */
   task: string;
+  /** Why the proposer wants this team, when it said. */
+  reason?: string;
 }
 
 /**
@@ -121,6 +123,8 @@ export interface SplitChild {
 export interface SplitProposal {
   children: SplitChild[];
   contracts: string;
+  /** Why the proposer wants this make-up of teams, when it said. */
+  reason?: string;
   status: SplitStatus;
   /**
    * The sub-teams the node has now that the proposed ones take the place of.
@@ -288,12 +292,6 @@ export interface DirectorSettings {
    * off.
    */
   manager_check_ic_escalations?: number;
-  /**
-   * After how many times its IC sent back the work one team directly below
-   * has in hand a Manager is woken to look at its teams. 0 turns the check
-   * off.
-   */
-  manager_check_sent_back?: number;
 }
 
 /** The settings, beside what the org has now. */
@@ -495,13 +493,18 @@ export type TeamEventKind =
   | "stopped"
   | "replaced"
   | "pruned"
-  | "woken";
+  | "woken"
+  | "proposed"
+  | "approved";
 
 /** Something that became of a team directly below a team. */
 export interface TeamEvent {
   at: string;
   kind: TeamEventKind;
-  /** Empty when the event is about no single team. */
+  /**
+   * Empty when the event is about no single team. A `woken` event names the
+   * team whose escalations reached the limit that wakes the Manager.
+   */
   team_id?: string;
   team?: string;
   /** For `woken`, why the Manager was woken, in the server's words. */
