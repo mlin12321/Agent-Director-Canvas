@@ -115,6 +115,8 @@ export interface SplitProposal {
    * Their own sub-teams stay.
    */
   replaces?: NodeId[];
+  /** The sub-teams the node has now that the IC said are to stay as they are. */
+  keeps?: NodeId[];
   /** ISO 8601 timestamp. */
   proposed_at: string;
 }
@@ -155,8 +157,20 @@ export interface Review {
   automated: ReviewFinding[];
   /** What the reviewing IC wants changed, when it asked. */
   findings: ReviewFinding[];
+  /**
+   * Whether the work went up without a review of its own: all of it was
+   * accepted work of the team's sub-teams.
+   */
+  passed_up?: boolean;
   /** ISO 8601 timestamp of the last change. */
   at: string;
+}
+
+/** That the IC of the team above stopped a team, and why. */
+export interface Stopped {
+  /** ISO 8601 timestamp. */
+  at: string;
+  reason: string;
 }
 
 export interface OrgNode {
@@ -190,6 +204,11 @@ export interface OrgNode {
    * as many conversations as it may. Absent on a server that does not say.
    */
   waiting_to_start?: boolean;
+  /**
+   * Set while the IC of the team above has stopped the team: its agents and
+   * those of every team below it are at rest and nothing is sent to them.
+   */
+  stopped?: Stopped | null;
   /**
    * The agent profile the team's agents were started from; `null` when
    * they were derived from the team above.
@@ -227,6 +246,23 @@ export interface DirectorSettings {
    * pause an org.
    */
   resume_on_start?: boolean;
+  /**
+   * How many minutes a team may show no progress, with nothing submitted or
+   * with its work sent back, before the IC of the team above is told. 0
+   * turns the check off. Absent on a server without the check.
+   */
+  stall_check_minutes?: number;
+  /**
+   * After how many reviews its IC accepted a Manager is woken to look at its
+   * teams. 0 turns the check off.
+   */
+  manager_check_accepted_reviews?: number;
+  /**
+   * After how many escalations from one team directly below, on the work it
+   * has in hand, a Manager is woken to look at its teams. 0 turns the check
+   * off.
+   */
+  manager_check_ic_escalations?: number;
 }
 
 /** The settings, beside what the org has now. */
@@ -371,11 +407,14 @@ export interface ThreadMessage {
 
 /**
  * What one Manager and one IC have said to each other, oldest first. The IC
- * is the Manager's own, or the IC of a team directly below it.
+ * is the Manager's own, or the IC of a team directly below it. With
+ * `ic_to_ic`, what the IC of the team above wrote to an IC instead: those go
+ * one way, and `manager_node_id` is then the team of the IC that writes.
  */
 export interface Thread {
   manager_node_id: NodeId;
   ic_node_id: NodeId;
+  ic_to_ic?: boolean;
   messages: ThreadMessage[];
 }
 

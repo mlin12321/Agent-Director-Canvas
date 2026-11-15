@@ -9,6 +9,7 @@ import type {
 } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
+import { ProposedTeams } from "./proposed-teams";
 import { TeamMessages } from "./team-messages";
 import { TeamReports } from "./team-reports";
 import { ReviewSummary } from "./review-summary";
@@ -110,7 +111,17 @@ export function AgentInspectorDrawer({
             })}
           </p>
         ) : null}
+        {node.stopped ? (
+          <p role="status" className="text-xs text-feedback-warning">
+            {t(I18nKey.ORG_CHART$STOPPED_REASON, {
+              reason: node.stopped.reason,
+            })}
+          </p>
+        ) : null}
         <StartAgain node={node} />
+        {node.pending_split ? (
+          <ProposedTeams proposal={node.pending_split} nodes={nodes} />
+        ) : null}
         {node.review ? <ReviewSummary review={node.review} /> : null}
         <SpecAndContracts node={node} />
         <TeamReports node={node} />
@@ -148,6 +159,13 @@ export function AgentInspectorDrawer({
             ) : null}
           </button>
         ))}
+        {node.agents.length > 0 &&
+        !node.agents.some((candidate) => candidate.role === "manager") ? (
+          // A Manager starts when something is first written to it.
+          <span className={cn(TAB_CLASS, "text-muted hover:bg-transparent")}>
+            {t(I18nKey.ORG_CHART$MANAGER_NOT_STARTED)}
+          </span>
+        ) : null}
         <button
           type="button"
           data-testid="org-team-changes-tab"

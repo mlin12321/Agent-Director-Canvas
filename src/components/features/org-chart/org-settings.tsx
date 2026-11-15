@@ -15,12 +15,55 @@ import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import { I18nKey } from "#/i18n/declaration";
 
-const DEFAULTS = { max_agents: 64, max_depth: 8, allowed_profiles: [] };
+const DEFAULTS = {
+  max_agents: 64,
+  max_depth: 8,
+  allowed_profiles: [],
+  stall_check_minutes: 120,
+  manager_check_accepted_reviews: 5,
+  manager_check_ic_escalations: 3,
+};
 const INPUT = "rounded-md border border-border bg-canvas-base px-3 py-2";
 
 function whole(text: string, least: number) {
   const value = Number(text);
   return text.trim() !== "" && Number.isInteger(value) && value >= least;
+}
+
+/** The text of a setting; undefined on a server that has no such setting. */
+function shown(value: number | undefined) {
+  return value === undefined ? undefined : String(value);
+}
+
+function CountField({
+  label,
+  help,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  help: string;
+  value: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-2 text-sm">
+      {label}
+      <input
+        type="number"
+        min={0}
+        step={1}
+        required
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        className={INPUT}
+      />
+      <span className="text-xs text-muted">{help}</span>
+    </label>
+  );
 }
 
 function SettingsForm({
@@ -39,6 +82,14 @@ function SettingsForm({
   const [allowed, setAllowed] = React.useState(state.allowed_profiles);
   // Absent on a server that cannot pause an org.
   const [resumes, setResumes] = React.useState(state.resume_on_start);
+  // Each absent on a server without that check; 0 turns a check off.
+  const [stall, setStall] = React.useState(shown(state.stall_check_minutes));
+  const [reviews, setReviews] = React.useState(
+    shown(state.manager_check_accepted_reviews),
+  );
+  const [escalations, setEscalations] = React.useState(
+    shown(state.manager_check_ic_escalations),
+  );
   const profiles = useAgentProfiles({ enabled: allowed !== undefined }).data;
   // A profile that was allowed and has since been deleted can still be
   // unticked.
@@ -55,6 +106,13 @@ function SettingsForm({
         max_depth: Number(depth),
         ...(allowed ? { allowed_profiles: allowed } : {}),
         ...(resumes === undefined ? {} : { resume_on_start: resumes }),
+        ...(stall === undefined ? {} : { stall_check_minutes: Number(stall) }),
+        ...(reviews === undefined
+          ? {}
+          : { manager_check_accepted_reviews: Number(reviews) }),
+        ...(escalations === undefined
+          ? {}
+          : { manager_check_ic_escalations: Number(escalations) }),
       }),
     onSuccess: (saved) => {
       queryClient.setQueryData(DIRECTOR_QUERY_KEYS.settings(backend.id), saved);
@@ -62,7 +120,12 @@ function SettingsForm({
     },
     meta: { disableToast: true },
   });
-  const valid = whole(agents, 2) && whole(depth, 1);
+  const valid =
+    whole(agents, 2) &&
+    whole(depth, 1) &&
+    [stall, reviews, escalations].every(
+      (count) => count === undefined || whole(count, 0),
+    );
 
   return (
     <ModalBackdrop
@@ -166,6 +229,33 @@ function SettingsForm({
               </span>
             </label>
           )}
+          {stall === undefined ? null : (
+            <CountField
+              label={t(I18nKey.ORG_CHART$SETTINGS_STALL_MINUTES)}
+              help={t(I18nKey.ORG_CHART$SETTINGS_STALL_MINUTES_HELP)}
+              value={stall}
+              disabled={save.isPending}
+              onChange={setStall}
+            />
+          )}
+          {reviews === undefined ? null : (
+            <CountField
+              label={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_REVIEWS)}
+              help={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_CHECK_HELP)}
+              value={reviews}
+              disabled={save.isPending}
+              onChange={setReviews}
+            />
+          )}
+          {escalations === undefined ? null : (
+            <CountField
+              label={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_ESCALATIONS)}
+              help={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_CHECK_HELP)}
+              value={escalations}
+              disabled={save.isPending}
+              onChange={setEscalations}
+            />
+          )}
           {state.max_concurrent_runs !== null ? (
             <p className="text-xs text-muted">
               {t(I18nKey.ORG_CHART$SETTINGS_RUNS, {
@@ -188,6 +278,12 @@ function SettingsForm({
                 setDepth(String(DEFAULTS.max_depth));
                 if (allowed) setAllowed(DEFAULTS.allowed_profiles);
                 if (resumes !== undefined) setResumes(false);
+                if (stall !== undefined)
+                  setStall(String(DEFAULTS.stall_check_minutes));
+                if (reviews !== undefined)
+                  setReviews(String(DEFAULTS.manager_check_accepted_reviews));
+                if (escalations !== undefined)
+                  setEscalations(String(DEFAULTS.manager_check_ic_escalations));
               }}
             >
               {t(I18nKey.ORG_CHART$SETTINGS_RESET)}
@@ -254,6 +350,9 @@ export function OrgSettings() {
             settings.data.max_depth,
             ...(settings.data.allowed_profiles ?? []),
             settings.data.resume_on_start,
+            settings.data.stall_check_minutes,
+            settings.data.manager_check_accepted_reviews,
+            settings.data.manager_check_ic_escalations,
           ].join(":")}
           state={settings.data}
           onClose={() => setIsOpen(false)}

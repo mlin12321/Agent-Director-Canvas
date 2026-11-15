@@ -1,5 +1,5 @@
 import React from "react";
-import { GitMerge, Pause, TriangleAlert } from "lucide-react";
+import { CircleStop, GitMerge, Pause, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { OrgNode } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
@@ -82,6 +82,16 @@ export const NodeCard = React.memo(function NodeCard({
             className="flex shrink-0 text-feedback-warning"
           >
             <Pause width={11} height={11} aria-hidden="true" />
+          </span>
+        ) : null}
+        {node.stopped ? (
+          <span
+            role="img"
+            aria-label={t(I18nKey.ORG_CHART$STOPPED)}
+            title={t(I18nKey.ORG_CHART$STOPPED)}
+            className="flex shrink-0 text-feedback-warning"
+          >
+            <CircleStop width={11} height={11} aria-hidden="true" />
           </span>
         ) : null}
         {collides ? (
