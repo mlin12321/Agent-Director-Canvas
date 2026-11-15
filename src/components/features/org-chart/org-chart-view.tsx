@@ -24,6 +24,8 @@ import { OrgSync } from "./org-sync";
 import { OrgSettings } from "./org-settings";
 import { OrgByState } from "./org-by-state";
 import { OrgTree } from "./org-tree";
+import { MessageToTeam } from "./message-to-team";
+import { HistoryButton, OrgHistoryPanel } from "./org-history";
 import { OwnershipMap } from "./ownership-map";
 import { HOME_PATH, StartOrgNotice } from "./start-org-notice";
 import { TeamSearch } from "./team-search";
@@ -153,6 +155,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
   const [detailsId, setDetailsId] = React.useState<NodeId | null>(null);
   const closeDetails = React.useCallback(() => setDetailsId(null), []);
   // The room the chart has, less the space kept free around what is drawn.
+  const [showsHistory, setShowsHistory] = React.useState(false);
   const [frame, setFrame] = React.useState<HTMLElement | null>(null);
   const [space, setSpace] = React.useState({ width: 0, height: 0 });
   React.useLayoutEffect(() => {
@@ -266,6 +269,12 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
             ) : null}
             <TeamSearch />
             {org.data && !org.data.fixture ? (
+              <HistoryButton
+                open={showsHistory}
+                onToggle={() => setShowsHistory((shown) => !shown)}
+              />
+            ) : null}
+            {org.data && !org.data.fixture ? (
               <OrgSync merging={org.data.merging} />
             ) : null}
             <ChartToolbar />
@@ -280,6 +289,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
         ) : null}
         {org.data?.merging ? <MergeConflicts /> : null}
         <EscalationsPanel escalations={escalations} />
+        {showsHistory ? <OrgHistoryPanel nodes={nodes} /> : null}
         <section
           ref={setFrame}
           aria-label={t(I18nKey.ORG_CHART$NAV)}
@@ -316,6 +326,9 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
           )}
         </section>
         <OwnershipMap node={current} ownership={ownership} />
+        {org.data && !org.data.fixture ? (
+          <MessageToTeam key={current.id} node={current} nodes={nodes} />
+        ) : null}
         {org.data ? (
           <p className="text-xs text-muted">
             {t(I18nKey.ORG_CHART$TALK_HINT, { path: org.data.repo_path })}{" "}

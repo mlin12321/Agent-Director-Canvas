@@ -397,6 +397,20 @@ export interface RouteMessageRequest {
   conversation?: Record<string, unknown>;
 }
 
+/** One event of an org's history, with the team whose record holds it. */
+export interface HistoryEvent extends TeamEvent {
+  /** The team directly above the event's team. */
+  above_id: NodeId;
+  above: string;
+}
+
+/** What became of the teams of an org, newest first. */
+export interface OrgHistory {
+  events: HistoryEvent[];
+  /** Whether there are events before these. */
+  earlier: boolean;
+}
+
 /** Where a message to the org went. */
 export interface RoutedMessage {
   /** The team that received it. */

@@ -138,6 +138,7 @@ export const DIRECTOR_QUERY_KEYS = {
     ["director", "search", backendId, query] as const,
   recovery: (backendId: string) => ["director", "recovery", backendId] as const,
   merge: (backendId: string) => ["director", "merge", backendId] as const,
+  history: (backendId: string) => ["director", "history", backendId] as const,
 } as const;
 
 export const MARS_QUERY_KEYS = {
