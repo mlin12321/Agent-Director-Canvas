@@ -65,10 +65,15 @@ export function AgentInspectorDrawer({
   // Tracked by role so the drawer follows the agent across live updates.
   const [role, setRole] = React.useState<AgentRole | null>(null);
   const [showsChanges, setShowsChanges] = React.useState(false);
+  // Which of an IC's two conversations is shown while it has a hand-over.
+  const [inHandOver, setInHandOver] = React.useState(false);
   const agent =
     node.agents.find((candidate) => candidate.role === role) ??
     node.agents.at(0) ??
     null;
+  const handOver = agent?.hand_over ?? null;
+  const conversationId =
+    inHandOver && handOver ? handOver.conversation_id : agent?.conversation_id;
 
   const held = node.boundary_enforcement ?? enforcement;
 
@@ -138,13 +143,9 @@ export function AgentInspectorDrawer({
             key={candidate.role}
             type="button"
             aria-pressed={!showsChanges && candidate.role === agent?.role}
-            title={
-              candidate.role === "handover"
-                ? t(I18nKey.ORG_CHART$ROLE_HANDOVER_HELP)
-                : undefined
-            }
             onClick={() => {
               setRole(candidate.role);
+              setInHandOver(false);
               setShowsChanges(false);
             }}
             className={cn(
@@ -199,19 +200,54 @@ export function AgentInspectorDrawer({
           </React.Suspense>
         </div>
       ) : null}
-      {!showsChanges && agent?.conversation_id ? (
+      {!showsChanges && agent && handOver ? (
+        <div
+          role="group"
+          aria-label={t(I18nKey.ORG_CHART$HAND_OVER_MODE)}
+          className="flex flex-wrap gap-2 border-b border-border px-3 py-1.5"
+        >
+          <button
+            type="button"
+            aria-pressed={!inHandOver}
+            onClick={() => setInHandOver(false)}
+            className={cn(
+              TAB_CLASS,
+              "text-xs",
+              inHandOver ? null : TAB_CHOSEN_CLASS,
+            )}
+          >
+            {t(I18nKey.ORG_CHART$MAIN_CONVERSATION)}
+          </button>
+          <button
+            type="button"
+            aria-pressed={inHandOver}
+            onClick={() => setInHandOver(true)}
+            className={cn(
+              TAB_CLASS,
+              "text-xs",
+              inHandOver ? TAB_CHOSEN_CLASS : null,
+            )}
+          >
+            {t(I18nKey.ORG_CHART$HAND_OVER_MODE)}
+            <span className="text-muted">{handOver.status}</span>
+          </button>
+        </div>
+      ) : null}
+      {!showsChanges && conversationId ? (
         <p className="border-b border-border px-3 py-1.5 text-xs text-muted">
-          {t(I18nKey.ORG_CHART$MESSAGE_AGENT_HINT, {
-            role: t(ROLE_LABEL_KEYS[agent.role]),
-          })}
+          {inHandOver && handOver
+            ? t(I18nKey.ORG_CHART$HAND_OVER_MODE_HELP)
+            : t(I18nKey.ORG_CHART$MESSAGE_AGENT_HINT, {
+                role: agent ? t(ROLE_LABEL_KEYS[agent.role]) : "",
+              })}
         </p>
       ) : null}
       <div className={cn("min-h-0 flex-1", showsChanges && "hidden")}>
-        {agent?.conversation_id ? (
+        {conversationId ? (
           <React.Suspense fallback={null}>
             <AgentConversation
-              key={agent.conversation_id}
-              conversationId={agent.conversation_id}
+              key={conversationId}
+              conversationId={conversationId}
             />
           </React.Suspense>
         ) : (

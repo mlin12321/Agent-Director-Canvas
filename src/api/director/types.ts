@@ -9,11 +9,19 @@ export type NodeId = string;
 /**
  * A pod has an IC and a Manager. A team's IC leads that team, is a report
  * of the team above, and does the code work in its boundary that no
- * sub-team has taken on. `handover` is a side conversation of the IC that
- * the director starts to pass on what removed teams left; it shares nothing
- * with the IC's main conversation.
+ * sub-team has taken on.
  */
-export type AgentRole = "ic" | "manager" | "handover";
+export type AgentRole = "ic" | "manager";
+
+/**
+ * An IC in hand-over mode: beside its main conversation it has one the
+ * director started to pass on what removed teams left. It shares nothing
+ * with the main conversation.
+ */
+export interface HandOverMode {
+  conversation_id: string;
+  status: string;
+}
 
 export type NodeStatus = "idle" | "working" | "done" | "blocked";
 
@@ -30,6 +38,8 @@ export interface Boundary {
 
 export interface AgentRef {
   role: AgentRole;
+  /** Set on an IC that is, or last was, in hand-over mode. */
+  hand_over?: HandOverMode | null;
   /** `null` until the director has started a conversation for this agent. */
   conversation_id: string | null;
   status: string;
