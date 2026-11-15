@@ -210,6 +210,11 @@ export interface OrgNode {
    */
   stopped?: Stopped | null;
   /**
+   * Specs that teams before this one left in its directory. They are old
+   * until the team's IC writes its own spec. Absent on an older server.
+   */
+  old_specs?: OldSpec[];
+  /**
    * The agent profile the team's agents were started from; `null` when
    * they were derived from the team above.
    */
@@ -230,7 +235,15 @@ export interface OrgNode {
  * splits; teams that exist are never removed for exceeding one.
  */
 export interface DirectorSettings {
-  /** The most agents a team may have together with every team below it. */
+  /**
+   * The most teams a team may be together with every team below it. Every
+   * team has an IC and a Manager. Absent on a server that limits agents.
+   */
+  max_teams?: number;
+  /**
+   * The most agents a team may have together with every team below it:
+   * twice `max_teams` on a server that limits teams.
+   */
   max_agents: number;
   /** The most levels of teams; the root team is level 1. */
   max_depth: number;
@@ -267,6 +280,8 @@ export interface DirectorSettings {
 
 /** The settings, beside what the org has now. */
 export interface DirectorSettingsState extends DirectorSettings {
+  /** How many teams the org has. Absent on a server that limits agents. */
+  teams?: number;
   agents: number;
   depth: number;
   /**
@@ -394,6 +409,11 @@ export interface Report {
   text: string;
   /** True for the one report a model wrote in place of earlier ones. */
   compacted?: boolean;
+  /**
+   * True for what the IC of the team above passed on of the teams that were
+   * there before this one. The team's own agents did not write it.
+   */
+  handed_over?: boolean;
 }
 
 /** One message between a Manager and an IC. */
@@ -423,6 +443,18 @@ export interface InheritedSpec {
   spec: string;
   /** False for the spec of the node's own boundary, which its IC writes. */
   readonly: boolean;
+  /** True for a spec a team before this one left; it is to be rewritten. */
+  old?: boolean;
+  /** The title of the team that left an old spec, when known. */
+  left_by?: string | null;
+}
+
+/** A spec a team before left in a directory a team now owns. */
+export interface OldSpec {
+  /** The directory of the spec; '' at the root. */
+  path: string;
+  /** The title of the team that left it, when known. */
+  team: string | null;
 }
 
 /** What the sub-teams of one boundary must keep between them. */

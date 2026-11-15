@@ -85,6 +85,11 @@ export function NodeHoverCard({ node }: NodeHoverCardProps) {
             <code className="break-all">{boundary.readonly.join(", ")}</code>
           </Row>
         ) : null}
+        {node.agents.length === 0 ? (
+          <Row label={t(I18nKey.ORG_CHART$AGENTS)}>
+            {t(I18nKey.ORG_CHART$TEAM_NOT_STARTED)}
+          </Row>
+        ) : null}
         {node.agents.length > 0 ? (
           <Row label={t(I18nKey.ORG_CHART$AGENTS)}>
             {node.agents
