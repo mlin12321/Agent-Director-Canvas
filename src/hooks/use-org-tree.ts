@@ -63,10 +63,7 @@ function reduce(state: OrgTreeState, action: OrgTreeAction): OrgTreeState {
         focusId: event.focus_id,
         nodes: new Map(event.nodes.map((node) => [node.id, node])),
         escalations: event.escalations,
-        orgState:
-          event.paused === undefined
-            ? null
-            : { paused: event.paused, merging: event.merging ?? false },
+        orgState: { paused: event.paused, merging: event.merging },
       };
     case "org_state":
       return {
@@ -102,7 +99,7 @@ export interface OrgTreeView {
   nodes: ReadonlyMap<NodeId, OrgNode>;
   /** Every escalation in the tree that waits on the human. */
   escalations: OpenEscalation[];
-  /** As the stream last said it; `null` when the server does not say. */
+  /** As the stream last said it; `null` before its first event. */
   orgState: OrgRunState | null;
 }
 

@@ -20,7 +20,9 @@ function team(
     isolation: "shared",
     worktree_path: ".",
     branch: "main",
-    agents: [{ role: "ic", conversation_id: null, status: "idle" }],
+    agents: [
+      { role: "ic", conversation_id: null, status: "idle", kind: "openhands" },
+    ],
     status,
     spec_summary: "",
     escalations: [],
@@ -36,7 +38,8 @@ function team(
           requested_at: "2026-11-13T00:00:00Z",
         }
       : null,
-    waiting_to_start: given.waiting,
+    waiting_to_start: given.waiting ?? false,
+    old_specs: [],
     child_ids: [],
     descendant_counts: { idle: 0, working: 0, done: 0, blocked: 0 },
     escalation_count: 0,

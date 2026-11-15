@@ -20,15 +20,17 @@ import { TeamReports } from "#/components/features/org-chart/team-reports";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
 
-// A server that limits teams still reports the agents it used to limit.
 const STATE: DirectorSettingsState = {
   max_teams: 32,
-  max_agents: 64,
   max_depth: 8,
   teams: 3,
-  agents: 6,
   depth: 2,
   max_concurrent_runs: null,
+  allowed_profiles: [],
+  resume_on_start: false,
+  stall_check_minutes: 120,
+  manager_check_accepted_reviews: 5,
+  manager_check_ic_setbacks: 3,
 };
 
 function settingsHandlers(state: DirectorSettingsState) {
@@ -46,7 +48,14 @@ function settingsHandlers(state: DirectorSettingsState) {
   return saved;
 }
 
-function memoryHandlers(memory: NodeMemory = { specs: [], reports: [] }) {
+function memoryHandlers(
+  memory: NodeMemory = {
+    specs: [],
+    reports: [],
+    former_teams: [],
+    history: [],
+  },
+) {
   server.use(
     http.get("*/api/director/org/nodes/:nodeId/memory", () =>
       HttpResponse.json(memory),
@@ -97,12 +106,6 @@ describe("the limit on teams", () => {
     expect(
       within(modal).getByText("ORG_CHART$SETTINGS_TEAMS_NOW"),
     ).toBeInTheDocument();
-    expect(
-      within(modal).queryByLabelText(/ORG_CHART\$SETTINGS_MAX_AGENTS/),
-    ).toBeNull();
-    expect(
-      within(modal).queryByText("ORG_CHART$SETTINGS_AGENTS_NOW"),
-    ).toBeNull();
   });
 
   it("says on hover that every team has an IC and a Manager", async () => {
@@ -128,7 +131,7 @@ describe("the limit on teams", () => {
     );
   });
 
-  it("saves the limit as teams and never as agents", async () => {
+  it("saves the limit as teams", async () => {
     const saved = settingsHandlers(STATE);
     const user = userEvent.setup();
     renderWithProviders(<OrgSettings />);
@@ -144,11 +147,21 @@ describe("the limit on teams", () => {
     await waitFor(() =>
       expect(screen.queryByTestId("org-settings-modal")).toBeNull(),
     );
-    expect(saved).toEqual([{ max_teams: 1, max_depth: 8 }]);
+    expect(saved).toEqual([
+      {
+        max_teams: 1,
+        max_depth: 8,
+        allowed_profiles: [],
+        resume_on_start: false,
+        stall_check_minutes: 120,
+        manager_check_accepted_reviews: 5,
+        manager_check_ic_setbacks: 3,
+      },
+    ]);
   });
 
   it("goes back to 32 teams when asked to", async () => {
-    settingsHandlers({ ...STATE, max_teams: 5, max_agents: 10 });
+    settingsHandlers({ ...STATE, max_teams: 5 });
     const user = userEvent.setup();
     renderWithProviders(<OrgSettings />);
     const modal = await openSettings(user);
@@ -309,6 +322,8 @@ describe("what a team is given of the teams before it", () => {
         },
         { at: "2026-11-14T11:00:00+00:00", role: "ic", text: "Kept SQLite." },
       ],
+      former_teams: [],
+      history: [],
     });
     renderWithProviders(<TeamReports node={NOT_STARTED} />);
 
@@ -334,6 +349,8 @@ describe("what a team is given of the teams before it", () => {
         { path: "shop/db", spec: "# Schema", readonly: true, old: true },
       ],
       reports: [],
+      former_teams: [],
+      history: [],
     });
     renderWithProviders(<SpecAndContracts node={NOT_STARTED} />);
 
@@ -347,6 +364,8 @@ describe("what a team is given of the teams before it", () => {
     memoryHandlers({
       specs: [{ path: "shop", spec: "# Shop", readonly: false, old: false }],
       reports: [],
+      former_teams: [],
+      history: [],
     });
     renderWithProviders(<SpecAndContracts node={NOT_STARTED} />);
 
@@ -473,7 +492,7 @@ describe("the record of the teams below a team", () => {
     expect(removed).toHaveTextContent("db serves http");
   });
 
-  it("shows nothing for a team with no record, as on an older server", async () => {
+  it("shows nothing for a team with no record", async () => {
     memoryHandlers();
     const { container } = renderWithProviders(
       <TeamRecord node={NOT_STARTED} />,

@@ -51,8 +51,13 @@ vi.mock("#/components/features/org-chart/agent-conversation", () => ({
 }));
 
 const POD: AgentRef[] = [
-  { role: "ic", conversation_id: null, status: "working" },
-  { role: "manager", conversation_id: "conv-manager", status: "idle" },
+  { role: "ic", conversation_id: null, status: "working", kind: "openhands" },
+  {
+    role: "manager",
+    conversation_id: "conv-manager",
+    status: "idle",
+    kind: "openhands",
+  },
 ];
 
 function input(
@@ -76,6 +81,9 @@ function input(
     spec_summary: `Spec for ${id}`,
     escalations,
     pending_split: pendingSplit,
+    review: null,
+    waiting_to_start: false,
+    old_specs: [],
   };
 }
 
@@ -157,7 +165,12 @@ function streamHandler() {
 function memoryHandlers(reports: Report[] = [], threads: Thread[] = []) {
   server.use(
     http.get("*/api/director/org/nodes/:nodeId/memory", () => {
-      const body: NodeMemory = { specs: [], reports };
+      const body: NodeMemory = {
+        specs: [],
+        reports,
+        former_teams: [],
+        history: [],
+      };
       return HttpResponse.json(body);
     }),
     http.get("*/api/director/org/nodes/:nodeId/messages", () =>
@@ -754,8 +767,10 @@ describe("OrgChartView", () => {
             root_id: "root",
             node_count: 5,
             repo_path: "/work/shop",
+            directory: "",
             is_git_repository: true,
             fixture: false,
+            boundary_enforcement: "sandbox",
             paused: null,
             merging: false,
           } satisfies OrgSummary),
@@ -1197,8 +1212,11 @@ describe("OrgChartView", () => {
       root_id: null,
       node_count: 0,
       repo_path: "/work/shop",
+      directory: "",
       is_git_repository: true,
       fixture: false,
+      boundary_enforcement: "sandbox",
+      paused: null,
     };
 
     function withoutOrg(summary: OrgSummary = SUMMARY) {
@@ -1260,8 +1278,11 @@ describe("OrgChartView", () => {
             root_id: "root",
             node_count: 5,
             repo_path: "/work/shop",
+            directory: "",
             is_git_repository: true,
             fixture: false,
+            boundary_enforcement: "sandbox",
+            paused: null,
           } satisfies OrgSummary),
         ),
       );
@@ -1289,9 +1310,11 @@ describe("OrgChartView", () => {
               root_id: "root",
               node_count: 5,
               repo_path: "/work/shop",
+              directory: "",
               is_git_repository: true,
               fixture: false,
               boundary_enforcement: enforcement,
+              paused: null,
             } satisfies OrgSummary),
           ),
         );
@@ -1853,6 +1876,8 @@ describe("OrgChartView", () => {
         http.get("*/api/director/org/nodes/:nodeId/memory", () =>
           HttpResponse.json({
             specs: [],
+            former_teams: [],
+            history: [],
             ...memory,
           } satisfies NodeMemory),
         ),
@@ -1942,9 +1967,11 @@ describe("OrgChartView", () => {
             root_id: "root",
             node_count: 5,
             repo_path: "/work/shop",
+            directory: "",
             is_git_repository: true,
             fixture: false,
             boundary_enforcement: "checks",
+            paused: null,
           } satisfies OrgSummary),
         ),
       );

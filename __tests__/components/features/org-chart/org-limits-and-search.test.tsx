@@ -16,11 +16,16 @@ import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
 
 const STATE: DirectorSettingsState = {
-  max_agents: 64,
+  max_teams: 32,
   max_depth: 8,
-  agents: 38,
+  teams: 19,
   depth: 4,
   max_concurrent_runs: 10,
+  allowed_profiles: [],
+  resume_on_start: false,
+  stall_check_minutes: 120,
+  manager_check_accepted_reviews: 5,
+  manager_check_ic_setbacks: 3,
 };
 
 function settingsHandlers(state: DirectorSettingsState = STATE) {
@@ -58,13 +63,13 @@ describe("OrgSettings", () => {
     const modal = await openSettings(user);
 
     expect(
-      within(modal).getByLabelText(/ORG_CHART\$SETTINGS_MAX_AGENTS/),
-    ).toHaveValue(64);
+      within(modal).getByLabelText(/ORG_CHART\$SETTINGS_MAX_TEAMS/),
+    ).toHaveValue(32);
     expect(
       within(modal).getByLabelText(/ORG_CHART\$SETTINGS_MAX_DEPTH/),
     ).toHaveValue(8);
     expect(
-      within(modal).getByText("ORG_CHART$SETTINGS_AGENTS_NOW"),
+      within(modal).getByText("ORG_CHART$SETTINGS_TEAMS_NOW"),
     ).toBeInTheDocument();
     expect(
       within(modal).getByText("ORG_CHART$SETTINGS_RUNS"),
@@ -77,11 +82,9 @@ describe("OrgSettings", () => {
     renderWithProviders(<OrgSettings />);
     const modal = await openSettings(user);
 
-    const agents = within(modal).getByLabelText(
-      /ORG_CHART\$SETTINGS_MAX_AGENTS/,
-    );
-    await user.clear(agents);
-    await user.type(agents, "12");
+    const teams = within(modal).getByLabelText(/ORG_CHART\$SETTINGS_MAX_TEAMS/);
+    await user.clear(teams);
+    await user.type(teams, "12");
     await user.click(
       within(modal).getByRole("button", { name: "BUTTON$SAVE" }),
     );
@@ -89,12 +92,22 @@ describe("OrgSettings", () => {
     await waitFor(() =>
       expect(screen.queryByTestId("org-settings-modal")).toBeNull(),
     );
-    expect(saved).toEqual([{ max_agents: 12, max_depth: 8 }]);
+    expect(saved).toEqual([
+      {
+        max_teams: 12,
+        max_depth: 8,
+        allowed_profiles: [],
+        resume_on_start: false,
+        stall_check_minutes: 120,
+        manager_check_accepted_reviews: 5,
+        manager_check_ic_setbacks: 3,
+      },
+    ]);
 
     // The form opens again on what was saved.
     expect(
       within(await openSettings(user)).getByLabelText(
-        /ORG_CHART\$SETTINGS_MAX_AGENTS/,
+        /ORG_CHART\$SETTINGS_MAX_TEAMS/,
       ),
     ).toHaveValue(12);
   });
@@ -105,11 +118,9 @@ describe("OrgSettings", () => {
     renderWithProviders(<OrgSettings />);
     const modal = await openSettings(user);
 
-    const agents = within(modal).getByLabelText(
-      /ORG_CHART\$SETTINGS_MAX_AGENTS/,
-    );
-    await user.clear(agents);
-    await user.type(agents, "1");
+    const teams = within(modal).getByLabelText(/ORG_CHART\$SETTINGS_MAX_TEAMS/);
+    await user.clear(teams);
+    await user.type(teams, "0");
 
     expect(
       within(modal).getByRole("button", { name: "BUTTON$SAVE" }),
@@ -118,7 +129,7 @@ describe("OrgSettings", () => {
   });
 
   it("goes back to the defaults when asked to", async () => {
-    settingsHandlers({ ...STATE, max_agents: 12, max_depth: 3 });
+    settingsHandlers({ ...STATE, max_teams: 12, max_depth: 3 });
     const user = userEvent.setup();
     renderWithProviders(<OrgSettings />);
     const modal = await openSettings(user);
@@ -128,8 +139,8 @@ describe("OrgSettings", () => {
     );
 
     expect(
-      within(modal).getByLabelText(/ORG_CHART\$SETTINGS_MAX_AGENTS/),
-    ).toHaveValue(64);
+      within(modal).getByLabelText(/ORG_CHART\$SETTINGS_MAX_TEAMS/),
+    ).toHaveValue(32);
     expect(
       within(modal).getByLabelText(/ORG_CHART\$SETTINGS_MAX_DEPTH/),
     ).toHaveValue(8);
@@ -155,7 +166,7 @@ describe("OrgSettings", () => {
     );
   });
 
-  it("lets the agent profiles a sub-team may run on be chosen, where the server has them", async () => {
+  it("lets the agent profiles a sub-team may run on be chosen", async () => {
     const saved = settingsHandlers({ ...STATE, allowed_profiles: ["gone"] });
     server.use(
       http.get("*/api/agent-profiles", () =>
@@ -186,18 +197,16 @@ describe("OrgSettings", () => {
       expect(screen.queryByTestId("org-settings-modal")).toBeNull(),
     );
     expect(saved).toEqual([
-      { max_agents: 64, max_depth: 8, allowed_profiles: ["codex"] },
+      {
+        max_teams: 32,
+        max_depth: 8,
+        allowed_profiles: ["codex"],
+        resume_on_start: false,
+        stall_check_minutes: 120,
+        manager_check_accepted_reviews: 5,
+        manager_check_ic_setbacks: 3,
+      },
     ]);
-  });
-
-  it("offers no profiles on a server that cannot give a sub-team another agent", async () => {
-    settingsHandlers();
-    const user = userEvent.setup();
-    renderWithProviders(<OrgSettings />);
-
-    const modal = await openSettings(user);
-
-    expect(within(modal).queryByRole("checkbox")).toBeNull();
   });
 
   it("offers nothing on a server without the settings", async () => {

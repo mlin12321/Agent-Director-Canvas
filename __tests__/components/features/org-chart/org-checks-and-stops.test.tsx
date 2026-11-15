@@ -20,14 +20,16 @@ import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
 
 const STATE: DirectorSettingsState = {
-  max_agents: 64,
+  max_teams: 32,
   max_depth: 8,
-  agents: 3,
+  teams: 3,
   depth: 2,
   max_concurrent_runs: null,
+  allowed_profiles: [],
+  resume_on_start: false,
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
-  manager_check_ic_escalations: 3,
+  manager_check_ic_setbacks: 3,
 };
 
 function settingsHandlers(state: DirectorSettingsState) {
@@ -48,7 +50,12 @@ function settingsHandlers(state: DirectorSettingsState) {
 function memoryHandlers(threads: Thread[] = []) {
   server.use(
     http.get("*/api/director/org/nodes/:nodeId/memory", () => {
-      const body: NodeMemory = { specs: [], reports: [] };
+      const body: NodeMemory = {
+        specs: [],
+        reports: [],
+        former_teams: [],
+        history: [],
+      };
       return HttpResponse.json(body);
     }),
     http.get("*/api/director/org/nodes/:nodeId/messages", () =>
@@ -127,11 +134,13 @@ describe("the checks in the settings", () => {
     );
     expect(saved).toEqual([
       {
-        max_agents: 64,
+        max_teams: 32,
         max_depth: 8,
+        allowed_profiles: [],
+        resume_on_start: false,
         stall_check_minutes: 30,
         manager_check_accepted_reviews: 5,
-        manager_check_ic_escalations: 0,
+        manager_check_ic_setbacks: 0,
       },
     ]);
   });
@@ -158,7 +167,7 @@ describe("the checks in the settings", () => {
       ...STATE,
       stall_check_minutes: 1,
       manager_check_accepted_reviews: 2,
-      manager_check_ic_escalations: 0,
+      manager_check_ic_setbacks: 0,
     });
     const user = userEvent.setup();
     renderWithProviders(<OrgSettings />);
@@ -177,32 +186,6 @@ describe("the checks in the settings", () => {
     expect(
       within(modal).getByLabelText(/ORG_CHART\$SETTINGS_MANAGER_ESCALATIONS/),
     ).toHaveValue(3);
-  });
-
-  it("offers no checks, and saves none, on a server without them", async () => {
-    const saved = settingsHandlers({
-      max_agents: 64,
-      max_depth: 8,
-      agents: 3,
-      depth: 2,
-      max_concurrent_runs: null,
-    });
-    const user = userEvent.setup();
-    renderWithProviders(<OrgSettings />);
-    const modal = await openSettings(user);
-
-    expect(
-      within(modal).queryByLabelText(/ORG_CHART\$SETTINGS_STALL_MINUTES/),
-    ).toBeNull();
-    expect(
-      within(modal).queryByLabelText(/ORG_CHART\$SETTINGS_MANAGER_REVIEWS/),
-    ).toBeNull();
-    await user.click(
-      within(modal).getByRole("button", { name: "BUTTON$SAVE" }),
-    );
-    await waitFor(() =>
-      expect(saved).toEqual([{ max_agents: 64, max_depth: 8 }]),
-    );
   });
 });
 
@@ -394,6 +377,7 @@ describe("a review", () => {
     state: "pending",
     round: 1,
     summary: "",
+    description: "",
     automated_ran: false,
     automated: [],
     findings: [],

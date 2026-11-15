@@ -43,8 +43,7 @@ export interface AgentRef {
   /** `null` until the director has started a conversation for this agent. */
   conversation_id: string | null;
   status: string;
-  /** Absent on a server that does not say; such an agent is `openhands`. */
-  kind?: AgentKind;
+  kind: AgentKind;
   /**
    * Which external agent an `acp` agent is, such as `claude-code` or
    * `codex`; `null` when the server could not tell.
@@ -164,9 +163,8 @@ export interface Review {
   round: number;
   /** What the team said it delivered. */
   summary: string;
-  /** The team's own account of what it changed, as markdown. Absent on a
-   * server that asks for none. */
-  description?: string;
+  /** The team's own account of what it changed, as markdown. */
+  description: string;
   /** Whether the team's IC, asked to review the changes, gave an answer. */
   automated_ran: boolean;
   /** What it found. */
@@ -211,15 +209,14 @@ export interface OrgNode {
   /** A split of this node's boundary that is not carried out yet. */
   pending_split: SplitProposal | null;
   /**
-   * The review of what the team last reported as done. Absent on a server
-   * that has no reviews.
+   * The review of what the team last reported as done.
    */
-  review?: Review | null;
+  review: Review | null;
   /**
    * An agent of the team could not be started yet because the server runs
-   * as many conversations as it may. Absent on a server that does not say.
+   * as many conversations as it may.
    */
-  waiting_to_start?: boolean;
+  waiting_to_start: boolean;
   /**
    * Set while the IC of the team above has stopped the team: its agents and
    * those of every team below it are at rest and nothing is sent to them.
@@ -227,9 +224,9 @@ export interface OrgNode {
   stopped?: Stopped | null;
   /**
    * Specs that teams before this one left in its directory. They are old
-   * until the team's IC writes its own spec. Absent on an older server.
+   * until the team's IC writes its own spec.
    */
-  old_specs?: OldSpec[];
+  old_specs: OldSpec[];
   /**
    * The agent profile the team's agents were started from; `null` when
    * they were derived from the team above.
@@ -253,52 +250,44 @@ export interface OrgNode {
 export interface DirectorSettings {
   /**
    * The most teams a team may be together with every team below it. Every
-   * team has an IC and a Manager. Absent on a server that limits agents.
+   * team has an IC and a Manager.
    */
-  max_teams?: number;
-  /**
-   * The most agents a team may have together with every team below it:
-   * twice `max_teams` on a server that limits teams.
-   */
-  max_agents: number;
+  max_teams: number;
   /** The most levels of teams; the root team is level 1. */
   max_depth: number;
   /**
    * Names of the agent profiles a team may give a sub-team in place of its
    * own agent. Empty: every team runs on the agent of the team above.
-   * Absent on a server that has no such setting.
    */
-  allowed_profiles?: string[];
+  allowed_profiles: string[];
   /**
    * Whether an org that was stopped in the middle of its work takes it up
-   * again as soon as the server is back. Absent on a server that cannot
-   * pause an org.
+   * again as soon as the server is back.
    */
-  resume_on_start?: boolean;
+  resume_on_start: boolean;
   /**
    * How many minutes a team may show no progress, with nothing submitted or
    * with its work sent back, before the IC of the team above is told. 0
-   * turns the check off. Absent on a server without the check.
+   * turns the check off.
    */
-  stall_check_minutes?: number;
+  stall_check_minutes: number;
   /**
    * After how many reviews its IC accepted a Manager is woken to look at its
    * teams. 0 turns the check off.
    */
-  manager_check_accepted_reviews?: number;
+  manager_check_accepted_reviews: number;
   /**
-   * After how many escalations from one team directly below, on the work it
-   * has in hand, a Manager is woken to look at its teams. 0 turns the check
-   * off.
+   * After how many escalations from one team directly below on the work it
+   * has in hand, and after how many times that work was sent back, a Manager
+   * is woken to look at its teams. 0 turns the check off.
    */
-  manager_check_ic_escalations?: number;
+  manager_check_ic_setbacks: number;
 }
 
 /** The settings, beside what the org has now. */
 export interface DirectorSettingsState extends DirectorSettings {
-  /** How many teams the org has. Absent on a server that limits agents. */
-  teams?: number;
-  agents: number;
+  /** How many teams the org has. */
+  teams: number;
   depth: number;
   /**
    * How many conversations the server runs at once; teams beyond that wait
@@ -326,21 +315,20 @@ export interface OrgSummary {
    */
   repo_path: string;
   /**
-   * The directory the server was started for, relative to `repo_path`.
-   * Absent on a server that does not say; `""` when they are the same.
+   * The directory the server was started for, relative to `repo_path`;
+   * `""` when they are the same.
    */
-  directory?: string;
+  directory: string;
   /** An org can only be started in a git repository. */
   is_git_repository: boolean;
   /** The tree is a fixed sample; its agents are not running. */
   fixture: boolean;
-  /** Absent on a server that does not hold teams to their boundaries. */
-  boundary_enforcement?: BoundaryEnforcement;
+  boundary_enforcement: BoundaryEnforcement;
   /**
    * Why the org's agents are held and its steps and messages wait; `null`
-   * when the org runs. Absent on a server that cannot pause an org.
+   * when the org runs.
    */
-  paused?: PauseReason | null;
+  paused: PauseReason | null;
   /** A pull stopped on conflicts and waits for choices. */
   merging?: boolean;
 }
@@ -531,7 +519,7 @@ export interface TeamEvent {
   detail?: string;
   /**
    * The directories a proposal was for; on `needed`, the file in the other
-   * team's directory. Absent on an older server.
+   * team's directory.
    */
   paths?: string[];
   /** On `needed`, the team beside this one whose directory it needed. */
@@ -559,10 +547,10 @@ export interface NodeMemory {
   contracts?: BoundaryContracts[];
   /** What the team's own two agents recorded, oldest first. */
   reports?: Report[];
-  /** The teams removed from directly below it. Absent on an older server. */
-  former_teams?: FormerTeam[];
-  /** What became of the teams directly below it. Absent on an older server. */
-  history?: TeamEvent[];
+  /** The teams removed from directly below it. */
+  former_teams: FormerTeam[];
+  /** What became of the teams directly below it. */
+  history: TeamEvent[];
 }
 
 /** A direct report, as the owner of a directory. */
@@ -715,9 +703,8 @@ export type OrgEvent =
       focus_id: NodeId;
       nodes: OrgNode[];
       escalations: OpenEscalation[];
-      /** Missing from a server that does not say it on the stream. */
-      paused?: PauseReason | null;
-      merging?: boolean;
+      paused: PauseReason | null;
+      merging: boolean;
     }
   | { type: "org_state"; paused: PauseReason | null; merging: boolean }
   | { type: "node_upsert"; node: OrgNode }

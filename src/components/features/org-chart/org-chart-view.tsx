@@ -284,9 +284,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
             {org.data && !org.data.fixture ? <OrgSettings /> : null}
           </div>
         </div>
-        {org.data?.paused !== undefined ? (
-          <PausedBanner paused={org.data.paused} />
-        ) : null}
+        {org.data ? <PausedBanner paused={org.data.paused} /> : null}
         {org.data?.merging ? <MergeConflicts /> : null}
         <EscalationsPanel escalations={escalations} />
         {showsHistory ? <OrgHistoryPanel nodes={nodes} /> : null}
