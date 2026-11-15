@@ -29,6 +29,7 @@ export const STATUS_DOT_CLASSES: Record<NodeStatus, string> = {
 export const ROLE_LABEL_KEYS: Record<AgentRole, I18nKey> = {
   ic: I18nKey.ORG_CHART$ROLE_IC,
   manager: I18nKey.ORG_CHART$ROLE_MANAGER,
+  handover: I18nKey.ORG_CHART$ROLE_HANDOVER,
 };
 
 export const ISOLATION_LABEL_KEYS: Record<IsolationMode, I18nKey> = {

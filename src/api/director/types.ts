@@ -9,9 +9,11 @@ export type NodeId = string;
 /**
  * A pod has an IC and a Manager. A team's IC leads that team, is a report
  * of the team above, and does the code work in its boundary that no
- * sub-team has taken on.
+ * sub-team has taken on. `handover` is a side conversation of the IC that
+ * the director starts to pass on what removed teams left; it shares nothing
+ * with the IC's main conversation.
  */
-export type AgentRole = "ic" | "manager";
+export type AgentRole = "ic" | "manager" | "handover";
 
 export type NodeStatus = "idle" | "working" | "done" | "blocked";
 

@@ -138,6 +138,11 @@ export function AgentInspectorDrawer({
             key={candidate.role}
             type="button"
             aria-pressed={!showsChanges && candidate.role === agent?.role}
+            title={
+              candidate.role === "handover"
+                ? t(I18nKey.ORG_CHART$ROLE_HANDOVER_HELP)
+                : undefined
+            }
             onClick={() => {
               setRole(candidate.role);
               setShowsChanges(false);

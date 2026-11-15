@@ -206,6 +206,32 @@ describe("a team that has not been given a task", () => {
   });
 });
 
+describe("the side conversation of a hand-over", () => {
+  it("has a tab of its own beside the IC, with what it is", () => {
+    memoryHandlers();
+    const handing = {
+      ...NOT_STARTED,
+      agents: [
+        { role: "ic", conversation_id: null, status: "idle" },
+        { role: "handover", conversation_id: null, status: "working" },
+      ],
+    } as unknown as OrgNode;
+    renderWithProviders(
+      <AgentInspectorDrawer node={handing} onClose={() => {}} />,
+    );
+
+    const agents = screen.getByRole("group", { name: "ORG_CHART$AGENTS" });
+    const tab = within(agents).getByRole("button", {
+      name: /ORG_CHART\$ROLE_HANDOVER/,
+    });
+    expect(tab).toHaveAttribute("title", "ORG_CHART$ROLE_HANDOVER_HELP");
+    expect(
+      within(agents).getByRole("button", { name: /ORG_CHART\$ROLE_IC/ }),
+    ).not.toHaveAttribute("title");
+    expect(within(agents).queryByText("ORG_CHART$TEAM_NOT_STARTED")).toBeNull();
+  });
+});
+
 describe("what a team is given of the teams before it", () => {
   it("marks what the IC above handed over among its reports", async () => {
     memoryHandlers({
