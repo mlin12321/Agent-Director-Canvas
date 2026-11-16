@@ -9,6 +9,7 @@ import type {
   HistoryEvent,
   OpenEscalation,
   OrgNode,
+  Review,
   Session,
   SessionTeam,
 } from "#/api/director/types";
@@ -87,6 +88,16 @@ const REFUNDS: SessionTeam = {
   team_id: API.id,
 };
 
+const REVIEW = {
+  state: "pending",
+  round: 1,
+  summary: "",
+  description: "",
+  automated_ran: false,
+  automated: [],
+  findings: [],
+} as unknown as Review;
+
 const SESSION: Session = {
   id: "s1a2b3c",
   title: "Refunds",
@@ -124,12 +135,25 @@ describe("NodeCard", () => {
   });
 
   it("shows a dot for each line of work that goes on at a team, and one idle dot only when none does", () => {
-    const at = (id: string, status: Session["status"]): Session => ({
+    const at = (
+      id: string,
+      status: Session["status"],
+      review: "pending" | "accepted" | null = null,
+    ): Session => ({
       ...SESSION,
       id,
       status,
-      teams: [{ ...REFUNDS, id: `${API.id}@${id}`, session: id, status }],
+      teams: [
+        {
+          ...REFUNDS,
+          id: `${API.id}@${id}`,
+          session: id,
+          status,
+          review: review && { ...REVIEW, state: review },
+        },
+      ],
     });
+    const merged = (id: string) => at(id, "done", "accepted");
     const dots = (sessions: Session[], own: OrgNode = API) => {
       const { unmount } = renderWithProviders(
         <OrgSessionsContext.Provider value={sessions}>
@@ -153,16 +177,18 @@ describe("NodeCard", () => {
     // Nothing goes on: one idle dot, without a number, however many
     // sessions are kept open after their work was merged or while they rest.
     expect(dots([]).states).toEqual(["idle"]);
-    expect(
-      dots([at("s1", "done"), at("s2", "done"), at("s3", "idle")]),
-    ).toEqual({
+    expect(dots([merged("s1"), merged("s2"), at("s3", "idle")])).toEqual({
       counted: false,
       name: "1 ORG_CHART$STATUS_IDLE",
       states: ["idle"],
     });
     // A session at work is shown, and the idle team beside it is not.
-    expect(dots([at("s1", "working"), at("s2", "done")]).states).toEqual([
+    expect(dots([at("s1", "working"), merged("s2")]).states).toEqual([
       "working",
+    ]);
+    // One that is done and waits for its review still has its dot.
+    expect(dots([at("s1", "done", "pending"), merged("s2")]).states).toEqual([
+      "done",
     ]);
     // The team's own work counts like a session's.
     const busy = { ...API, status: "working" as const };
@@ -178,13 +204,14 @@ describe("NodeCard", () => {
         at("s2", "working"),
         at("s3", "working"),
         at("s4", "blocked"),
-        at("s5", "done"),
-        at("s6", "idle"),
+        at("s5", "done", "pending"),
+        merged("s6"),
+        at("s7", "idle"),
       ]),
     ).toEqual({
       counted: true,
-      name: "1 ORG_CHART$STATUS_BLOCKED, 3 ORG_CHART$STATUS_WORKING",
-      states: ["blocked1", "working3"],
+      name: "1 ORG_CHART$STATUS_BLOCKED, 3 ORG_CHART$STATUS_WORKING, 1 ORG_CHART$STATUS_DONE",
+      states: ["blocked1", "working3", "done1"],
     });
   });
 });

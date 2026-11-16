@@ -28,11 +28,11 @@ export function useSessionsAt(nodeId: NodeId): number {
 }
 
 /**
- * The state of each session that is at work at a team, whether it was
- * opened there or at a team above. A session that rests there, or whose
- * work is finished, stays open until the human closes it and is not at
- * work: it is left out, so that sessions kept open do not pile up as idle
- * or done.
+ * The state of each session that has something going on at a team, whether
+ * it was opened there or at a team above: one that works, is blocked, or is
+ * done and waits for its review. A session that rests there, or whose work
+ * was accepted, stays open until the human closes it and is left out, so
+ * that sessions kept open do not pile up as idle or done.
  */
 export function useSessionStatusesAt(nodeId: NodeId): NodeStatus[] {
   const sessions = React.useContext(OrgSessionsContext);
@@ -41,7 +41,8 @@ export function useSessionStatusesAt(nodeId: NodeId): NodeStatus[] {
       .filter(
         (team) =>
           team.team_id === nodeId &&
-          (team.status === "working" || team.status === "blocked"),
+          team.status !== "idle" &&
+          team.review?.state !== "accepted",
       )
       .map((team) => team.status),
   );
