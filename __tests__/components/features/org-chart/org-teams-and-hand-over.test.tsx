@@ -91,10 +91,6 @@ const NOT_STARTED = {
   escalation_count: 0,
   pending_split: null,
   child_ids: [],
-  session_ids: [],
-  session: "",
-  session_title: "",
-  instance_of: null,
 } as unknown as OrgNode;
 
 describe("the limit on teams", () => {

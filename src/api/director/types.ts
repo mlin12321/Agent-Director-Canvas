@@ -198,19 +198,7 @@ export interface Stopped {
 export interface OrgNode {
   id: NodeId;
   parent_id: NodeId | null;
-  /** Everything directly below: sub-teams, and the sessions of `session_ids`. */
   child_ids: NodeId[];
-  /**
-   * Those of `child_ids` that are no sub-teams of this team: the teams
-   * sessions were opened at, whose work this team's IC reviews.
-   */
-  session_ids: NodeId[];
-  /** The session the team works in; `""` for a team of the org itself. */
-  session: string;
-  /** What the human called that session. */
-  session_title: string;
-  /** On a team of a session, the team of the org it is there for. */
-  instance_of: NodeId | null;
   title: string;
   boundary: Boundary;
   isolation: IsolationMode;
@@ -405,11 +393,6 @@ export type BoundaryEnforcement = "sandbox" | "checks";
 /** Something the human says to the org, from somewhere in the repository. */
 export interface RouteMessageRequest {
   text: string;
-  /**
-   * Write to this team and no other, whatever its directory: how a message
-   * reaches a team of a session.
-   */
-  node_id?: NodeId;
   /** The directory the message is about, repo-relative. Default: the root. */
   path?: string;
   /**
@@ -436,24 +419,79 @@ export interface OpenSessionRequest {
 }
 
 /**
- * A line of work the human opened at a team, beside the org's own. The team
- * and its sub-teams are in the org once more for it, with agents and a
- * checkout of their own; the IC of the team above reviews its work.
+ * What a session has at one team of the org: agents, a checkout, a review
+ * and escalations of its own. It is no node of the org tree. `id` is its
+ * own, `parent_id` what the session has at the team above (for the team it
+ * was opened at: the team whose IC reviews it), `child_ids` what it has at
+ * the team's sub-teams.
+ */
+export interface SessionTeam extends OrgNode {
+  /** The session. */
+  session: string;
+  /** The team of the org. */
+  team_id: NodeId;
+}
+
+/**
+ * A line of work the human opened at a team, beside the org's own. It is
+ * not part of the org tree, which is the org's structure: it has agents and
+ * a checkout of its own at the team it was opened at and, once they are
+ * given a task in it, at the teams below. The IC of the team above reviews
+ * its work.
  */
 export interface Session {
   id: string;
   title: string;
-  /** The team of the session it was opened at. */
-  node_id: NodeId;
-  /** The team of the org that one is there for, and its title. */
+  /** The team of the org it was opened at, and that team's title. */
   team_id: NodeId;
   team: string;
   /** The team whose IC reviews its work. */
   above_id: NodeId;
+  /** What the human asked of it. */
+  request: string;
+  opened_at: string;
   status: NodeStatus;
   review: ReviewState | null;
-  /** How many of its teams have started. */
-  teams: number;
+  /** The conversation of its IC at the team it was opened at. */
+  conversation_id: string | null;
+  /** What it has at each of its teams, the one it was opened at first. */
+  teams: SessionTeam[];
+}
+
+/**
+ * Where an agent is from a conversation: `above` an agent of the team that
+ * reviews its team's work, `beside` the other agent of its own team,
+ * `below` the IC of a team directly below, `session` the IC of a session
+ * whose work its team reviews.
+ */
+export type ConversationRelation = "above" | "beside" | "below" | "session";
+
+/** An agent's conversation, as it is reached from another one. */
+export interface ConversationLink {
+  conversation_id: string;
+  relation: ConversationRelation;
+  /** The team of the org the agent works for, and its title. */
+  node_id: NodeId;
+  team: string;
+  role: AgentRole;
+  /** The session the agent works in and its title; empty for none. */
+  session_id: string;
+  session: string;
+  status: string;
+}
+
+/** Where an agent's conversation is in the org, and those a level away. */
+export interface ConversationPlace {
+  conversation_id: string;
+  node_id: NodeId;
+  team: string;
+  role: AgentRole;
+  session_id: string;
+  session: string;
+  /** Whether the human has written in this conversation. */
+  human_joined: boolean;
+  /** Above first, then beside, below and sessions. */
+  links: ConversationLink[];
 }
 
 /** A session that was just opened. */
@@ -501,8 +539,11 @@ export interface RoutedMessage {
 
 /** An escalation that waits on the human, with the nodes it came up through. */
 export interface OpenEscalation {
-  /** The node that raised it. */
+  /** The team of the org that raised it. */
   node_id: NodeId;
+  /** The session it was raised in and its title; empty for the org's own. */
+  session_id: string;
+  session: string;
   escalation: Escalation;
   /** Root first, ending at the node that raised it. */
   path: Array<{ id: NodeId; title: string }>;
@@ -806,12 +847,15 @@ export type OrgEvent =
       focus_id: NodeId;
       nodes: OrgNode[];
       escalations: OpenEscalation[];
+      /** The sessions that are open. They are no nodes of the tree. */
+      sessions: Session[];
       paused: PauseReason | null;
       merging: boolean;
     }
   | { type: "org_state"; paused: PauseReason | null; merging: boolean }
   | { type: "node_upsert"; node: OrgNode }
   | { type: "node_removed"; id: NodeId }
-  | { type: "escalations"; escalations: OpenEscalation[] };
+  | { type: "escalations"; escalations: OpenEscalation[] }
+  | { type: "sessions"; sessions: Session[] };
 
 export const DIRECTOR_BASE_PATH = "/api/director";

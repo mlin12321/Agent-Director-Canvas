@@ -328,10 +328,6 @@ describe("NodeCard", () => {
     escalation_count: 0,
     pending_split: null,
     child_ids: [],
-    session_ids: [],
-    session: "",
-    session_title: "",
-    instance_of: null,
   } as unknown as OrgNode;
 
   it("says a team waits for a free run slot in place of what it is delivering", () => {

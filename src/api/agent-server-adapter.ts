@@ -655,6 +655,7 @@ export const RESERVED_CONVERSATION_TAG_KEYS: ReadonlySet<string> = new Set([
   // Marks the conversations an org's director started; the sidebar leaves
   // them out by default (see `conversation-tag-flags.ts`).
   "startedby",
+  "humanjoined",
   LOCAL_PLANNER_PARENT_TAG_KEY,
   // The launched agent profile, which the app server stamps as tags; the
   // hovercard names the profile instead of echoing the raw id and revision.

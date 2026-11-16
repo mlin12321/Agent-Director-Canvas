@@ -226,10 +226,6 @@ function buildMockTree() {
         id,
         parent_id: domain.name,
         child_ids: [],
-        session_ids: [],
-        session: "",
-        session_title: "",
-        instance_of: null,
         title: `${domain.name}/${module.name}`,
         boundary: {
           path: `${path}/${module.name}`,
@@ -261,10 +257,6 @@ function buildMockTree() {
       id: domain.name,
       parent_id: ROOT_ID,
       child_ids: MODULES.map((module) => `${domain.name}.${module.name}`),
-      session_ids: [],
-      session: "",
-      session_title: "",
-      instance_of: null,
       title: `${domain.name} domain`,
       boundary: { path, writable: [`${path}/*.md`], readonly: [] },
       isolation: "worktree",
@@ -287,10 +279,6 @@ function buildMockTree() {
     id: ROOT_ID,
     parent_id: null,
     child_ids: DOMAINS.map((domain) => domain.name),
-    session_ids: [],
-    session: "",
-    session_title: "",
-    instance_of: null,
     title: "Root organization",
     boundary: { path: "", writable: [], readonly: ["**"] },
     isolation: "worktree",
@@ -344,6 +332,8 @@ function escalationsWaiting(): OpenEscalation[] {
         .filter((escalation) => escalation.held_by === null)
         .map((escalation) => ({
           node_id: node.id,
+          session_id: "",
+          session: "",
           escalation,
           path: [...ancestorsOf(node), node].map(({ id, title }) => ({
             id,
@@ -374,6 +364,7 @@ function snapshot(focusId: NodeId, full: boolean): OrgEvent | null {
     focus_id: focusId,
     nodes: [...nodes.values()],
     escalations: escalationsWaiting(),
+    sessions: [],
     paused: null,
     merging: false,
   };

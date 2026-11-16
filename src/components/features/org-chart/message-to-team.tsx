@@ -10,12 +10,10 @@ import type {
   RoutedMessage,
 } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
-import { orgNodePath } from "#/constants/org-chart";
 import { I18nKey } from "#/i18n/declaration";
+import { conversationPath } from "./org-sessions";
 
-type Sent =
-  | { session: OpenedSession["session"] }
-  | { session: null; routed: RoutedMessage };
+type Sent = { opened: OpenedSession } | { opened: null; routed: RoutedMessage };
 
 /**
  * Writes to the team the page shows. The message goes the way every message
@@ -27,8 +25,8 @@ type Sent =
  *
  * Sent as a new session, what is written is a request of its own: the team
  * gets one more IC for it, in a git worktree of its own, and the IC of the
- * team above reviews what comes of it. A team of a session is written to
- * as that team; its directory is also another team's.
+ * team above reviews what comes of it. A session is then read and written
+ * to in its own conversation, which the answer links to.
  */
 export function MessageToTeam({
   node,
@@ -53,21 +51,16 @@ export function MessageToTeam({
           ...(title ? { title } : {}),
           ...(node.parent_id === null ? {} : { node_id: node.id }),
         });
-        return { session: opened.session };
+        return { opened };
       }
-      const routed = await DirectorClient.routeMessage(
-        node.session
-          ? { text, node_id: node.id }
-          : {
-              text,
-              path: node.boundary.path,
-              // What is written to the top team is for the org as a whole,
-              // and its director may send it straight to the team it
-              // concerns.
-              auto: node.parent_id === null,
-            },
-      );
-      return { session: null, routed };
+      const routed = await DirectorClient.routeMessage({
+        text,
+        path: node.boundary.path,
+        // What is written to the top team is for the org as a whole, and
+        // its director may send it straight to the team it concerns.
+        auto: node.parent_id === null,
+      });
+      return { opened: null, routed };
     },
     onSuccess: () => {
       setDraft("");
@@ -77,8 +70,8 @@ export function MessageToTeam({
     meta: { disableToast: true },
   });
   const text = draft.trim();
-  const routed = send.data && !send.data.session ? send.data.routed : null;
-  const opened = send.data?.session ?? null;
+  const routed = send.data && !send.data.opened ? send.data.routed : null;
+  const opened = send.data?.opened ?? null;
   const taken = routed ? nodes.get(routed.node_id) : undefined;
 
   const onSubmit = (event: React.FormEvent) => {
@@ -112,19 +105,17 @@ export function MessageToTeam({
           {t(I18nKey.ORG_CHART$MESSAGE_SEND)}
         </button>
       </div>
-      {node.session ? null : (
-        <label
-          className="flex w-fit items-center gap-1.5 text-xs text-text-secondary"
-          title={t(I18nKey.ORG_CHART$SESSION_NEW_HELP)}
-        >
-          <input
-            type="checkbox"
-            checked={asSession}
-            onChange={(event) => setAsSession(event.target.checked)}
-          />
-          {t(I18nKey.ORG_CHART$SESSION_NEW)}
-        </label>
-      )}
+      <label
+        className="flex w-fit items-center gap-1.5 text-xs text-text-secondary"
+        title={t(I18nKey.ORG_CHART$SESSION_NEW_HELP)}
+      >
+        <input
+          type="checkbox"
+          checked={asSession}
+          onChange={(event) => setAsSession(event.target.checked)}
+        />
+        {t(I18nKey.ORG_CHART$SESSION_NEW)}
+      </label>
       {asSession ? (
         <>
           <input
@@ -154,12 +145,12 @@ export function MessageToTeam({
       {opened ? (
         <p role="status" className="text-xs text-muted">
           <NavigationLink
-            to={orgNodePath(opened.node_id)}
+            to={conversationPath(opened.conversation_id)}
             className="text-link hover:underline"
           >
             {t(I18nKey.ORG_CHART$SESSION_OPENED, {
-              title: opened.title,
-              team: opened.team,
+              title: opened.session.title,
+              team: opened.session.team,
             })}
           </NavigationLink>
         </p>

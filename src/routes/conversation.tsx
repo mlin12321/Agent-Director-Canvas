@@ -22,6 +22,7 @@ import { useTaskPollingController } from "#/hooks/query/use-task-polling";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { ConversationMain } from "#/components/features/conversation/conversation-main/conversation-main";
+import { SubChatHost } from "#/components/features/org-chart/sub-chat-host";
 import { ConversationSurface } from "#/components/features/conversation/conversation-surface";
 import { ConversationMobilePanelPage } from "#/components/features/conversation/conversation-main/conversation-mobile-panel-page";
 
@@ -195,18 +196,25 @@ function AppContent() {
     return null;
   }
 
+  // A conversation of an org's agent links to the ones a level from it,
+  // which open here in place of it; the path starts again with each
+  // conversation the window is opened on.
   return (
-    <ConversationSurface conversationId={conversationId}>
-      <div data-testid="app-route" className="flex h-full flex-col">
-        {showsMobilePanelPage ? (
-          <ConversationMobilePanelPage
-            onNavigateBack={() => navigate(`/conversations/${conversationId}`)}
-          />
-        ) : (
-          <ConversationMain />
-        )}
-      </div>
-    </ConversationSurface>
+    <SubChatHost key={conversationId}>
+      <ConversationSurface conversationId={conversationId}>
+        <div data-testid="app-route" className="flex h-full flex-col">
+          {showsMobilePanelPage ? (
+            <ConversationMobilePanelPage
+              onNavigateBack={() =>
+                navigate(`/conversations/${conversationId}`)
+              }
+            />
+          ) : (
+            <ConversationMain />
+          )}
+        </div>
+      </ConversationSurface>
+    </SubChatHost>
   );
 }
 

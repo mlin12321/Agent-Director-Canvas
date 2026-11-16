@@ -1,17 +1,31 @@
 import React from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { GitBranch } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DirectorClient, DirectorError } from "#/api/director/director-client";
 import type { NodeId, OrgNode, Session } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { orgNodePath } from "#/constants/org-chart";
-import { useActiveBackend } from "#/contexts/active-backend-context";
-import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { I18nKey } from "#/i18n/declaration";
 import { StatusBadge } from "./status-badge";
 
-const REFRESH_MS = 15_000;
+/**
+ * The sessions that are open, for the parts of the chart that say something
+ * of them. A session is not a team of the chart: the chart is the org's
+ * structure, and a session is work that goes on in a part of it.
+ */
+export const OrgSessionsContext = React.createContext<readonly Session[]>([]);
+
+/** How many sessions are open at a team. */
+export function useSessionsAt(nodeId: NodeId): number {
+  const sessions = React.useContext(OrgSessionsContext);
+  return sessions.filter((session) => session.team_id === nodeId).length;
+}
+
+/** Where a conversation is read in the normal chat window. */
+export function conversationPath(conversationId: string): string {
+  return `/conversations/${conversationId}`;
+}
 
 /** Marks a team as one of a session, with what the human called it. */
 export function SessionMark({ title }: { title: string }) {
@@ -66,19 +80,14 @@ function SessionRow({
   nodes: ReadonlyMap<NodeId, OrgNode>;
 }) {
   const { t } = useTranslation("openhands");
-  const { backend } = useActiveBackend();
-  const queryClient = useQueryClient();
   const [confirming, setConfirming] = React.useState(false);
+  // The server closes it once its agents are quiet; the stream then says so.
   const close = useMutation({
     mutationFn: () => DirectorClient.closeSession(session.id),
-    // The server closes it once its agents are quiet; the list follows.
-    onSettled: () =>
-      queryClient.invalidateQueries({
-        queryKey: DIRECTOR_QUERY_KEYS.sessions(backend.id),
-      }),
     meta: { disableToast: true },
   });
   const above = nodes.get(session.above_id);
+  const started = session.teams.filter((team) => team.agents.length > 0);
 
   return (
     <li
@@ -86,16 +95,26 @@ function SessionRow({
       className="flex flex-col gap-1 text-xs text-text-secondary"
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {session.conversation_id ? (
+          <NavigationLink
+            to={conversationPath(session.conversation_id)}
+            title={t(I18nKey.ORG_CHART$SESSION_OPEN_CHAT)}
+            className="font-medium text-contrast hover:text-link hover:underline"
+          >
+            {session.title}
+          </NavigationLink>
+        ) : (
+          <span className="font-medium text-contrast">{session.title}</span>
+        )}
         <NavigationLink
-          to={orgNodePath(session.node_id)}
-          className="font-medium text-contrast hover:text-link hover:underline"
+          to={orgNodePath(session.team_id)}
+          className="hover:text-link hover:underline"
         >
-          {session.title}
+          {session.team}
         </NavigationLink>
-        <span>{session.team}</span>
         <StatusBadge status={session.status} />
         <span>
-          {t(I18nKey.ORG_CHART$SESSION_TEAMS, { count: session.teams })}
+          {t(I18nKey.ORG_CHART$SESSION_TEAMS, { count: started.length })}
         </span>
         <span>
           {t(I18nKey.ORG_CHART$SESSION_REVIEWED_BY, {
@@ -152,32 +171,17 @@ function SessionRow({
 
 /**
  * The sessions that are open: lines of work the human opened at a team
- * beside the org's own. Each is a team of the chart; here they are in one
- * list, and here one is closed.
+ * beside the org's own. They are no teams of the chart. Each is read and
+ * written to in its conversation, and closed here.
  */
 export function OrgSessionsPanel({
+  sessions,
   nodes,
 }: {
+  sessions: readonly Session[];
   nodes: ReadonlyMap<NodeId, OrgNode>;
 }) {
   const { t } = useTranslation("openhands");
-  const { backend } = useActiveBackend();
-  const sessions = useQuery({
-    queryKey: DIRECTOR_QUERY_KEYS.sessions(backend.id),
-    queryFn: () => DirectorClient.listSessions(),
-    refetchInterval: REFRESH_MS,
-    meta: { disableToast: true },
-  });
-  // A session is opened and closed as a team of the tree: ask again when
-  // the teams of sessions change.
-  const inSessions = [...nodes.values()]
-    .filter((node) => node.session)
-    .map((node) => `${node.id}:${node.status}:${node.review?.state ?? ""}`)
-    .join(" ");
-  const { refetch } = sessions;
-  React.useEffect(() => {
-    refetch();
-  }, [inSessions, refetch]);
 
   return (
     <section
@@ -188,18 +192,13 @@ export function OrgSessionsPanel({
       <h3 className="text-xs font-medium text-contrast">
         {t(I18nKey.ORG_CHART$SESSIONS_OPEN)}
       </h3>
-      {sessions.isError ? (
-        <p role="alert" className="text-xs text-feedback-error">
-          {t(I18nKey.ORG_CHART$SESSIONS_ERROR)}
-        </p>
-      ) : null}
-      {sessions.data?.length === 0 ? (
+      {sessions.length === 0 ? (
         <p className="text-xs text-muted">
           {t(I18nKey.ORG_CHART$SESSIONS_EMPTY)}
         </p>
       ) : null}
       <ul className="flex flex-col gap-2">
-        {sessions.data?.map((session) => (
+        {sessions.map((session) => (
           <SessionRow key={session.id} session={session} nodes={nodes} />
         ))}
       </ul>

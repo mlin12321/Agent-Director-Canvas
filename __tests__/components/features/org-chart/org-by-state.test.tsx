@@ -41,10 +41,6 @@ function team(
     waiting_to_start: given.waiting ?? false,
     old_specs: [],
     child_ids: [],
-    session_ids: [],
-    session: "",
-    session_title: "",
-    instance_of: null,
     descendant_counts: { idle: 0, working: 0, done: 0, blocked: 0 },
     escalation_count: 0,
   } as OrgNode;

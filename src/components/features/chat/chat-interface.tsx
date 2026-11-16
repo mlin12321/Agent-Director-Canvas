@@ -33,9 +33,12 @@ import { WorkspaceFilesForChatProvider } from "./chat-markdown-path-code";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 import { useSendMessage } from "#/hooks/use-send-message";
+import { useQueryClient } from "@tanstack/react-query";
 import { routeFromChat } from "#/api/director/route-from-chat";
 import { sessionRequestOf } from "#/api/director/session-from-chat";
 import { DirectorClient } from "#/api/director/director-client";
+import { joinFromChat } from "#/api/director/join-from-chat";
+import { ConversationLinks } from "#/components/features/org-chart/conversation-links";
 import { ExplicitAgentChatContext } from "#/context/explicit-agent-chat";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { useIsArchivedConversation } from "#/hooks/use-is-archived-conversation";
@@ -178,6 +181,7 @@ export function ChatInterface({
   // and show an explanatory banner. For local backends sandbox_status is
   // always null, so this is effectively a no-op for non-cloud use.
   const { data: activeConversation } = useActiveConversation();
+  const queryClient = useQueryClient();
   const sandboxStatus = activeConversation?.sandbox_status ?? null;
   const isArchivedConversation = useIsArchivedConversation();
 
@@ -582,6 +586,13 @@ export function ChatInterface({
         await send(
           createChatMessage(prompt, imageUrls, uploadedFiles, timestamp),
         );
+        // Written straight to an agent the director started: from now on
+        // the conversation is listed with the human's own.
+        joinFromChat(conversationId!, activeConversation?.tags).then(
+          (joined) => {
+            if (joined) queryClient.invalidateQueries({ queryKey: ["user"] });
+          },
+        );
       }
       const errors = useErrorMessageStore.getState();
       if (errors.errorCode === STARTUP_UPLOAD_ERROR_CODE)
@@ -739,6 +750,9 @@ export function ChatInterface({
     <WorkspaceFilesForChatProvider>
       <ScrollProvider value={scrollProviderValue}>
         <div className={CHAT_BODY_CLASS_NAME} data-testid="chat-interface">
+          {conversationId ? (
+            <ConversationLinks conversationId={conversationId} />
+          ) : null}
           {sessionHistoryKnown &&
             !hasSubstantiveAgentActions &&
             !hasPendingUserMessages &&

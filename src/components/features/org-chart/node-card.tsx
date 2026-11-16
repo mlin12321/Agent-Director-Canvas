@@ -9,7 +9,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { useOrgChartStore } from "#/stores/org-chart-store";
 import { cn } from "#/utils/utils";
 import { NodeHoverCard } from "./node-hover-card";
-import { SessionMark } from "./org-sessions";
+import { useSessionsAt } from "./org-sessions";
 
 interface NodeCardProps {
   node: OrgNode;
@@ -70,9 +70,9 @@ export const NodeCard = React.memo(function NodeCard({
   const notStarted = node.agents.length === 0;
   // An agent that was working when the org was paused.
   const paused = node.agents.some((agent) => agent.status === "paused");
-  // What is below it is its sub-teams and the sessions its IC reviews.
-  const sessions = node.session_ids.length;
-  const subTeams = node.child_ids.length - sessions;
+  // Sessions are no part of the chart; the card says how many are open here.
+  const sessions = useSessionsAt(node.id);
+  const subTeams = node.child_ids.length;
 
   const body = (
     <>
@@ -80,7 +80,6 @@ export const NodeCard = React.memo(function NodeCard({
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-contrast">
           {node.title}
         </span>
-        {node.session ? <SessionMark title={node.session_title} /> : null}
         {paused ? (
           <span
             role="img"
