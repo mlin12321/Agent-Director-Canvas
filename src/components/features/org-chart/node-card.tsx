@@ -75,10 +75,15 @@ export const NodeCard = React.memo(function NodeCard({
   const sessions = useSessionsAt(node.id);
   const subTeams = node.child_ids.length;
   // One state for the team's own work and one for each session at work
-  // here: a team with sessions is in several states at once.
+  // here: a team with sessions is in several states at once. Idle is what
+  // a team is when nothing goes on at it, so it is shown alone or not at
+  // all.
   const sessionStatuses = useSessionStatusesAt(node.id);
   const statuses = React.useMemo(
-    () => [node.status, ...sessionStatuses],
+    () =>
+      node.status === "idle" && sessionStatuses.length > 0
+        ? sessionStatuses
+        : [node.status, ...sessionStatuses],
     [node.status, sessionStatuses],
   );
 

@@ -9,6 +9,7 @@ import type {
   HistoryEvent,
   OpenEscalation,
   OrgNode,
+  Review,
   Session,
   SessionTeam,
 } from "#/api/director/types";
@@ -87,6 +88,16 @@ const REFUNDS: SessionTeam = {
   team_id: API.id,
 };
 
+const REVIEW = {
+  state: "pending",
+  round: 1,
+  summary: "",
+  description: "",
+  automated_ran: false,
+  automated: [],
+  findings: [],
+} as unknown as Review;
+
 const SESSION: Session = {
   id: "s1a2b3c",
   title: "Refunds",
@@ -123,56 +134,85 @@ describe("NodeCard", () => {
     expect(screen.queryByTestId("org-session-mark")).toBeNull();
   });
 
-  it("shows a dot for the team's own work and one for each session at work there, and counts them when there is no room", () => {
-    const at = (id: string, status: Session["status"]): Session => ({
+  it("shows a dot for each line of work that goes on at a team, and one idle dot only when none does", () => {
+    const at = (
+      id: string,
+      status: Session["status"],
+      review: "pending" | "accepted" | null = null,
+    ): Session => ({
       ...SESSION,
       id,
       status,
-      teams: [{ ...REFUNDS, id: `${API.id}@${id}`, session: id, status }],
+      teams: [
+        {
+          ...REFUNDS,
+          id: `${API.id}@${id}`,
+          session: id,
+          status,
+          review: review && { ...REVIEW, state: review },
+        },
+      ],
     });
-    const dots = (testId: string) => {
-      const found = within(screen.getByTestId(testId)).getByTestId(
-        "org-status-dots",
+    const merged = (id: string) => at(id, "done", "accepted");
+    const dots = (sessions: Session[], own: OrgNode = API) => {
+      const { unmount } = renderWithProviders(
+        <OrgSessionsContext.Provider value={sessions}>
+          <NodeCard node={own} current={false} onOpenDetails={() => {}} />
+        </OrgSessionsContext.Provider>,
       );
-      return {
-        found,
+      const found = within(
+        screen.getByTestId(`org-node-${own.id}`),
+      ).getByTestId("org-status-dots");
+      const seen = {
+        counted: found.hasAttribute("data-counted"),
+        name: found.getAttribute("aria-label"),
         states: [...found.querySelectorAll("[data-status]")].map(
           (dot) => `${dot.getAttribute("data-status")}${dot.textContent}`,
         ),
       };
+      unmount();
+      return seen;
     };
-    const { unmount } = renderWithProviders(
-      <OrgSessionsContext.Provider value={[at("s1", "working")]}>
-        <NodeCard node={ROOT} current={false} onOpenDetails={() => {}} />
-        <NodeCard node={API} current={false} onOpenDetails={() => {}} />
-      </OrgSessionsContext.Provider>,
-    );
 
-    // A team without sessions has the one dot of its own state.
-    expect(dots("org-node-root").states).toEqual(["idle"]);
-    const few = dots("org-node-services.api");
-    expect(few.states).toEqual(["idle", "working"]);
-    expect(few.found).not.toHaveAttribute("data-counted");
-    expect(few.found).toHaveAccessibleName(
-      "1 ORG_CHART$STATUS_WORKING, 1 ORG_CHART$STATUS_IDLE",
-    );
-    unmount();
-
-    renderWithProviders(
-      <OrgSessionsContext.Provider
-        value={[
-          at("s1", "working"),
-          at("s2", "working"),
-          at("s3", "blocked"),
-          at("s4", "done"),
-        ]}
-      >
-        <NodeCard node={API} current={false} onOpenDetails={() => {}} />
-      </OrgSessionsContext.Provider>,
-    );
-    const many = dots("org-node-services.api");
-    expect(many.found).toHaveAttribute("data-counted");
-    expect(many.states).toEqual(["blocked1", "working2", "idle1", "done1"]);
+    // Nothing goes on: one idle dot, without a number, however many
+    // sessions are kept open after their work was merged or while they rest.
+    expect(dots([]).states).toEqual(["idle"]);
+    expect(dots([merged("s1"), merged("s2"), at("s3", "idle")])).toEqual({
+      counted: false,
+      name: "1 ORG_CHART$STATUS_IDLE",
+      states: ["idle"],
+    });
+    // A session at work is shown, and the idle team beside it is not.
+    expect(dots([at("s1", "working"), merged("s2")]).states).toEqual([
+      "working",
+    ]);
+    // One that is done and waits for its review still has its dot.
+    expect(dots([at("s1", "done", "pending"), merged("s2")]).states).toEqual([
+      "done",
+    ]);
+    // The team's own work counts like a session's.
+    const busy = { ...API, status: "working" as const };
+    expect(dots([at("s1", "working"), at("s2", "blocked")], busy)).toEqual({
+      counted: false,
+      name: "1 ORG_CHART$STATUS_BLOCKED, 2 ORG_CHART$STATUS_WORKING",
+      states: ["working", "working", "blocked"],
+    });
+    // More than there is room for are counted by state; idle is never one.
+    expect(
+      dots([
+        at("s1", "working"),
+        at("s2", "working"),
+        at("s3", "working"),
+        at("s4", "blocked"),
+        at("s5", "done", "pending"),
+        merged("s6"),
+        at("s7", "idle"),
+      ]),
+    ).toEqual({
+      counted: true,
+      name: "1 ORG_CHART$STATUS_BLOCKED, 3 ORG_CHART$STATUS_WORKING, 1 ORG_CHART$STATUS_DONE",
+      states: ["blocked1", "working3", "done1"],
+    });
   });
 });
 
