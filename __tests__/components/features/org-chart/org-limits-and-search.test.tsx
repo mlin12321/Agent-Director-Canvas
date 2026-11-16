@@ -5,15 +5,18 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   DirectorSettingsState,
   OrgNode,
+  SessionTeam,
   TeamMatch,
 } from "#/api/director/types";
 import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-inspector-drawer";
 import { NodeCard } from "#/components/features/org-chart/node-card";
 import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
+import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { TeamSearch } from "#/components/features/org-chart/team-search";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
+import { atWork } from "./session-fixtures";
 
 const STATE: DirectorSettingsState = {
   max_teams: 32,
@@ -27,6 +30,7 @@ const STATE: DirectorSettingsState = {
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
+  session_worktrees: true,
 };
 
 function settingsHandlers(state: DirectorSettingsState = STATE) {
@@ -311,16 +315,8 @@ describe("NodeCard", () => {
     isolation: "worktree",
     worktree_path: ".",
     branch: "agents/auth",
-    // A team with no agents has not started; this one has.
-    agents: [
-      {
-        role: "ic",
-        conversation_id: null,
-        status: "idle",
-        kind: "openhands",
-        acp_server: null,
-      },
-    ],
+    // Nobody works at a team itself.
+    agents: [],
     status: "idle",
     spec_summary: "",
     headline: "Token refresh",
@@ -329,32 +325,39 @@ describe("NodeCard", () => {
     pending_split: null,
     child_ids: [],
   } as unknown as OrgNode;
+  const IC: SessionTeam["agents"][number] = {
+    role: "ic",
+    conversation_id: null,
+    status: "idle",
+    kind: "openhands",
+    acp_server: null,
+  };
+
+  /** The team beside a session that has `work` at it. */
+  function atTeam(work: Partial<SessionTeam>, children: React.ReactNode) {
+    return (
+      <OrgSessionsContext.Provider
+        value={atWork(NODE, { agents: [IC], ...work })}
+      >
+        {children}
+      </OrgSessionsContext.Provider>
+    );
+  }
 
   it("says a team waits for a free run slot in place of what it is delivering", () => {
-    const { rerender } = renderWithProviders(
-      <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />,
+    const authCard = (
+      <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />
     );
+    const { rerender } = renderWithProviders(atTeam({}, authCard));
     expect(screen.getByText("Token refresh")).toBeInTheDocument();
 
-    rerender(
-      <NodeCard
-        node={{ ...NODE, waiting_to_start: true }}
-        current={false}
-        onOpenDetails={() => {}}
-      />,
-    );
+    rerender(atTeam({ waiting_to_start: true }, authCard));
 
     expect(screen.getByText("ORG_CHART$WAITING_TO_START")).toBeInTheDocument();
     expect(screen.queryByText("Token refresh")).toBeNull();
 
     // Once its IC works, it says what it delivers again.
-    rerender(
-      <NodeCard
-        node={{ ...NODE, waiting_to_start: true, status: "working" }}
-        current={false}
-        onOpenDetails={() => {}}
-      />,
-    );
+    rerender(atTeam({ waiting_to_start: true, status: "working" }, authCard));
 
     expect(screen.getByText("Token refresh")).toBeInTheDocument();
     expect(screen.queryByText("ORG_CHART$WAITING_TO_START")).toBeNull();
@@ -362,9 +365,8 @@ describe("NodeCard", () => {
 
   it("names an external agent and the profile a team runs on in its hover card", () => {
     renderWithProviders(
-      <NodeHoverCard
-        node={{
-          ...NODE,
+      atTeam(
+        {
           agent_profile: "codex",
           agents: [
             {
@@ -382,8 +384,9 @@ describe("NodeCard", () => {
               acp_server: null,
             },
           ],
-        }}
-      />,
+        },
+        <NodeHoverCard node={{ ...NODE, agent_profile: "codex" }} />,
+      ),
     );
 
     expect(
@@ -394,37 +397,24 @@ describe("NodeCard", () => {
     expect(screen.getByText("codex")).toBeInTheDocument();
   });
 
-  it("says in the details how the team itself is held, over what the server says of the org", () => {
-    const team = {
-      ...NODE,
-      agents: [
-        {
-          role: "ic" as const,
-          conversation_id: null,
-          status: "idle",
-          kind: "acp" as const,
-          acp_server: "claude-code",
-        },
-      ],
-    };
-    const { rerender } = renderWithProviders(
+  it("says in the details how the team is held where a session's IC ran, over what the server says of the org", () => {
+    const agents = [{ ...IC, kind: "acp" as const, acp_server: "claude-code" }];
+    const details = (
       <AgentInspectorDrawer
-        node={{ ...team, boundary_enforcement: "merge" }}
+        node={NODE}
         enforcement="checks"
         onClose={() => {}}
-      />,
+      />
+    );
+    const { rerender } = renderWithProviders(
+      atTeam({ agents, boundary_enforcement: "merge" }, details),
     );
 
     expect(screen.getByText("ORG_CHART$ENFORCED_MERGE")).toBeInTheDocument();
     expect(screen.getByText("Claude Code")).toBeInTheDocument();
 
-    rerender(
-      <AgentInspectorDrawer
-        node={team}
-        enforcement="checks"
-        onClose={() => {}}
-      />,
-    );
+    // Until an IC ran here, it is what the server says of the org.
+    rerender(atTeam({ agents }, details));
 
     expect(screen.getByText("ORG_CHART$ENFORCED_CHECKS")).toBeInTheDocument();
   });

@@ -11,7 +11,7 @@ import {
  * One agent's live conversation inside the org chart. The conversation UI
  * reads its id from the navigation context, so that is re-targeted at the
  * agent; the page itself stays where it is. What is written here is for
- * this agent, the top team's IC included.
+ * this agent, the IC a session was opened with included.
  */
 export function AgentConversation({
   conversationId,

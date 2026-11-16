@@ -8,8 +8,8 @@ import type {
   OrgNode,
 } from "#/api/director/types";
 import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-inspector-drawer";
-import { NodeCard } from "#/components/features/org-chart/node-card";
 import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
+import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { SpecAndContracts } from "#/components/features/org-chart/spec-and-contracts";
 import {
@@ -19,6 +19,7 @@ import {
 import { TeamReports } from "#/components/features/org-chart/team-reports";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
+import { atWork } from "./session-fixtures";
 
 // The chat stack needs a live agent server; what matters here is which
 // conversation the drawer opens.
@@ -40,6 +41,7 @@ const STATE: DirectorSettingsState = {
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
+  session_worktrees: true,
 };
 
 function settingsHandlers(state: DirectorSettingsState) {
@@ -82,7 +84,8 @@ async function openSettings(user: ReturnType<typeof userEvent.setup>) {
   return screen.findByTestId("org-settings-modal");
 }
 
-// A team that was set up and has been given no task: it has no agents.
+// A team of the org. Nobody works at a team itself, and no session has
+// been given a task at this one.
 const NOT_STARTED = {
   id: "shop",
   parent_id: "root",
@@ -187,26 +190,6 @@ describe("the limit on teams", () => {
 });
 
 describe("a team that has not been given a task", () => {
-  it("says so on its card in place of what it delivers", () => {
-    const { rerender } = renderWithProviders(
-      <NodeCard node={NOT_STARTED} current={false} onOpenDetails={() => {}} />,
-    );
-
-    expect(screen.getByText("ORG_CHART$TEAM_NOT_STARTED")).toBeInTheDocument();
-    expect(screen.queryByText("Sells the goods")).toBeNull();
-
-    const started = {
-      ...NOT_STARTED,
-      agents: [{ role: "ic", conversation_id: null, status: "idle" }],
-    } as unknown as OrgNode;
-    rerender(
-      <NodeCard node={started} current={false} onOpenDetails={() => {}} />,
-    );
-
-    expect(screen.queryByText("ORG_CHART$TEAM_NOT_STARTED")).toBeNull();
-    expect(screen.getByText("Sells the goods")).toBeInTheDocument();
-  });
-
   it("says so in its hover card and its details, with how it starts", () => {
     memoryHandlers();
     const { unmount } = renderWithProviders(
@@ -233,31 +216,35 @@ describe("a team that has not been given a task", () => {
   });
 });
 
+/** The team's details, with a session whose IC is as given. */
+function detailsWithIc(ic: Record<string, unknown>) {
+  return renderWithProviders(
+    <OrgSessionsContext.Provider
+      value={atWork(NOT_STARTED, {
+        agents: [{ role: "ic", kind: "openhands", ...ic }],
+      } as never)}
+    >
+      <AgentInspectorDrawer node={NOT_STARTED} onClose={() => {}} />
+    </OrgSessionsContext.Provider>,
+  );
+}
+
 describe("an IC in hand-over mode", () => {
   it("stays one agent, with its two conversations in the list", async () => {
     memoryHandlers();
-    const handing = {
-      ...NOT_STARTED,
-      agents: [
-        {
-          role: "ic",
-          conversation_id: "main-1",
-          status: "idle",
-          hand_over: { conversation_id: "side-1", status: "working" },
-        },
-      ],
-    } as unknown as OrgNode;
     const user = userEvent.setup();
-    renderWithProviders(
-      <AgentInspectorDrawer node={handing} onClose={() => {}} />,
-    );
+    detailsWithIc({
+      conversation_id: "main-1",
+      status: "idle",
+      hand_over: { conversation_id: "side-1", status: "working" },
+    });
 
     const list = screen.getByTestId("org-node-conversations");
     const [main, mode] = within(list).getAllByRole("button");
     expect(within(list).getAllByRole("button")).toHaveLength(2);
     expect(main).toHaveTextContent("ORG_CHART$ROLE_IC");
     expect(mode).toHaveTextContent(
-      "ORG_CHART$ROLE_IC · ORG_CHART$HAND_OVER_MODE",
+      "ORG_CHART$ROLE_IC · Work · ORG_CHART$HAND_OVER_MODE",
     );
     expect(mode).toHaveTextContent("working");
     // Nothing is open until a conversation is chosen.
@@ -286,20 +273,11 @@ describe("an IC in hand-over mode", () => {
 
   it("says so when the hand-over could not be started, and opens nothing", () => {
     memoryHandlers();
-    const lost = {
-      ...NOT_STARTED,
-      agents: [
-        {
-          role: "ic",
-          conversation_id: null,
-          status: "idle",
-          hand_over: { conversation_id: "side-1", status: "lost" },
-        },
-      ],
-    } as unknown as OrgNode;
-    renderWithProviders(
-      <AgentInspectorDrawer node={lost} onClose={() => {}} />,
-    );
+    detailsWithIc({
+      conversation_id: null,
+      status: "idle",
+      hand_over: { conversation_id: "side-1", status: "lost" },
+    });
 
     const mode = screen.getByRole("button", {
       name: /ORG_CHART\$HAND_OVER_MODE/,
@@ -313,13 +291,7 @@ describe("an IC in hand-over mode", () => {
 
   it("lists one conversation for an IC that has no hand-over", () => {
     memoryHandlers();
-    const plain = {
-      ...NOT_STARTED,
-      agents: [{ role: "ic", conversation_id: null, status: "idle" }],
-    } as unknown as OrgNode;
-    renderWithProviders(
-      <AgentInspectorDrawer node={plain} onClose={() => {}} />,
-    );
+    detailsWithIc({ conversation_id: null, status: "idle" });
 
     expect(
       within(screen.getByTestId("org-node-conversations")).getAllByRole(

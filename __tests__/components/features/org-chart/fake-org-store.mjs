@@ -4,7 +4,11 @@
  * same way, as `openhands.agent_server.director.org_store` in the SDK, so UI
  * tests can drive realistic event sequences without a server.
  *
- * @import { StatusCounts, NodeStatus, NodeId, OpenEscalation, OrgEvent, OrgNode } from "../../../../src/api/director/types.ts"
+ * The tree is the org's structure: nobody works at a team itself. Work is
+ * what a session has at a team (`openSession`, `place`), and the page is
+ * told of it with the sessions.
+ *
+ * @import { AgentRef, StatusCounts, NodeStatus, NodeId, OpenEscalation, OrgEvent, OrgNode, Session, SessionTeam } from "../../../../src/api/director/types.ts"
  */
 
 /** @type {readonly NodeStatus[]} */
@@ -26,6 +30,8 @@ export function emptyStatusCounts() {
  * What a caller supplies; the store fills in the derived fields.
  * @typedef {Omit<OrgNode, "child_ids" | "descendant_counts" | "escalation_count">} OrgNodeInput
  * @typedef {(event: OrgEvent) => void} OrgListener
+ * @typedef {Pick<Session, "id" | "title" | "team_id"> & Partial<Pick<Session, "request" | "opened_at">>} SessionInput
+ * @typedef {Partial<Omit<SessionTeam, "id" | "parent_id" | "child_ids" | "session" | "team_id" | "review_only">>} Work
  * @typedef {{ event: OrgEvent, id: NodeId, parent_id: NodeId | null }} Emission
  */
 
@@ -41,6 +47,30 @@ function sameCounts(a, b) {
   return NODE_STATUSES.every((status) => a[status] === b[status]);
 }
 
+/** The id of what a session has at a team. */
+export function placeId(
+  /** @type {NodeId} */ teamId,
+  /** @type {string} */ sessionId,
+) {
+  return `${teamId}@${sessionId}`;
+}
+
+/** The id of the place a session's work is reviewed from. */
+export function reviewPlaceId(
+  /** @type {NodeId} */ teamId,
+  /** @type {string} */ sessionId,
+) {
+  return `${teamId}@${sessionId}@review`;
+}
+
+/** @type {AgentRef} */
+const REVIEWER = {
+  role: "ic",
+  conversation_id: null,
+  status: "idle",
+  kind: "openhands",
+};
+
 /** @param {Pick<OrgNode, "escalations">} node */
 function waitingOnHuman(node) {
   return node.escalations.filter((escalation) => escalation.held_by === null)
@@ -54,7 +84,14 @@ export class OrgStore {
   /** @type {NodeId | null} */
   #rootId = null;
 
-  /** @type {Set<{ deliver: (emission: Emission) => void, announce: () => void }>} */
+  /** @type {Map<string, Required<SessionInput> & { above_id: NodeId }>} */
+  #sessions = new Map();
+
+  /** What each session has at each of its teams, by its own id. */
+  /** @type {Map<string, SessionTeam>} */
+  #places = new Map();
+
+  /** @type {Set<{ deliver: (emission: Emission) => void, announce: () => void, tell: OrgListener }>} */
   #listeners = new Set();
 
   get rootId() {
@@ -218,9 +255,168 @@ export class OrgStore {
     });
     doomed.forEach((gone) => this.#nodes.delete(gone.id));
 
+    // What the sessions had at the removed teams goes with them.
+    const gone = new Set(doomed.map((team) => team.id));
+    const placesBefore = this.#places.size;
+    [...this.#sessions.values()]
+      .filter((session) => gone.has(session.team_id))
+      .forEach((session) => this.#sessions.delete(session.id));
+    [...this.#places.values()]
+      .filter(
+        (place) =>
+          gone.has(place.team_id) || !this.#sessions.has(place.session),
+      )
+      .forEach((place) => this.#places.delete(place.id));
+
     this.#refreshAncestors(node.parent_id, true);
+    if (this.#places.size !== placesBefore) this.#announceSessions();
     this.#announceEscalations();
     return true;
+  }
+
+  /**
+   * Open a session at a team. Its work is reviewed from the team above, or
+   * from the team itself at the top: that place is the session's first, and
+   * its IC only reviews.
+   *
+   * @param {SessionInput} input
+   * @param {AgentRef[]} [reviewer] The agents of the review place.
+   * @returns {Session}
+   */
+  openSession(input, reviewer = [REVIEWER]) {
+    const team = this.#nodes.get(input.team_id);
+    if (!team) {
+      throw new OrgStoreError(`Team ${input.team_id} does not exist`);
+    }
+    if (this.#sessions.has(input.id)) {
+      throw new OrgStoreError(`Session ${input.id} is already open`);
+    }
+    const aboveId = team.parent_id ?? team.id;
+    this.#sessions.set(input.id, {
+      request: "",
+      opened_at: "",
+      ...structuredClone(input),
+      above_id: aboveId,
+    });
+    const id = reviewPlaceId(aboveId, input.id);
+    this.#places.set(id, {
+      ...this.#reference(/** @type {OrgNode} */ (this.#nodes.get(aboveId))),
+      id,
+      parent_id: null,
+      agents: structuredClone(reviewer),
+      session: input.id,
+      team_id: aboveId,
+      review_only: true,
+    });
+    this.#announceSessions();
+    return /** @type {Session} */ (
+      this.sessions().find((session) => session.id === input.id)
+    );
+  }
+
+  /**
+   * Set what a session has at a team: its agents, state, review and
+   * escalations there. What is left out is as at a team nothing was done at.
+   *
+   * @param {string} sessionId
+   * @param {NodeId} teamId
+   * @param {Work} [work]
+   * @returns {SessionTeam}
+   */
+  place(sessionId, teamId, work = {}) {
+    const session = this.#sessions.get(sessionId);
+    if (!session) throw new OrgStoreError(`Session ${sessionId} is not open`);
+    const team = this.#nodes.get(teamId);
+    if (!team) throw new OrgStoreError(`Team ${teamId} does not exist`);
+    /** @type {SessionTeam} */
+    const place = {
+      ...this.#reference(team),
+      ...structuredClone(work),
+      id: placeId(teamId, sessionId),
+      parent_id:
+        teamId === session.team_id
+          ? reviewPlaceId(session.above_id, sessionId)
+          : placeId(/** @type {NodeId} */ (team.parent_id), sessionId),
+      session: sessionId,
+      team_id: teamId,
+    };
+    place.escalation_count = waitingOnHuman(place);
+    this.#places.set(place.id, place);
+    this.#announceSessions();
+    this.#announceEscalations();
+    return place;
+  }
+
+  /**
+   * Close a session, with everything it has at its teams.
+   *
+   * @param {string} sessionId
+   * @returns {boolean} Whether it was open.
+   */
+  closeSession(sessionId) {
+    if (!this.#sessions.delete(sessionId)) return false;
+    [...this.#places.values()]
+      .filter((place) => place.session === sessionId)
+      .forEach((place) => this.#places.delete(place.id));
+    this.#announceSessions();
+    this.#announceEscalations();
+    return true;
+  }
+
+  /**
+   * The open sessions as a client reads them, oldest first: each with the
+   * team it was opened at first and the place it is reviewed from last.
+   *
+   * @returns {Session[]}
+   */
+  sessions() {
+    return [...this.#sessions.values()].map((session) => {
+      const places = [...this.#places.values()]
+        .filter((place) => place.session === session.id)
+        .map((place) => ({
+          ...place,
+          child_ids: [...this.#places.values()]
+            .filter((below) => below.parent_id === place.id)
+            .map((below) => below.id),
+        }));
+      const teams = [
+        ...places.filter((place) => !place.review_only),
+        ...places.filter((place) => place.review_only),
+      ];
+      const opened = this.#places.get(placeId(session.team_id, session.id));
+      return {
+        ...session,
+        team: this.#nodes.get(session.team_id)?.title ?? "",
+        status: opened?.status ?? "idle",
+        review: opened?.review?.state ?? null,
+        conversation_id:
+          opened?.agents.find((agent) => agent.role === "ic")
+            ?.conversation_id ?? null,
+        teams,
+      };
+    });
+  }
+
+  /**
+   * A team as a place of a session starts from it: the team's own title and
+   * boundary, and nothing done.
+   *
+   * @param {OrgNode} team
+   * @returns {Omit<SessionTeam, "id" | "parent_id" | "session" | "team_id">}
+   */
+  #reference(team) {
+    return {
+      ...structuredClone(team),
+      child_ids: [],
+      agents: [],
+      status: "idle",
+      escalations: [],
+      pending_split: null,
+      review: null,
+      waiting_to_start: false,
+      descendant_counts: emptyStatusCounts(),
+      escalation_count: 0,
+    };
   }
 
   /**
@@ -253,6 +449,37 @@ export class OrgStore {
           });
         });
       stack.push(...this.children(node.id).reverse());
+    }
+    // A session is under no node: what its teams wait on the human for is
+    // told with the whole org's.
+    if (focusId === this.#rootId) {
+      this.#places.forEach((place) => {
+        const session = this.#sessions.get(place.session);
+        /** @type {SessionTeam[]} */
+        const way = [];
+        for (
+          let step = /** @type {SessionTeam | undefined} */ (place);
+          step;
+          step = this.#places.get(step.parent_id ?? "")
+        ) {
+          // At the top the work is reviewed from the team it was opened at.
+          if (way[0]?.team_id !== step.team_id) way.unshift(step);
+        }
+        place.escalations
+          .filter((escalation) => escalation.held_by === null)
+          .forEach((escalation) => {
+            found.push({
+              node_id: place.team_id,
+              session_id: place.session,
+              session: session?.title ?? "",
+              escalation,
+              path: way.map((step) => ({
+                id: step.team_id,
+                title: step.title,
+              })),
+            });
+          });
+      });
     }
     const rank = (/** @type {OpenEscalation} */ item) =>
       item.escalation.kind === "critical_issue" ? 0 : 1;
@@ -287,7 +514,7 @@ export class OrgStore {
       focus_id: focusId,
       nodes: [...nodes.values()],
       escalations: this.#waitingAnywhere(),
-      sessions: [],
+      sessions: this.sessions(),
     };
   }
 
@@ -334,6 +561,7 @@ export class OrgStore {
         told = current;
         listener({ type: "escalations", escalations });
       },
+      tell: listener,
     };
     this.#listeners.add(subscription);
     return () => {
@@ -410,6 +638,14 @@ export class OrgStore {
   #emit(event, id, parent_id) {
     [...this.#listeners].forEach((listener) =>
       listener.deliver({ event, id, parent_id }),
+    );
+  }
+
+  /** Tell every subscriber what the sessions are now. */
+  #announceSessions() {
+    const sessions = this.sessions();
+    [...this.#listeners].forEach((listener) =>
+      listener.tell({ type: "sessions", sessions }),
     );
   }
 

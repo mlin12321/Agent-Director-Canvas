@@ -9,7 +9,11 @@ import {
   type NodeStatus,
   type NodeId,
   type OpenEscalation,
+  type Escalation,
+  type Session,
+  type SessionTeam,
   type OrgEvent,
+  type OrgChange,
   type OrgNode,
   type Report,
   type OrgSummary,
@@ -23,8 +27,11 @@ import {
 /**
  * MSW handlers for the Agent Server director API, so `npm run dev:mock` renders the
  * org chart without one running. The tree is small and static: one root, a
- * few domains, a few modules under each, and two open escalations: one still
- * held by the team above, one that has reached the human and can be answered.
+ * few domains, a few modules under each. It is the org's structure only:
+ * nobody works at a team itself. The work is that of two sessions: one
+ * opened at the top team, with places at several teams, and one opened at a
+ * domain. They have two open escalations: one still held by the team above,
+ * one that has reached the human and can be answered.
  */
 const NODE_QUERY_PARAM = "node";
 const FULL_QUERY_PARAM = "full";
@@ -36,65 +43,54 @@ const POD: AgentRef[] = [
   { role: "manager", conversation_id: null, status: "idle", kind: "openhands" },
 ];
 
-const DOMAINS: Array<{ name: string; status: NodeStatus }> = [
-  { name: "platform", status: "working" },
-  { name: "payments", status: "blocked" },
-  { name: "identity", status: "idle" },
-  { name: "search", status: "done" },
+/** The IC that reviews a session's work, which does nothing else there. */
+const REVIEWER: AgentRef[] = [
+  { role: "ic", conversation_id: null, status: "idle", kind: "openhands" },
 ];
 
-const MODULES: Array<{ name: string; status: NodeStatus }> = [
-  { name: "api", status: "working" },
-  { name: "worker", status: "blocked" },
-  { name: "storage", status: "done" },
-];
+const DOMAINS = ["platform", "payments", "identity", "search"];
 
-const ESCALATIONS: Record<NodeId, OrgNode["escalations"]> = {
-  identity: [
+const MODULES = ["api", "worker", "storage"];
+
+const SESSION_TOKENS: Escalation = {
+  id: "session-tokens",
+  kind: "design_decision",
+  title: "Session tokens: signed JWTs or opaque server-side sessions?",
+  detail: "The api and worker teams disagree.",
+  raised_at: "2026-11-10T09:12:00Z",
+  raised_by: "ic",
+  held_by: "identity",
+  asked_of: null,
+  asked_at: null,
+  handoffs: [],
+};
+
+const IDEMPOTENCY_COLLISION: Escalation = {
+  id: "idempotency-collision",
+  kind: "critical_issue",
+  title: "Idempotency keys collide across retries",
+  detail: "The fix needs a schema change outside this team's boundary.",
+  raised_at: "2026-11-11T16:40:00Z",
+  raised_by: "manager",
+  held_by: null,
+  asked_of: null,
+  asked_at: null,
+  handoffs: [
     {
-      id: "session-tokens",
-      kind: "design_decision",
-      title: "Session tokens: signed JWTs or opaque server-side sessions?",
-      detail: "The api and worker teams disagree.",
-      raised_at: "2026-11-10T09:12:00Z",
-      raised_by: "ic",
-      held_by: ROOT_ID,
-      asked_of: null,
-      asked_at: null,
-      handoffs: [],
+      node_id: "payments",
+      reason: "The schema is shared with the identity domain.",
+      at: "2026-11-11T17:05:00Z",
     },
-  ],
-  "payments.worker": [
     {
-      id: "idempotency-collision",
-      kind: "critical_issue",
-      title: "Idempotency keys collide across retries",
-      detail: "The fix needs a schema change outside this team's boundary.",
-      raised_at: "2026-11-11T16:40:00Z",
-      raised_by: "manager",
-      held_by: null,
-      asked_of: null,
-      asked_at: null,
-      handoffs: [
-        {
-          node_id: "payments",
-          reason: "The schema is shared with the identity domain.",
-          at: "2026-11-11T17:05:00Z",
-        },
-        {
-          node_id: ROOT_ID,
-          reason: "Changing it means downtime only a human can schedule.",
-          at: "2026-11-11T17:30:00Z",
-        },
-      ],
+      node_id: ROOT_ID,
+      reason: "Changing it means downtime only a human can schedule.",
+      at: "2026-11-11T17:30:00Z",
     },
   ],
 };
 
-function waitingOnHuman(id: NodeId) {
-  return (ESCALATIONS[id] ?? []).filter(
-    (escalation) => escalation.held_by === null,
-  ).length;
+function waitingOnHuman(escalations: Escalation[]) {
+  return escalations.filter((escalation) => escalation.held_by === null).length;
 }
 
 function zeroCounts(): StatusCounts {
@@ -208,101 +204,197 @@ const MOCK_REVIEW: Review = {
   at: "2026-11-12T10:00:00+00:00",
 };
 
-function buildMockTree() {
-  const nodes = new Map<NodeId, OrgNode>();
-  const moduleCounts = zeroCounts();
-  MODULES.forEach(({ status }) => {
-    moduleCounts[status] += 1;
-  });
-
-  const rootCounts = zeroCounts();
-  DOMAINS.forEach((domain) => {
-    const path = `services/${domain.name}`;
-    rootCounts[domain.status] += 1;
-    MODULES.forEach((module) => {
-      rootCounts[module.status] += 1;
-      const id = `${domain.name}.${module.name}`;
-      nodes.set(id, {
-        id,
-        parent_id: domain.name,
-        child_ids: [],
-        title: `${domain.name}/${module.name}`,
-        boundary: {
-          path: `${path}/${module.name}`,
-          writable: [`${path}/${module.name}/**`],
-          readonly: [`${path}/contracts/**`],
-        },
-        isolation: "shared",
-        worktree_path: `.worktrees/${domain.name}`,
-        branch: `agents/${domain.name}`,
-        agents: POD,
-        status: module.status,
-        headline: `Building ${module.name} for ${domain.name}.`,
-        spec_summary: `Implements ${module.name} for ${domain.name}.`,
-        escalations: ESCALATIONS[id] ?? [],
-        pending_split: null,
-        review: module.status === "done" ? MOCK_REVIEW : null,
-        waiting_to_start: false,
-        old_specs: [],
-        descendant_counts: zeroCounts(),
-        escalation_count: waitingOnHuman(id),
-      });
-    });
-    const own = ESCALATIONS[domain.name] ?? [];
-    const below = MODULES.reduce(
-      (sum, module) => sum + waitingOnHuman(`${domain.name}.${module.name}`),
-      0,
-    );
-    nodes.set(domain.name, {
-      id: domain.name,
-      parent_id: ROOT_ID,
-      child_ids: MODULES.map((module) => `${domain.name}.${module.name}`),
-      title: `${domain.name} domain`,
-      boundary: { path, writable: [`${path}/*.md`], readonly: [] },
-      isolation: "worktree",
-      worktree_path: `.worktrees/${domain.name}`,
-      branch: `agents/${domain.name}`,
-      agents: POD,
-      status: domain.status,
-      headline: `Keeps the ${domain.name} services working together.`,
-      spec_summary: `Interface contracts between the ${domain.name} services.`,
-      escalations: own,
-      pending_split: null,
-      review: null,
-      waiting_to_start: false,
-      old_specs: [],
-      descendant_counts: { ...moduleCounts },
-      escalation_count: waitingOnHuman(domain.name) + below,
-    });
-  });
-  nodes.set(ROOT_ID, {
-    id: ROOT_ID,
-    parent_id: null,
-    child_ids: DOMAINS.map((domain) => domain.name),
-    title: "Root organization",
-    boundary: { path: "", writable: [], readonly: ["**"] },
-    isolation: "worktree",
+/** A team of the org: where it is and what it owns. Nobody works at it. */
+function referenceTeam(
+  id: NodeId,
+  parentId: NodeId | null,
+  childIds: NodeId[],
+  given: Pick<OrgNode, "title" | "boundary" | "isolation" | "spec_summary"> &
+    Partial<Pick<OrgNode, "worktree_path" | "branch">>,
+): OrgNode {
+  return {
+    id,
+    parent_id: parentId,
+    child_ids: childIds,
     worktree_path: ".",
     branch: "main",
-    agents: POD,
-    status: "working",
-    headline: "Plans the release across every domain.",
-    spec_summary: "Owns cross-domain contracts and the release plan.",
+    ...given,
+    agents: [],
+    status: "idle",
     escalations: [],
     pending_split: null,
     review: null,
     waiting_to_start: false,
     old_specs: [],
-    descendant_counts: rootCounts,
-    escalation_count: Object.keys(ESCALATIONS).reduce(
-      (sum, id) => sum + waitingOnHuman(id),
-      0,
-    ),
+    descendant_counts: zeroCounts(),
+    escalation_count: 0,
+  };
+}
+
+function buildMockTree() {
+  const nodes = new Map<NodeId, OrgNode>();
+  nodes.set(
+    ROOT_ID,
+    referenceTeam(ROOT_ID, null, DOMAINS, {
+      title: "Root organization",
+      boundary: { path: "", writable: [], readonly: ["**"] },
+      isolation: "worktree",
+      spec_summary: "Owns cross-domain contracts and the release plan.",
+    }),
+  );
+  DOMAINS.forEach((domain) => {
+    const path = `services/${domain}`;
+    nodes.set(
+      domain,
+      referenceTeam(
+        domain,
+        ROOT_ID,
+        MODULES.map((module) => `${domain}.${module}`),
+        {
+          title: `${domain} domain`,
+          boundary: { path, writable: [`${path}/*.md`], readonly: [] },
+          isolation: "worktree",
+          worktree_path: `.worktrees/${domain}`,
+          branch: `agents/${domain}`,
+          spec_summary: `Interface contracts between the ${domain} services.`,
+        },
+      ),
+    );
+    MODULES.forEach((module) => {
+      const id = `${domain}.${module}`;
+      nodes.set(
+        id,
+        referenceTeam(id, domain, [], {
+          title: `${domain}/${module}`,
+          boundary: {
+            path: `${path}/${module}`,
+            writable: [`${path}/${module}/**`],
+            readonly: [`${path}/contracts/**`],
+          },
+          isolation: "shared",
+          worktree_path: `.worktrees/${domain}`,
+          branch: `agents/${domain}`,
+          spec_summary: `Implements ${module} for ${domain}.`,
+        }),
+      );
+    });
   });
   return nodes;
 }
 
+/** A session before what it has at its teams is worked out. */
+interface MockSession {
+  id: string;
+  title: string;
+  team_id: NodeId;
+  request: string;
+  opened_at: string;
+  /** Sub-teams of it that wait for the Manager of the team above. */
+  waits?: OrgChange;
+  /** What it has at each team, the one it was opened at first. */
+  work: Array<
+    { team_id: NodeId; status: NodeStatus; headline: string } & Partial<
+      Pick<SessionTeam, "agents" | "escalations" | "review">
+    >
+  >;
+}
+
+function buildMockSessions(): MockSession[] {
+  return [
+    {
+      id: "release-24",
+      title: "Release 2.4",
+      team_id: ROOT_ID,
+      request: "Ship release 2.4 across every domain.",
+      opened_at: "2026-11-09T08:00:00Z",
+      work: [
+        {
+          team_id: ROOT_ID,
+          status: "working",
+          headline: "Plans the release across every domain.",
+        },
+        {
+          team_id: "platform",
+          status: "working",
+          headline: "Moves the platform services to the new deploy.",
+        },
+        {
+          team_id: "platform.api",
+          status: "working",
+          headline: "Building api for platform.",
+        },
+        {
+          team_id: "payments",
+          status: "blocked",
+          headline: "Keeps the payments services working together.",
+        },
+        {
+          team_id: "payments.api",
+          status: "working",
+          headline: "Building api for payments.",
+        },
+        {
+          team_id: "payments.worker",
+          status: "blocked",
+          headline: "Building worker for payments.",
+          escalations: [IDEMPOTENCY_COLLISION],
+        },
+        {
+          team_id: "payments.storage",
+          status: "done",
+          headline: "Building storage for payments.",
+          review: MOCK_REVIEW,
+        },
+        {
+          team_id: "search",
+          status: "done",
+          headline: "Rebuilds the search index for the release.",
+          review: { ...MOCK_REVIEW, state: "accepted" },
+        },
+      ],
+    },
+    {
+      id: "passkeys",
+      title: "Passkey sign-in",
+      team_id: "identity",
+      request: "Let users sign in with a passkey.",
+      opened_at: "2026-11-10T08:30:00Z",
+      waits: {
+        teams: [
+          {
+            team_id: "identity.worker",
+            title: "identity/worker",
+            session: "identity/passkeys, under identity",
+            org: "identity/worker, under identity.api",
+          },
+        ],
+      },
+      work: [
+        {
+          team_id: "identity",
+          status: "working",
+          headline: "Adds passkey sign-in.",
+        },
+        {
+          team_id: "identity.api",
+          status: "blocked",
+          headline: "Building api for identity.",
+          escalations: [SESSION_TOKENS],
+        },
+        {
+          team_id: "identity.worker",
+          status: "idle",
+          headline: "",
+          // Set up in the session and not given its task yet.
+          agents: [],
+        },
+      ],
+    },
+  ];
+}
+
 let tree = buildMockTree();
+let mockSessions = buildMockSessions();
 
 function ancestorsOf(node: OrgNode): OrgNode[] {
   const ancestors: OrgNode[] = [];
@@ -324,22 +416,97 @@ function reportsOf(nodeId: NodeId): OrgNode[] {
   );
 }
 
-/** What waits on the human anywhere in the tree, critical issues first. */
+const placeId = (teamId: NodeId, sessionId: string) => `${teamId}@${sessionId}`;
+
+/**
+ * The sessions as a client reads them: what each has at its teams, and
+ * last the place its work is reviewed from, which is the team above the
+ * one it was opened at, or that team itself at the top.
+ */
+function sessionsNow(): Session[] {
+  return mockSessions.flatMap((session) => {
+    const opened = tree.get(session.team_id);
+    if (!opened) return [];
+    const aboveId = opened.parent_id ?? opened.id;
+    const reviewId = `${placeId(aboveId, session.id)}@review`;
+    const here = new Set(session.work.map((work) => work.team_id));
+    const places = session.work.flatMap((work): SessionTeam[] => {
+      const team = tree.get(work.team_id);
+      if (!team) return [];
+      const escalations = work.escalations ?? [];
+      return [
+        {
+          ...team,
+          agents: POD,
+          ...work,
+          id: placeId(team.id, session.id),
+          parent_id:
+            team.id === session.team_id
+              ? reviewId
+              : placeId(team.parent_id ?? "", session.id),
+          child_ids: team.child_ids
+            .filter((id) => here.has(id))
+            .map((id) => placeId(id, session.id)),
+          escalations,
+          review: work.review ?? null,
+          escalation_count: waitingOnHuman(escalations),
+          session: session.id,
+          team_id: team.id,
+        },
+      ];
+    });
+    const above = tree.get(aboveId);
+    const [first] = places;
+    if (!above || !first) return [];
+    const reviewPlace: SessionTeam = {
+      ...above,
+      id: reviewId,
+      parent_id: null,
+      child_ids: [first.id],
+      agents: REVIEWER,
+      session: session.id,
+      team_id: aboveId,
+      review_only: true,
+      org_change: session.waits ?? null,
+    };
+    return [
+      {
+        id: session.id,
+        title: session.title,
+        team_id: session.team_id,
+        team: opened.title,
+        above_id: aboveId,
+        request: session.request,
+        opened_at: session.opened_at,
+        status: first.status,
+        review: first.review?.state ?? null,
+        conversation_id: null,
+        teams: [...places, reviewPlace],
+      },
+    ];
+  });
+}
+
+/** What waits on the human in any session, critical issues first. */
 function escalationsWaiting(): OpenEscalation[] {
-  return [...tree.values()]
-    .flatMap((node) =>
-      node.escalations
-        .filter((escalation) => escalation.held_by === null)
-        .map((escalation) => ({
-          node_id: node.id,
-          session_id: "",
-          session: "",
-          escalation,
-          path: [...ancestorsOf(node), node].map(({ id, title }) => ({
-            id,
-            title,
-          })),
-        })),
+  return sessionsNow()
+    .flatMap((session) =>
+      session.teams.flatMap((place) => {
+        const team = tree.get(place.team_id);
+        if (!team) return [];
+        return place.escalations
+          .filter((escalation) => escalation.held_by === null)
+          .map((escalation) => ({
+            node_id: team.id,
+            session_id: session.id,
+            session: session.title,
+            escalation,
+            path: [...ancestorsOf(team), team].map(({ id, title }) => ({
+              id,
+              title,
+            })),
+          }));
+      }),
     )
     .sort(
       (a, b) =>
@@ -364,17 +531,26 @@ function snapshot(focusId: NodeId, full: boolean): OrgEvent | null {
     focus_id: focusId,
     nodes: [...nodes.values()],
     escalations: escalationsWaiting(),
-    sessions: [],
+    sessions: sessionsNow(),
     paused: null,
     merging: false,
   };
 }
 
-/** The open streams, which hear about an answered escalation. */
+/** The open streams, which hear about what changes in a session. */
 const subscribers = new Set<(event: OrgEvent) => void>();
 
 export function resetDirectorMockData() {
   tree = buildMockTree();
+  mockSessions = buildMockSessions();
+}
+
+/** Tell the open streams what the sessions are now, and what waits. */
+function announceSessions() {
+  subscribers.forEach((tell) => {
+    tell({ type: "sessions", sessions: sessionsNow() });
+    tell({ type: "escalations", escalations: escalationsWaiting() });
+  });
 }
 
 /** The team that owns the nearest folder at or above `path`. */
@@ -392,32 +568,6 @@ function frame(event: OrgEvent) {
   );
 }
 
-/** Settle an escalation that waits on the human, as an answer does. */
-function settle(node: OrgNode, escalationId: string): OrgNode {
-  const settled: OrgNode = {
-    ...node,
-    escalations: node.escalations.filter(({ id }) => id !== escalationId),
-    escalation_count: node.escalation_count - 1,
-  };
-  tree.set(node.id, settled);
-  const changed = [settled];
-  ancestorsOf(node).forEach((ancestor) => {
-    const updated = {
-      ...ancestor,
-      escalation_count: ancestor.escalation_count - 1,
-    };
-    tree.set(ancestor.id, updated);
-    changed.push(updated);
-  });
-  subscribers.forEach((tell) => {
-    changed.forEach((changedNode) =>
-      tell({ type: "node_upsert", node: changedNode }),
-    );
-    tell({ type: "escalations", escalations: escalationsWaiting() });
-  });
-  return settled;
-}
-
 function notFound(id: string) {
   return HttpResponse.json({ detail: `Unknown node: ${id}` }, { status: 404 });
 }
@@ -426,7 +576,6 @@ export const DIRECTOR_HANDLERS = [
   http.get(`${BASE}/org`, () => {
     const body: OrgSummary = {
       root_id: ROOT_ID,
-      top_conversation_id: null,
       node_count: tree.size,
       repo_path: "/workspace/project",
       directory: "",
@@ -465,7 +614,9 @@ export const DIRECTOR_HANDLERS = [
       );
     }
     const body: RoutedMessage = {
-      node_id: nearestTeam(payload.path ?? "").id,
+      node_id:
+        mockSessions.find((session) => session.id === payload.session_id)
+          ?.team_id ?? nearestTeam(payload.path ?? "").id,
       // The mock org's agents have no conversations.
       conversation_id: "",
       started_org: false,
@@ -477,12 +628,15 @@ export const DIRECTOR_HANDLERS = [
   }),
 
   http.post(
-    `${BASE}/org/nodes/:nodeId/escalations/:escalationId/answer`,
+    `${BASE}/org/sessions/:sessionId/teams/:nodeId/escalations/:escalationId/answer`,
     async ({ params, request }) => {
+      const sessionId = String(params.sessionId);
       const nodeId = String(params.nodeId);
       const escalationId = String(params.escalationId);
-      const node = tree.get(nodeId);
-      if (!node) return notFound(nodeId);
+      const work = mockSessions
+        .find((session) => session.id === sessionId)
+        ?.work.find((candidate) => candidate.team_id === nodeId);
+      if (!work) return notFound(placeId(nodeId, sessionId));
       const payload = (await request.json()) as { answer?: unknown } | null;
       if (typeof payload?.answer !== "string" || !payload.answer.trim()) {
         return HttpResponse.json(
@@ -490,7 +644,7 @@ export const DIRECTOR_HANDLERS = [
           { status: 422 },
         );
       }
-      const waiting = node.escalations.some(
+      const waiting = (work.escalations ?? []).some(
         ({ id, held_by: heldBy }) => id === escalationId && heldBy === null,
       );
       if (!waiting) {
@@ -499,9 +653,32 @@ export const DIRECTOR_HANDLERS = [
           { status: 409 },
         );
       }
-      return HttpResponse.json(settle(node, escalationId));
+      // An answer settles it, and the team works again.
+      work.escalations = (work.escalations ?? []).filter(
+        ({ id }) => id !== escalationId,
+      );
+      work.status = "working";
+      announceSessions();
+      return HttpResponse.json(
+        sessionsNow()
+          .find((session) => session.id === sessionId)
+          ?.teams.find((place) => place.id === placeId(nodeId, sessionId)),
+      );
     },
   ),
+
+  http.delete(`${BASE}/org/sessions/:sessionId`, ({ params }) => {
+    const sessionId = String(params.sessionId);
+    if (!mockSessions.some((session) => session.id === sessionId)) {
+      return HttpResponse.json(
+        { detail: `No session '${sessionId}' is open` },
+        { status: 404 },
+      );
+    }
+    mockSessions = mockSessions.filter((session) => session.id !== sessionId);
+    announceSessions();
+    return HttpResponse.json({}, { status: 202 });
+  }),
 
   http.get(`${BASE}/org/tree-stream`, ({ request }) => {
     const params = new URL(request.url).searchParams;

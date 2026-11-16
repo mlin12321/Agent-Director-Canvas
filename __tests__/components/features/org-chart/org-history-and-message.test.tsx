@@ -17,9 +17,7 @@ function team(id: string, title: string, path: string): OrgNode {
     isolation: "shared",
     worktree_path: "/work",
     branch: "",
-    agents: [
-      { role: "ic", conversation_id: "c", status: "idle", kind: "openhands" },
-    ],
+    agents: [],
     status: "idle",
     spec_summary: "",
     escalations: [],
@@ -162,81 +160,9 @@ describe("OrgHistoryPanel", () => {
 });
 
 describe("MessageToTeam", () => {
-  it("sends what is written from the team's directory and names who took it", async () => {
-    const sent: unknown[] = [];
-    server.use(
-      http.post("*/api/director/org/messages", async ({ request }) => {
-        sent.push(await request.json());
-        // The team's IC is lost here, so the team above took it.
-        return HttpResponse.json({
-          node_id: "root",
-          conversation_id: "c",
-          started_org: false,
-          team: "",
-          chosen_by: "path",
-          reason: "",
-        });
-      }),
-    );
-    const user = userEvent.setup();
-    renderWithProviders(<MessageToTeam node={API} nodes={NODES} />);
-    const box = screen.getByLabelText("ORG_CHART$MESSAGE_LABEL");
-    const send = screen.getByRole("button", { name: "ORG_CHART$MESSAGE_SEND" });
-
-    expect(send).toBeDisabled();
-    await user.type(box, "  Use the new price list.  ");
-    await user.click(send);
-
-    await waitFor(() =>
-      expect(sent).toEqual([
-        { text: "Use the new price list.", path: "services/api", auto: false },
-      ]),
-    );
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "ORG_CHART$MESSAGE_SENT",
-    );
-    expect(box).toHaveValue("");
-  });
-
-  it("lets the director choose the team for what is written to the top team", async () => {
-    const sent: unknown[] = [];
-    server.use(
-      http.post("*/api/director/org/messages", async ({ request }) => {
-        sent.push(await request.json());
-        return HttpResponse.json({
-          node_id: API.id,
-          team: API.title,
-          conversation_id: "c",
-          started_org: false,
-          chosen_by: "model",
-          reason: "It is about the price list.",
-        });
-      }),
-    );
-    const user = userEvent.setup();
-    renderWithProviders(<MessageToTeam node={ROOT} nodes={NODES} />);
-
-    await user.type(
-      screen.getByLabelText("ORG_CHART$MESSAGE_LABEL"),
-      "Use the new price list.",
-    );
-    await user.click(
-      screen.getByRole("button", { name: "ORG_CHART$MESSAGE_SEND" }),
-    );
-
-    await waitFor(() =>
-      expect(sent).toEqual([
-        { text: "Use the new price list.", path: "", auto: true },
-      ]),
-    );
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "ORG_CHART$MESSAGE_SENT (It is about the price list.)",
-    );
-  });
-
   it("keeps what was written and says why when the server refuses it", async () => {
     server.use(
-      http.post("*/api/director/org/messages", () =>
+      http.post("*/api/director/org/sessions", () =>
         HttpResponse.json(
           { detail: "No team here can take a message." },
           { status: 409 },
@@ -244,7 +170,7 @@ describe("MessageToTeam", () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<MessageToTeam node={API} nodes={NODES} />);
+    renderWithProviders(<MessageToTeam node={API} />);
     const box = screen.getByLabelText("ORG_CHART$MESSAGE_LABEL");
 
     await user.type(box, "Hello");

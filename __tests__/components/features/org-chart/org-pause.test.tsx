@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import type {
+  AgentRef,
   DirectorSettingsState,
   OrgNode,
   Recovery,
@@ -12,9 +13,11 @@ import {
   PauseButton,
   PausedBanner,
 } from "#/components/features/org-chart/org-pause";
+import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
+import { atWork } from "./session-fixtures";
 
 const HELD: Recovery = {
   paused: "crash",
@@ -154,20 +157,7 @@ describe("a team whose agent was paused while working", () => {
     isolation: "shared",
     worktree_path: "/repo",
     branch: "main",
-    agents: [
-      {
-        role: "ic",
-        conversation_id: "c1",
-        status: "paused",
-        kind: "openhands",
-      },
-      {
-        role: "manager",
-        conversation_id: "c2",
-        status: "idle",
-        kind: "openhands",
-      },
-    ],
+    agents: [],
     status: "idle",
     headline: "Serves the checkout API",
     spec_summary: "",
@@ -181,10 +171,27 @@ describe("a team whose agent was paused while working", () => {
     escalation_count: 0,
   };
 
-  it("is marked on its card", () => {
-    renderWithProviders(
-      <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />,
+  // The agents are a session's: nobody works at a team itself.
+  const AGENTS: AgentRef[] = [
+    { role: "ic", conversation_id: "c1", status: "paused", kind: "openhands" },
+    {
+      role: "manager",
+      conversation_id: "c2",
+      status: "idle",
+      kind: "openhands",
+    },
+  ];
+
+  function cardWith(agents: AgentRef[]) {
+    return renderWithProviders(
+      <OrgSessionsContext.Provider value={atWork(NODE, { agents })}>
+        <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />
+      </OrgSessionsContext.Provider>,
     );
+  }
+
+  it("is marked on its card", () => {
+    cardWith(AGENTS);
 
     expect(
       screen.getByRole("img", { name: "ORG_CHART$AGENT_PAUSED" }),
@@ -192,13 +199,7 @@ describe("a team whose agent was paused while working", () => {
   });
 
   it("is not marked once its agent runs again", () => {
-    const running = {
-      ...NODE,
-      agents: NODE.agents.map((agent) => ({ ...agent, status: "working" })),
-    };
-    renderWithProviders(
-      <NodeCard node={running} current={false} onOpenDetails={() => {}} />,
-    );
+    cardWith(AGENTS.map((agent) => ({ ...agent, status: "working" })));
 
     expect(
       screen.queryByRole("img", { name: "ORG_CHART$AGENT_PAUSED" }),
@@ -219,6 +220,7 @@ describe("the setting to resume on start", () => {
     manager_check_accepted_reviews: 5,
     manager_check_ic_setbacks: 3,
     route_requests: true,
+    session_worktrees: true,
   };
 
   function settings(state: DirectorSettingsState) {

@@ -33,14 +33,12 @@ function EscalationCard({ item }: { item: OpenEscalation }) {
     meta: { disableToast: true },
     // One a team raised in a session is answered to the session's IC.
     mutationFn: (text: string): Promise<unknown> =>
-      item.session_id
-        ? DirectorClient.answerSessionEscalation(
-            item.session_id,
-            item.node_id,
-            escalation.id,
-            text,
-          )
-        : DirectorClient.answerEscalation(item.node_id, escalation.id, text),
+      DirectorClient.answerSessionEscalation(
+        item.session_id,
+        item.node_id,
+        escalation.id,
+        text,
+      ),
   });
   const text = draft.trim();
 

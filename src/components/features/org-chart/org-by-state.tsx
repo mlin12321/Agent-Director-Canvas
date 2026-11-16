@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import type { NodeId, OrgNode } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
 import { NodeCard } from "./node-card";
+import { teamAtWork } from "./node-conversations";
+import { OrgSessionsContext } from "./org-sessions";
 
 /** Where a team stands, as one of the board's columns. */
 export type TeamState =
@@ -36,8 +38,9 @@ export const TEAM_STATES: ReadonlyArray<{ state: TeamState; label: I18nKey }> =
  * it has submitted its work. A block comes first, then a review that waits
  * for its reviewer, so a team that submitted is "in review" until it is
  * accepted; a team sent back to change its work stays under "changes
- * requested" until it submits again. A team without agents was set up and
- * has not been given its task.
+ * requested" until it submits again. A team no session has agents at has
+ * not been given a task. Nobody works at a team itself: the team is given
+ * with what the sessions do there (`teamAtWork`).
  */
 export function teamStateOf(node: OrgNode): TeamState {
   if (node.status === "blocked") return "blocked";
@@ -68,15 +71,16 @@ export function OrgByState({
   onOpenDetails,
 }: OrgByStateProps) {
   const { t } = useTranslation("openhands");
+  const sessions = React.useContext(OrgSessionsContext);
   const columns = React.useMemo(() => {
     const byState = new Map<TeamState, OrgNode[]>(
       TEAM_STATES.map(({ state }) => [state, []]),
     );
     for (const node of nodes.values()) {
-      byState.get(teamStateOf(node))?.push(node);
+      byState.get(teamStateOf(teamAtWork(node, sessions)))?.push(node);
     }
     return byState;
-  }, [nodes]);
+  }, [nodes, sessions]);
 
   return (
     <div data-testid="org-by-state" className="flex h-full min-w-max gap-2 p-2">

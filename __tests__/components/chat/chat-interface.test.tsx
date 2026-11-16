@@ -926,21 +926,25 @@ describe("ChatInterface - Pending message queue", () => {
     expect(messages[1]).toHaveTextContent("second");
   });
 
-  /** An org whose top IC runs as ``topConversation``. */
+  /** An org with one session, whose first IC runs as ``topConversation``. */
   function director(topConversation: string, wentTo: string) {
     const sent: unknown[] = [];
     server.use(
       http.get("*/api/director/org", () =>
-        HttpResponse.json({
-          root_id: "root",
-          top_conversation_id: topConversation,
-          fixture: false,
-        }),
+        HttpResponse.json({ root_id: "root", fixture: false }),
+      ),
+      http.get("*/api/director/org/sessions", () =>
+        HttpResponse.json([
+          { id: "s1a2b3c", team_id: "root", conversation_id: topConversation },
+        ]),
       ),
       http.post("*/api/director/org/messages", async ({ request }) => {
         sent.push(await request.json());
         return HttpResponse.json({
-          node_id: wentTo === "test-conversation-id" ? "root" : "services.api",
+          node_id:
+            wentTo === "test-conversation-id"
+              ? "root@s1a2b3c"
+              : "services.api@s1a2b3c",
           team: wentTo === "test-conversation-id" ? "Shop" : "API",
           conversation_id: wentTo,
           started_org: false,
@@ -952,7 +956,7 @@ describe("ChatInterface - Pending message queue", () => {
     return sent;
   }
 
-  it("sends what is written to the top IC through the org and says which team took it", async () => {
+  it("sends what is written to a session's first IC through its session and says which team took it", async () => {
     const sent = director("test-conversation-id", "conv-api");
 
     renderInterface();
@@ -966,7 +970,7 @@ describe("ChatInterface - Pending message queue", () => {
       "href",
       "/org/services.api",
     );
-    expect(sent).toEqual([{ text: "Add refunds", path: "", auto: true }]);
+    expect(sent).toEqual([{ text: "Add refunds", session_id: "s1a2b3c" }]);
     // The server delivered it; it is not sent to this conversation as well.
     expect(mockSend).not.toHaveBeenCalled();
     expect(screen.getByTestId("user-message")).not.toHaveAttribute(
@@ -974,7 +978,7 @@ describe("ChatInterface - Pending message queue", () => {
     );
   });
 
-  it("leaves a message the top IC keeps to arrive by its echo", async () => {
+  it("leaves a message the session's first IC keeps to arrive by its echo", async () => {
     const sent = director("test-conversation-id", "test-conversation-id");
 
     renderInterface();
@@ -989,7 +993,7 @@ describe("ChatInterface - Pending message queue", () => {
     );
   });
 
-  it("sends to the conversation itself when it is not the top IC's", async () => {
+  it("sends to the conversation itself when no session was opened with it", async () => {
     const sent = director("another-conversation", "conv-api");
     mockSend.mockResolvedValue({ queued: false });
 

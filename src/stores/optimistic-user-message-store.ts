@@ -5,12 +5,13 @@ import { matchesPendingConversationId } from "#/utils/pending-task-message-link"
 import type { BaseEvent } from "#/types/agent-server/core/base/event";
 
 /**
- * "routed": the org's director sent it straight to a team below the one
- * whose conversation it was written in, so no echo of it comes here.
+ * "routed": the org's director sent it straight to a team of the session
+ * below the one whose conversation it was written in, so no echo of it
+ * comes here.
  */
 export type PendingUserMessageStatus = "sending" | "error" | "routed";
 
-/** The team a message written to the org as a whole went to. */
+/** The team of a session a message written in it went to. */
 export interface RoutedTo {
   nodeId: string;
   team: string;

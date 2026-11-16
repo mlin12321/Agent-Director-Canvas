@@ -8,16 +8,19 @@ import type {
   NodeMemory,
   OrgNode,
   Review,
+  SessionTeam,
   Thread,
 } from "#/api/director/types";
 import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-inspector-drawer";
 import { NodeCard } from "#/components/features/org-chart/node-card";
 import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
+import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { ProposedTeams } from "#/components/features/org-chart/proposed-teams";
 import { ReviewSummary } from "#/components/features/org-chart/review-summary";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
+import { atWork } from "./session-fixtures";
 
 const STATE: DirectorSettingsState = {
   max_teams: 32,
@@ -31,6 +34,7 @@ const STATE: DirectorSettingsState = {
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
+  session_worktrees: true,
 };
 
 function settingsHandlers(state: DirectorSettingsState) {
@@ -80,6 +84,7 @@ const IC = {
   acp_server: null,
 };
 
+// A team of the org: nobody works at it itself.
 const NODE = {
   id: "shop",
   parent_id: "root",
@@ -88,7 +93,7 @@ const NODE = {
   isolation: "shared",
   worktree_path: ".",
   branch: "agents/shop",
-  agents: [IC, { ...IC, role: "manager" as const }],
+  agents: [],
   status: "idle",
   spec_summary: "",
   escalations: [],
@@ -96,6 +101,17 @@ const NODE = {
   pending_split: null,
   child_ids: [],
 } as unknown as OrgNode;
+
+const POD = [IC, { ...IC, role: "manager" as const }];
+
+/** The team beside a session that has `work` at it. */
+function atTeam(work: Partial<SessionTeam>, children: React.ReactNode) {
+  return (
+    <OrgSessionsContext.Provider value={atWork(NODE, { agents: POD, ...work })}>
+      {children}
+    </OrgSessionsContext.Provider>
+  );
+}
 
 const STOPPED = {
   at: "2026-11-14T10:00:00+00:00",
@@ -194,18 +210,13 @@ describe("the checks in the settings", () => {
 
 describe("a stopped team", () => {
   it("is marked on its card only while it is stopped", () => {
-    const { rerender } = renderWithProviders(
-      <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />,
+    const shopCard = (
+      <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />
     );
+    const { rerender } = renderWithProviders(atTeam({}, shopCard));
     expect(screen.queryByRole("img", { name: "ORG_CHART$STOPPED" })).toBeNull();
 
-    rerender(
-      <NodeCard
-        node={{ ...NODE, status: "blocked", stopped: STOPPED }}
-        current={false}
-        onOpenDetails={() => {}}
-      />,
-    );
+    rerender(atTeam({ status: "blocked", stopped: STOPPED }, shopCard));
 
     expect(
       screen.getByRole("img", { name: "ORG_CHART$STOPPED" }),
@@ -214,55 +225,43 @@ describe("a stopped team", () => {
 
   it("says so, and why, in its hover card and its details", () => {
     memoryHandlers();
-    const stopped = { ...NODE, status: "blocked" as const, stopped: STOPPED };
-    const { unmount } = renderWithProviders(<NodeHoverCard node={stopped} />);
+    const stopped = { status: "blocked" as const, stopped: STOPPED };
+    const { unmount } = renderWithProviders(
+      atTeam(stopped, <NodeHoverCard node={NODE} />),
+    );
 
     expect(screen.getByText("ORG_CHART$STOPPED")).toBeInTheDocument();
     expect(screen.getByText("ORG_CHART$STOPPED_REASON")).toBeInTheDocument();
     unmount();
 
     renderWithProviders(
-      <AgentInspectorDrawer node={stopped} onClose={() => {}} />,
+      atTeam(stopped, <AgentInspectorDrawer node={NODE} onClose={() => {}} />),
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "ORG_CHART$STOPPED_REASON",
-    );
+    // Said of the session that is stopped here.
+    expect(
+      within(screen.getByTestId("org-session-work-s1")).getByRole("status"),
+    ).toHaveTextContent("ORG_CHART$STOPPED_REASON");
   });
 });
 
 describe("a Manager that has not been written to", () => {
-  it("is said to be not started in the hover card and the details", () => {
-    memoryHandlers();
-    const team = { ...NODE, agents: [IC] };
-    const { unmount } = renderWithProviders(<NodeHoverCard node={team} />);
+  it("is said to be not started in the hover card", () => {
+    renderWithProviders(
+      atTeam({ agents: [IC] }, <NodeHoverCard node={NODE} />),
+    );
 
     expect(
       screen.getByText(
         "ORG_CHART$ROLE_IC (idle), ORG_CHART$MANAGER_NOT_STARTED",
       ),
     ).toBeInTheDocument();
-    unmount();
-
-    renderWithProviders(
-      <AgentInspectorDrawer node={team} onClose={() => {}} />,
-    );
-
-    const agents = screen.getByRole("group", { name: "ORG_CHART$AGENTS" });
-    expect(
-      within(agents).getByText("ORG_CHART$MANAGER_NOT_STARTED"),
-    ).toBeInTheDocument();
-    // It is not an agent to open.
-    expect(
-      within(agents).queryByRole("button", {
-        name: /ORG_CHART\$MANAGER_NOT_STARTED/,
-      }),
-    ).toBeNull();
   });
 
   it("is not mentioned for a team that has its Manager", () => {
-    renderWithProviders(<NodeHoverCard node={NODE} />);
+    renderWithProviders(atTeam({}, <NodeHoverCard node={NODE} />));
 
+    expect(screen.getByText(/ORG_CHART\$ROLE_MANAGER/)).toBeInTheDocument();
     expect(screen.queryByText(/ORG_CHART\$MANAGER_NOT_STARTED/)).toBeNull();
   });
 });
@@ -275,9 +274,8 @@ describe("proposed sub-teams", () => {
       ["shop.api", { ...NODE, id: "shop.api", title: "API" }],
     ]);
     renderWithProviders(
-      <AgentInspectorDrawer
-        node={{
-          ...NODE,
+      atTeam(
+        {
           pending_split: {
             children: [
               {
@@ -295,10 +293,9 @@ describe("proposed sub-teams", () => {
             replaces: ["shop.api"],
             proposed_at: "2026-11-14T10:00:00+00:00",
           },
-        }}
-        nodes={nodes}
-        onClose={() => {}}
-      />,
+        },
+        <AgentInspectorDrawer node={NODE} nodes={nodes} onClose={() => {}} />,
+      ),
     );
 
     const proposal = screen.getByRole("region", {
@@ -356,20 +353,22 @@ describe("proposed sub-teams", () => {
   it("say nothing of kept or replaced teams for a first proposal", () => {
     memoryHandlers();
     renderWithProviders(
-      <AgentInspectorDrawer
-        node={{
-          ...NODE,
+      atTeam(
+        {
           pending_split: {
             children: [],
             contracts: "",
             status: "proposed",
             proposed_at: "2026-11-14T10:00:00+00:00",
           },
-        }}
-        onClose={() => {}}
-      />,
+        },
+        <AgentInspectorDrawer node={NODE} onClose={() => {}} />,
+      ),
     );
 
+    expect(
+      screen.getByRole("region", { name: "ORG_CHART$SPLIT_PROPOSED" }),
+    ).toBeInTheDocument();
     expect(screen.queryByText("ORG_CHART$SPLIT_KEEPS")).toBeNull();
     expect(screen.queryByText("ORG_CHART$SPLIT_REPLACES")).toBeNull();
   });

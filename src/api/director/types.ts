@@ -295,6 +295,8 @@ export interface DirectorSettings {
    * another team, may go straight to the team the director chooses.
    */
   route_requests: boolean;
+  /** Whether a session works in a git worktree of its own. */
+  session_worktrees: boolean;
 }
 
 /** The settings, beside what the org has now. */
@@ -321,11 +323,6 @@ export interface TeamMatch {
 export interface OrgSummary {
   /** `null` when no org has been started. */
   root_id: NodeId | null;
-  /**
-   * The conversation of the top team's IC; `null` when there is no org or
-   * that IC has no conversation here.
-   */
-  top_conversation_id: string | null;
   node_count: number;
   /**
    * The directory the org works in. For a server started in a git submodule
@@ -402,6 +399,11 @@ export interface RouteMessageRequest {
    */
   auto?: boolean;
   /**
+   * The session the message continues, when it begins no new one: it goes to
+   * one of that session's own teams and `path` and `auto` are ignored.
+   */
+  session_id?: string;
+  /**
    * How to start the root team's IC when there is no org yet, as for a
    * normal conversation; the message then becomes the org's task and every
    * other agent is derived from this one.
@@ -430,6 +432,33 @@ export interface SessionTeam extends OrgNode {
   session: string;
   /** The team of the org. */
   team_id: NodeId;
+  /**
+   * Whether this is the place the session's work is reviewed from: the team
+   * above the one the session was opened at, whose IC only reviews here.
+   */
+  review_only?: boolean;
+  /**
+   * On the place a session is reviewed from: the sub-teams of the session
+   * that wait for this place's Manager, because the org made something else
+   * of them while the session worked. The session's code is merged all the
+   * same.
+   */
+  org_change?: OrgChange | null;
+}
+
+/** A team a session and the org each made something else of. */
+export interface OrgChangeTeam {
+  team_id: NodeId;
+  title: string;
+  /** What the session made of it, in words. */
+  session: string;
+  /** What the org has there now, in words. */
+  org: string;
+}
+
+/** Sub-teams of a session that wait to be settled before they are the org's. */
+export interface OrgChange {
+  teams: OrgChangeTeam[];
 }
 
 /**
@@ -541,7 +570,7 @@ export interface RoutedMessage {
 export interface OpenEscalation {
   /** The team of the org that raised it. */
   node_id: NodeId;
-  /** The session it was raised in and its title; empty for the org's own. */
+  /** The session it was raised in and its title. */
   session_id: string;
   session: string;
   escalation: Escalation;

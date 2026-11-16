@@ -5,8 +5,14 @@ import {
   OrgByState,
   teamStateOf,
 } from "#/components/features/org-chart/org-by-state";
+import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { renderWithProviders } from "test-utils";
+import { placeAt, sessionOf } from "./session-fixtures";
 
+/**
+ * A team with what goes on at it. Nobody works at a team itself: on the
+ * board the work is a session's, and the team is given without it.
+ */
 function team(
   id: string,
   status: NodeStatus,
@@ -47,13 +53,40 @@ function team(
 }
 
 function board(teams: OrgNode[], currentId = teams[0].id) {
+  const reference = teams.map((node): OrgNode => ({
+    ...node,
+    agents: [],
+    status: "idle",
+    review: null,
+    waiting_to_start: false,
+  }));
+  // One session, opened at the first team, has the work of every team
+  // that was given a task.
+  const session = sessionOf(
+    "s1",
+    "Work",
+    teams.flatMap((node, index) =>
+      node.agents.length > 0
+        ? [
+            placeAt(reference[index], "s1", {
+              agents: node.agents,
+              status: node.status,
+              review: node.review,
+              waiting_to_start: node.waiting_to_start,
+            }),
+          ]
+        : [],
+    ),
+  );
   return (
-    <OrgByState
-      nodes={new Map(teams.map((node) => [node.id, node]))}
-      currentId={currentId}
-      collidingIds={new Set()}
-      onOpenDetails={() => {}}
-    />
+    <OrgSessionsContext.Provider value={[session]}>
+      <OrgByState
+        nodes={new Map(reference.map((node) => [node.id, node]))}
+        currentId={currentId}
+        collidingIds={new Set()}
+        onOpenDetails={() => {}}
+      />
+    </OrgSessionsContext.Provider>
   );
 }
 

@@ -30,7 +30,6 @@ import type {
   OrgSummary,
   OrgSync,
   Review,
-  SplitProposal,
   Thread,
 } from "#/api/director/types";
 import { subscribeOrgTree } from "#/api/director/director-client";
@@ -40,7 +39,7 @@ import { server } from "#/mocks/node";
 import { useOpenFolderRequestStore } from "#/stores/open-folder-request-store";
 import { useOrgChartStore } from "#/stores/org-chart-store";
 import { renderWithProviders } from "test-utils";
-import { OrgStore, type OrgNodeInput } from "./fake-org-store.mjs";
+import { OrgStore, type OrgNodeInput, type Work } from "./fake-org-store.mjs";
 
 // The real conversation UI needs a live agent server. What matters here is
 // that the inspector mounts it for the inspected agent.
@@ -60,14 +59,14 @@ const POD: AgentRef[] = [
   },
 ];
 
-function input(
-  id: string,
-  parentId: string | null,
-  status: NodeStatus,
-  path: string,
-  escalations: Escalation[] = [],
-  pendingSplit: SplitProposal | null = null,
-): OrgNodeInput {
+/** The session the org's work is done in: the one opened at the top. */
+const SESSION = "s1";
+
+/**
+ * A team of the org: where it is and what it owns. Nobody works at a team
+ * itself, so it has no agents and no state.
+ */
+function team(id: string, parentId: string | null, path: string): OrgNodeInput {
   return {
     id,
     parent_id: parentId,
@@ -76,15 +75,33 @@ function input(
     isolation: parentId === "auth" ? "shared" : "worktree",
     worktree_path: ".",
     branch: `agents/${id}`,
-    agents: POD,
-    status,
+    agents: [],
+    status: "idle",
     spec_summary: `Spec for ${id}`,
-    escalations,
-    pending_split: pendingSplit,
+    escalations: [],
+    pending_split: null,
     review: null,
     waiting_to_start: false,
     old_specs: [],
   };
+}
+
+/** A team of the org, with what the session has at it. */
+function put(
+  id: string,
+  parentId: string | null,
+  status: NodeStatus,
+  path: string,
+  escalations: Escalation[] = [],
+  work: Work = {},
+) {
+  store.upsert(team(id, parentId, path));
+  return store.place(SESSION, id, {
+    agents: POD,
+    status,
+    escalations,
+    ...work,
+  });
 }
 
 /** Still with the team above the one that raised it. */
@@ -205,15 +222,13 @@ beforeEach(() => {
   streams = [];
   streamRequests = [];
   store = new OrgStore();
-  store.upsert(input("root", null, "working", ""));
-  store.upsert(input("auth", "root", "working", "services/auth"));
-  store.upsert(
-    input("billing", "root", "blocked", "services/billing", [DOUBLE_CHARGE]),
-  );
-  store.upsert(input("search", "root", "working", "services/search"));
-  store.upsert(
-    input("oauth", "auth", "done", "services/auth/oauth", [TOKEN_DECISION]),
-  );
+  store.upsert(team("root", null, ""));
+  store.openSession({ id: SESSION, title: "Release", team_id: "root" });
+  put("root", null, "working", "");
+  put("auth", "root", "working", "services/auth");
+  put("billing", "root", "blocked", "services/billing", [DOUBLE_CHARGE]);
+  put("search", "root", "working", "services/search");
+  put("oauth", "auth", "done", "services/auth/oauth", [TOKEN_DECISION]);
   server.use(streamHandler());
 });
 
@@ -241,7 +256,7 @@ describe("subscribeOrgTree", () => {
     await waitFor(() => expect(events).toHaveLength(1));
 
     stop();
-    store.upsert(input("late", "root", "done", "services/late"));
+    put("late", "root", "done", "services/late");
     await new Promise((resolve) => {
       setTimeout(resolve, 1200);
     });
@@ -359,7 +374,7 @@ describe("OrgChartView", () => {
     });
 
     it("moves to a report when it is clicked", async () => {
-      store.upsert(input("a/b c", "root", "done", "services/odd"));
+      put("a/b c", "root", "done", "services/odd");
       renderWithProviders(<OrgChartView nodeId={null} />);
       await findCard("root");
 
@@ -455,8 +470,9 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId={null} />);
       await findCard("root");
 
+      // The top team's card names the session opened at it on the same line.
       const subTeams = (id: string) =>
-        within(card(id)).queryByText("ORG_CHART$SUB_TEAMS") !== null;
+        card(id).textContent?.includes("ORG_CHART$SUB_TEAMS") ?? false;
 
       expect([subTeams("root"), subTeams("auth"), subTeams("billing")]).toEqual(
         [true, true, false],
@@ -510,19 +526,17 @@ describe("OrgChartView", () => {
 
     it("shows on a team's card only the escalations that wait on the human", async () => {
       const user = userEvent.setup();
-      store.upsert(
-        input("billing", "root", "blocked", "services/billing", [
-          DOUBLE_CHARGE,
-          {
-            ...TOKEN_DECISION,
-            id: "ledger",
-            title: "Pick a ledger",
-            held_by: "root",
-            asked_of: null,
-            asked_at: null,
-          },
-        ]),
-      );
+      put("billing", "root", "blocked", "services/billing", [
+        DOUBLE_CHARGE,
+        {
+          ...TOKEN_DECISION,
+          id: "ledger",
+          title: "Pick a ledger",
+          held_by: "root",
+          asked_of: null,
+          asked_at: null,
+        },
+      ]);
       renderWithProviders(<OrgChartView nodeId={null} />);
       await findCard("billing");
 
@@ -540,8 +554,7 @@ describe("OrgChartView", () => {
     });
 
     it("says on each card, in a line, what the team is delivering", async () => {
-      store.upsert({
-        ...input("auth", "root", "working", "services/auth"),
+      put("auth", "root", "working", "services/auth", [], {
         headline: "Adds passkey sign-in.",
       });
       renderWithProviders(<OrgChartView nodeId={null} />);
@@ -595,7 +608,7 @@ describe("OrgChartView", () => {
         screen.getByRole("button", { name: "ORG_CHART$ZOOM_IN" }),
       ).toBeDisabled();
 
-      store.upsert(input("search", "root", "done", "services/search"));
+      put("search", "root", "done", "services/search");
 
       await waitFor(() => expect(column("done")).toEqual(["search", "oauth"]));
       expect(column("working")).toEqual(["root", "auth"]);
@@ -771,7 +784,6 @@ describe("OrgChartView", () => {
         http.get("*/api/director/org", () =>
           HttpResponse.json({
             root_id: "root",
-            top_conversation_id: null,
             node_count: 5,
             repo_path: "/work/shop",
             directory: "",
@@ -804,7 +816,7 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId={null} />);
       await findCard("root");
 
-      store.upsert(input("growth", "root", "idle", "services/growth"));
+      put("growth", "root", "idle", "services/growth");
       expect(await findCard("growth")).toBeInTheDocument();
 
       store.remove("billing");
@@ -818,10 +830,10 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId={null} />);
       await findCard("root");
 
-      store.upsert(input("saml", "auth", "working", "services/auth/saml"));
+      put("saml", "auth", "working", "services/auth/saml");
       await showWholeOrg(user);
       await findCard("saml");
-      store.upsert(input("device", "oauth", "done", "services/auth/oauth/d"));
+      put("device", "oauth", "done", "services/auth/oauth/d");
 
       expect(await findCard("device")).toBeInTheDocument();
       store.remove("oauth");
@@ -996,7 +1008,7 @@ describe("OrgChartView", () => {
       ).toBeInTheDocument();
     });
 
-    it("marks the teams above one that waits on the human, and not one a team still holds", async () => {
+    it("marks the team that waits on the human, and not one whose escalation a team still holds", async () => {
       renderWithProviders(<OrgChartView nodeId={null} />);
       await findCard("root");
 
@@ -1005,7 +1017,7 @@ describe("OrgChartView", () => {
         auth: badge("auth"),
         billing: badge("billing"),
         search: badge("search"),
-      }).toEqual({ root: "1", auth: null, billing: "1", search: null });
+      }).toEqual({ root: null, auth: null, billing: "1", search: null });
     });
 
     it("adds one the moment the last team above passes it up, and drops it once settled", async () => {
@@ -1020,29 +1032,25 @@ describe("OrgChartView", () => {
         asked_at: null,
         handoffs: [{ node_id: "auth", reason: "Affects billing too", at: "t" }],
       };
-      store.upsert(
-        input("oauth", "auth", "done", "services/auth/oauth", [passedOnce]),
-      );
+      put("oauth", "auth", "done", "services/auth/oauth", [passedOnce]);
       await new Promise((resolve) => {
         setTimeout(resolve, 100);
       });
       expect(within(escalations()).getAllByRole("listitem")).toHaveLength(1);
 
       // Root passes it up too: nobody is left but the human.
-      store.upsert(
-        input("oauth", "auth", "done", "services/auth/oauth", [
-          {
-            ...passedOnce,
-            held_by: null,
-            asked_of: null,
-            asked_at: null,
-            handoffs: [
-              ...passedOnce.handoffs,
-              { node_id: "root", reason: "A product call", at: "t" },
-            ],
-          },
-        ]),
-      );
+      put("oauth", "auth", "done", "services/auth/oauth", [
+        {
+          ...passedOnce,
+          held_by: null,
+          asked_of: null,
+          asked_at: null,
+          handoffs: [
+            ...passedOnce.handoffs,
+            { node_id: "root", reason: "A product call", at: "t" },
+          ],
+        },
+      ]);
 
       const added = (
         await within(escalations()).findByText("Pick a token format")
@@ -1060,10 +1068,7 @@ describe("OrgChartView", () => {
           "ORG_CHART$ESCALATION_ANSWER_TO_MANAGER",
         ),
       ).toBeInTheDocument();
-      await waitFor(() => expect(badge("auth")).toBe("1"));
-      expect(badge("root")).toBe("2");
-
-      store.upsert(input("billing", "root", "working", "services/billing"));
+      put("billing", "root", "working", "services/billing");
 
       await waitFor(() =>
         expect(
@@ -1074,7 +1079,7 @@ describe("OrgChartView", () => {
     });
 
     it("says so when nothing waits on the human", async () => {
-      store.upsert(input("billing", "root", "working", "services/billing"));
+      put("billing", "root", "working", "services/billing");
 
       renderWithProviders(<OrgChartView nodeId={null} />);
       await findCard("root");
@@ -1088,13 +1093,19 @@ describe("OrgChartView", () => {
 
   describe("answering an escalation", () => {
     function answerHandler(status = 200) {
-      const answers: Array<{ nodeId: string; id: string; answer: string }> = [];
+      const answers: Array<{
+        session: string;
+        nodeId: string;
+        id: string;
+        answer: string;
+      }> = [];
       server.use(
         http.post(
-          "*/api/director/org/nodes/:nodeId/escalations/:id/answer",
+          "*/api/director/org/sessions/:session/teams/:nodeId/escalations/:id/answer",
           async ({ params, request }) => {
             const { answer } = (await request.json()) as { answer: string };
             answers.push({
+              session: String(params.session),
               nodeId: String(params.nodeId),
               id: String(params.id),
               answer,
@@ -1103,9 +1114,7 @@ describe("OrgChartView", () => {
               return HttpResponse.json({ detail: "no" }, { status });
             }
             return HttpResponse.json(
-              store.upsert(
-                input("billing", "root", "working", "services/billing"),
-              ),
+              put("billing", "root", "working", "services/billing"),
             );
           },
         ),
@@ -1113,7 +1122,7 @@ describe("OrgChartView", () => {
       return answers;
     }
 
-    it("sends the answer for the team that raised it, and drops the entry once the server settles it", async () => {
+    it("sends the answer to the session of the team that raised it, and drops the entry once the server settles it", async () => {
       const answers = answerHandler();
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId={null} />);
@@ -1136,12 +1145,13 @@ describe("OrgChartView", () => {
       );
       expect(answers).toEqual([
         {
+          session: SESSION,
           nodeId: "billing",
           id: "double-charge",
           answer: "Refund both charges.",
         },
       ]);
-      expect(badge("root")).toBeNull();
+      expect(badge("billing")).toBeNull();
     });
 
     it("keeps the entry and the answer when the server refuses it", async () => {
@@ -1174,8 +1184,8 @@ describe("OrgChartView", () => {
 
   describe("a split that is not carried out yet", () => {
     it("shows where it stands and the sub-teams it proposes on the team's card", async () => {
-      store.upsert(
-        input("search", "root", "working", "services/search", [], {
+      put("search", "root", "working", "services/search", [], {
+        pending_split: {
           children: [
             {
               title: "indexer",
@@ -1198,8 +1208,8 @@ describe("OrgChartView", () => {
           status: "approved",
           replaces: ["auth"],
           proposed_at: "2026-11-12T00:00:00Z",
-        }),
-      );
+        },
+      });
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId={null} />);
       await findCard("search");
@@ -1221,7 +1231,6 @@ describe("OrgChartView", () => {
   describe("a director without an org", () => {
     const SUMMARY: OrgSummary = {
       root_id: null,
-      top_conversation_id: null,
       node_count: 0,
       repo_path: "/work/shop",
       directory: "",
@@ -1288,7 +1297,6 @@ describe("OrgChartView", () => {
         http.get("*/api/director/org", () =>
           HttpResponse.json({
             root_id: "root",
-            top_conversation_id: null,
             node_count: 5,
             repo_path: "/work/shop",
             directory: "",
@@ -1321,7 +1329,6 @@ describe("OrgChartView", () => {
           http.get("*/api/director/org", () =>
             HttpResponse.json({
               root_id: "root",
-              top_conversation_id: null,
               node_count: 5,
               repo_path: "/work/shop",
               directory: "",
@@ -1790,16 +1797,11 @@ describe("OrgChartView", () => {
     };
 
     it("puts no mark for a review on a card", async () => {
-      store.upsert({
-        ...input("auth", "root", "working", "services/auth"),
-        review: REVIEW,
-      });
-      store.upsert({
-        ...input("search", "root", "done", "services/search"),
+      put("auth", "root", "working", "services/auth", [], { review: REVIEW });
+      put("search", "root", "done", "services/search", [], {
         review: { ...REVIEW, state: "pending", round: 1 },
       });
-      store.upsert({
-        ...input("billing", "root", "done", "services/billing"),
+      put("billing", "root", "done", "services/billing", [], {
         review: { ...REVIEW, state: "accepted" },
       });
       renderWithProviders(<OrgChartView nodeId="root" />);
@@ -1816,10 +1818,7 @@ describe("OrgChartView", () => {
 
     it("says in the team's details where the review stands and what was found", async () => {
       memoryHandlers();
-      store.upsert({
-        ...input("auth", "root", "working", "services/auth"),
-        review: REVIEW,
-      });
+      put("auth", "root", "working", "services/auth", [], { review: REVIEW });
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("auth");
@@ -1845,8 +1844,7 @@ describe("OrgChartView", () => {
 
     it("says when the automated review found nothing, and when it did not run", async () => {
       memoryHandlers();
-      store.upsert({
-        ...input("auth", "root", "done", "services/auth"),
+      put("auth", "root", "done", "services/auth", [], {
         review: { ...REVIEW, state: "pending", round: 1, automated: [] },
       });
       const user = userEvent.setup();
@@ -1861,8 +1859,7 @@ describe("OrgChartView", () => {
       expect(review).not.toHaveTextContent("ORG_CHART$REVIEW_ROUND");
 
       act(() => {
-        store.upsert({
-          ...input("auth", "root", "done", "services/auth"),
+        put("auth", "root", "done", "services/auth", [], {
           review: {
             ...REVIEW,
             state: "pending",
@@ -1989,7 +1986,6 @@ describe("OrgChartView", () => {
         http.get("*/api/director/org", () =>
           HttpResponse.json({
             root_id: "root",
-            top_conversation_id: null,
             node_count: 5,
             repo_path: "/work/shop",
             directory: "",
@@ -2137,15 +2133,28 @@ describe("mock mode", () => {
     ).toBeInTheDocument();
     // One escalation has reached the human; the other is still with a team.
     expect(within(escalations()).getAllByRole("listitem")).toHaveLength(1);
+    // The work is that of the sessions: the one opened at the top team has
+    // a place here.
+    expect(
+      within(card("payments")).getByTestId("org-status-dots"),
+    ).toHaveAccessibleName("1 ORG_CHART$STATUS_BLOCKED");
 
     await showWholeOrg(user);
     await findCard("identity.api");
     expect(cardIds()).toHaveLength(17);
+    // The other session was opened at another domain.
+    expect(card("identity")).toHaveTextContent("ORG_CHART$SESSIONS_COUNT");
+    expect(card("payments")).not.toHaveTextContent("ORG_CHART$SESSIONS_COUNT");
 
     await user.click(currentCard());
 
     expect(
       await screen.findByText("Idempotency keys on every write."),
     ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("org-node-conversations")).getAllByRole(
+        "button",
+      )[0],
+    ).toHaveTextContent("ORG_CHART$ROLE_IC · Release 2.4");
   });
 });

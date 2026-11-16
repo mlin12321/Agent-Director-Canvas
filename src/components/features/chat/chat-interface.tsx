@@ -568,8 +568,9 @@ export function ChatInterface({
     setMessageToSend("");
 
     try {
-      // What is written to the top team's IC is for the org as a whole: its
-      // director may send it straight to the team it concerns. Attachments
+      // What is written to the IC a session was opened with goes on in that
+      // session: the director may send it straight to the team of the
+      // session it concerns. Attachments
       // travel with the conversation, so a message with any goes as it is.
       const routed =
         !isExplicitAgentChat && !imageUrls.length && !uploadedFiles.length
@@ -577,7 +578,8 @@ export function ChatInterface({
           : null;
       if (routed && routed.conversation_id !== conversationId) {
         markPendingMessageRouted(pendingId, {
-          nodeId: routed.node_id,
+          // The team's page, whichever session's team took it.
+          nodeId: routed.node_id.split("@")[0],
           team: routed.team || routed.node_id,
           reason: routed.reason,
         });

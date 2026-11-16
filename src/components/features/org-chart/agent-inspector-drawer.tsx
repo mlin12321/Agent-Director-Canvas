@@ -14,8 +14,8 @@ import { TeamRecord } from "./team-record";
 import { TeamReports } from "./team-reports";
 import { ReviewSummary } from "./review-summary";
 import { SpecAndContracts } from "./spec-and-contracts";
-import { StartAgain } from "./start-again";
-import { conversationsAt } from "./node-conversations";
+import { isLost, StartAgain } from "./start-again";
+import { conversationsAt, placesAt } from "./node-conversations";
 import { OrgSessionsContext } from "./org-sessions";
 import {
   ENFORCEMENT_LABEL_KEYS,
@@ -89,8 +89,18 @@ export function AgentInspectorDrawer({
     ) ?? null;
   const conversationId = open?.conversationId ?? null;
   const lost = conversations.some((candidate) => candidate.lost);
+  // Nobody works at a team itself: what is being done here is what each
+  // session has at it.
+  const places = placesAt(node.id, sessions).filter(
+    (place) => !place.review_only,
+  );
+  const titles = new Map(
+    sessions.map((session) => [session.id, session.title]),
+  );
+  // The changes are those of the session whose conversation is open.
+  const changed = open && !open.review ? open.place : (places[0] ?? null);
   const noneToOpen =
-    node.agents.length === 0
+    conversations.length === 0
       ? I18nKey.ORG_CHART$TEAM_NOT_STARTED_HELP
       : I18nKey.ORG_CHART$NO_CONVERSATION;
   const nothingOpenKey = conversations.some(
@@ -99,7 +109,11 @@ export function AgentInspectorDrawer({
     ? I18nKey.ORG_CHART$CONVERSATION_PICK
     : noneToOpen;
 
-  const held = node.boundary_enforcement ?? enforcement;
+  // How a team is held is known once an IC ran there, which is a session's.
+  const held =
+    node.boundary_enforcement ??
+    places.find((place) => place.boundary_enforcement)?.boundary_enforcement ??
+    enforcement;
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -140,18 +154,67 @@ export function AgentInspectorDrawer({
             })}
           </p>
         ) : null}
-        {node.stopped ? (
-          <p role="status" className="text-xs text-feedback-warning">
-            {t(I18nKey.ORG_CHART$STOPPED_REASON, {
-              reason: node.stopped.reason,
-            })}
-          </p>
-        ) : null}
-        <StartAgain node={node} />
-        {node.pending_split ? (
-          <ProposedTeams proposal={node.pending_split} nodes={nodes} />
-        ) : null}
-        {node.review ? <ReviewSummary review={node.review} /> : null}
+        {places.map((place) =>
+          place.stopped ||
+          place.pending_split ||
+          place.review ||
+          isLost(place) ? (
+            <section
+              key={place.id}
+              data-testid={`org-session-work-${place.session}`}
+              className="flex flex-col gap-2"
+            >
+              <h3 className="text-xs font-medium text-text-secondary">
+                {titles.get(place.session) ?? place.session}
+              </h3>
+              {place.stopped ? (
+                <p role="status" className="text-xs text-feedback-warning">
+                  {t(I18nKey.ORG_CHART$STOPPED_REASON, {
+                    reason: place.stopped.reason,
+                  })}
+                </p>
+              ) : null}
+              <StartAgain node={place} />
+              {place.pending_split ? (
+                <ProposedTeams proposal={place.pending_split} nodes={nodes} />
+              ) : null}
+              {place.review ? <ReviewSummary review={place.review} /> : null}
+            </section>
+          ) : null,
+        )}
+        {placesAt(node.id, sessions).map((place) =>
+          place.review_only && place.org_change?.teams.length ? (
+            <section
+              key={place.id}
+              data-testid={`org-change-${place.session}`}
+              className="flex flex-col gap-1"
+            >
+              <h3 className="text-xs font-medium text-text-secondary">
+                {titles.get(place.session) ?? place.session}
+              </h3>
+              <p role="status" className="text-xs text-feedback-warning">
+                {t(I18nKey.ORG_CHART$TEAMS_WAIT)}
+              </p>
+              <ul className="flex flex-col gap-1 text-xs">
+                {place.org_change.teams.map((team) => (
+                  <li key={team.team_id}>
+                    <span className="text-contrast">
+                      {team.title || team.team_id}
+                    </span>
+                    <span className="block text-muted">
+                      {t(I18nKey.ORG_CHART$TEAMS_WAIT_SESSION, {
+                        what: team.session,
+                      })}
+                    </span>
+                    <span className="block text-muted">
+                      {t(I18nKey.ORG_CHART$TEAMS_WAIT_ORG, { what: team.org })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null,
+        )}
         <SpecAndContracts node={node} />
         <TeamReports node={node} />
         <TeamRecord node={node} />
@@ -170,15 +233,17 @@ export function AgentInspectorDrawer({
           <h3 className="text-xs font-medium text-text-secondary">
             {t(I18nKey.ORG_CHART$CONVERSATIONS)}
           </h3>
-          <button
-            type="button"
-            data-testid="org-team-changes-tab"
-            aria-pressed={showsChanges}
-            onClick={() => setShowsChanges((shown) => !shown)}
-            className={cn(TAB_CLASS, showsChanges ? TAB_CHOSEN_CLASS : null)}
-          >
-            {t(I18nKey.ORG_CHART$CHANGES)}
-          </button>
+          {changed ? (
+            <button
+              type="button"
+              data-testid="org-team-changes-tab"
+              aria-pressed={showsChanges}
+              onClick={() => setShowsChanges((shown) => !shown)}
+              className={cn(TAB_CLASS, showsChanges ? TAB_CHOSEN_CLASS : null)}
+            >
+              {t(I18nKey.ORG_CHART$CHANGES)}
+            </button>
+          ) : null}
         </div>
         <ul
           data-testid="org-node-conversations"
@@ -210,8 +275,10 @@ export function AgentInspectorDrawer({
                   )}
                 >
                   <span className="min-w-0 flex-1 truncate">
-                    {t(ROLE_LABEL_KEYS[candidate.role])}
-                    {candidate.session ? ` · ${candidate.session}` : null}
+                    {candidate.review && candidate.role === "ic"
+                      ? t(I18nKey.ORG_CHART$REVIEWER)
+                      : t(ROLE_LABEL_KEYS[candidate.role])}
+                    {` · ${candidate.session}`}
                     {candidate.handOver
                       ? ` · ${t(I18nKey.ORG_CHART$HAND_OVER_MODE)}`
                       : null}
@@ -234,17 +301,10 @@ export function AgentInspectorDrawer({
               </li>
             );
           })}
-          {node.agents.length === 0 ? (
-            // A team starts when something is first sent to it.
+          {conversations.length === 0 ? (
+            // Work starts here when something is first sent to the team.
             <li className={cn(ROW_CLASS, "border-border text-muted")}>
               {t(I18nKey.ORG_CHART$TEAM_NOT_STARTED)}
-            </li>
-          ) : null}
-          {node.agents.length > 0 &&
-          !node.agents.some((candidate) => candidate.role === "manager") ? (
-            // A Manager starts when something is first written to it.
-            <li className={cn(ROW_CLASS, "border-border text-muted")}>
-              {t(I18nKey.ORG_CHART$MANAGER_NOT_STARTED)}
             </li>
           ) : null}
         </ul>
@@ -253,21 +313,21 @@ export function AgentInspectorDrawer({
             {t(I18nKey.ORG_CHART$HAND_OVER_LOST)}
           </p>
         ) : null}
-        {!open && !showsChanges ? (
+        {!open && !(showsChanges && changed) ? (
           <p className="p-3 text-center text-sm text-muted">
             {t(nothingOpenKey)}
           </p>
         ) : null}
       </div>
 
-      {showsChanges ? (
+      {showsChanges && changed ? (
         <div className="min-h-0 flex-1">
           <React.Suspense fallback={null}>
-            <TeamChanges key={node.id} node={node} />
+            <TeamChanges key={changed.id} node={changed} />
           </React.Suspense>
         </div>
       ) : null}
-      {!showsChanges && open && conversationId ? (
+      {!(showsChanges && changed) && open && conversationId ? (
         <>
           <p className="border-b border-border px-3 py-1.5 text-xs text-muted">
             {open.handOver

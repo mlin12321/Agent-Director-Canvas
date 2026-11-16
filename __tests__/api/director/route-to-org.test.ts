@@ -6,7 +6,6 @@ import { server } from "#/mocks/node";
 
 const SUMMARY: OrgSummary = {
   root_id: null,
-  top_conversation_id: null,
   node_count: 0,
   repo_path: "/work/shop",
   directory: "",

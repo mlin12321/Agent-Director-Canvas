@@ -1,7 +1,7 @@
 import React from "react";
 import { CircleStop, GitMerge, Pause, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { OrgNode } from "#/api/director/types";
+import type { NodeStatus, OrgNode } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { Tooltip } from "#/components/shared/tooltip";
 import { orgNodePath } from "#/constants/org-chart";
@@ -9,7 +9,11 @@ import { I18nKey } from "#/i18n/declaration";
 import { useOrgChartStore } from "#/stores/org-chart-store";
 import { cn } from "#/utils/utils";
 import { NodeHoverCard } from "./node-hover-card";
-import { useSessionsAt, useSessionStatusesAt } from "./org-sessions";
+import {
+  useSessionsAt,
+  useSessionStatusesAt,
+  useTeamAtWork,
+} from "./org-sessions";
 import { StatusDots } from "./status-badge";
 
 interface NodeCardProps {
@@ -64,27 +68,24 @@ export const NodeCard = React.memo(function NodeCard({
     onScreen.current = true;
   }, [zoom]);
 
+  // Nobody works at a team itself: what the card says of its work is what
+  // the sessions have going on there.
+  const work = useTeamAtWork(node);
   // A team whose IC already works says what it delivers, even while its
   // Manager still waits to start.
-  const waiting = node.waiting_to_start && node.status !== "working";
-  // A team that was set up and has been given no task has no agents.
-  const notStarted = node.agents.length === 0;
+  const waiting = work.waiting_to_start && work.status !== "working";
   // An agent that was working when the org was paused.
-  const paused = node.agents.some((agent) => agent.status === "paused");
+  const paused = work.agents.some((agent) => agent.status === "paused");
   // Sessions are no part of the chart; the card says how many are open here.
   const sessions = useSessionsAt(node.id);
   const subTeams = node.child_ids.length;
-  // One state for the team's own work and one for each session at work
-  // here: a team with sessions is in several states at once. Idle is what
-  // a team is when nothing goes on at it, so it is shown alone or not at
-  // all.
+  // One state for each session at work here: a team with sessions is in
+  // several states at once. Idle is what a team is when nothing goes on at
+  // it, so it is shown alone or not at all.
   const sessionStatuses = useSessionStatusesAt(node.id);
-  const statuses = React.useMemo(
-    () =>
-      node.status === "idle" && sessionStatuses.length > 0
-        ? sessionStatuses
-        : [node.status, ...sessionStatuses],
-    [node.status, sessionStatuses],
+  const statuses = React.useMemo<NodeStatus[]>(
+    () => (sessionStatuses.length > 0 ? sessionStatuses : ["idle"]),
+    [sessionStatuses],
   );
 
   const body = (
@@ -104,7 +105,7 @@ export const NodeCard = React.memo(function NodeCard({
             <Pause width={11} height={11} aria-hidden="true" />
           </span>
         ) : null}
-        {node.stopped ? (
+        {work.stopped ? (
           <span
             role="img"
             aria-label={t(I18nKey.ORG_CHART$STOPPED)}
@@ -124,16 +125,16 @@ export const NodeCard = React.memo(function NodeCard({
             <GitMerge width={11} height={11} aria-hidden="true" />
           </span>
         ) : null}
-        {node.escalation_count > 0 ? (
+        {work.escalation_count > 0 ? (
           <span
             role="img"
             aria-label={t(I18nKey.ORG_CHART$ESCALATION_COUNT, {
-              count: node.escalation_count,
+              count: work.escalation_count,
             })}
             className="flex shrink-0 items-center gap-0.5 text-[11px] font-medium text-feedback-error"
           >
             <TriangleAlert width={11} height={11} aria-hidden="true" />
-            {node.escalation_count}
+            {work.escalation_count}
           </span>
         ) : null}
       </span>
@@ -142,14 +143,9 @@ export const NodeCard = React.memo(function NodeCard({
           {t(I18nKey.ORG_CHART$WAITING_TO_START)}
         </span>
       ) : null}
-      {notStarted && !waiting ? (
-        <span className="w-full truncate text-2xs text-muted">
-          {t(I18nKey.ORG_CHART$TEAM_NOT_STARTED)}
-        </span>
-      ) : null}
-      {node.headline && !waiting && !notStarted ? (
+      {work.headline && !waiting ? (
         <span className="w-full truncate text-[11px] text-contrast">
-          {node.headline}
+          {work.headline}
         </span>
       ) : null}
       {subTeams > 0 || sessions > 0 ? (
