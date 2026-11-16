@@ -43685,6 +43685,24 @@
     "ca": "feina acceptada",
     "id": "pekerjaan diterima"
   },
+  "ORG_CHART$HISTORY_RECONCILED": {
+    "en": "work reconciled with what was merged meanwhile",
+    "zh-CN": "工作已与期间合并的内容协调",
+    "zh-TW": "工作已與期間合併的內容協調",
+    "de": "Arbeit mit dem inzwischen Zusammengeführten abgeglichen",
+    "ko-KR": "그사이 병합된 내용과 작업 조정됨",
+    "no": "arbeid avstemt med det som ble flettet i mellomtiden",
+    "it": "lavoro riconciliato con quanto unito nel frattempo",
+    "pt": "trabalho reconciliado com o que foi integrado entretanto",
+    "es": "trabajo conciliado con lo fusionado entretanto",
+    "ar": "تمت مطابقة العمل مع ما دُمج في الأثناء",
+    "fr": "travail concilié avec ce qui a été fusionné entre-temps",
+    "tr": "iş, bu arada birleştirilenle uzlaştırıldı",
+    "ja": "その間にマージされた内容と作業を調整",
+    "uk": "роботу узгоджено з тим, що злито тим часом",
+    "ca": "feina conciliada amb el que s'ha fusionat mentrestant",
+    "id": "pekerjaan diselaraskan dengan yang digabung sementara itu"
+  },
   "ORG_CHART$HISTORY_SENT_BACK": {
     "en": "work sent back",
     "zh-CN": "工作被退回",
