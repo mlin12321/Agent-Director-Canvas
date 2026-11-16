@@ -12,6 +12,7 @@ import type {
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { orgNodePath } from "#/constants/org-chart";
 import { I18nKey } from "#/i18n/declaration";
+import { teamAtWork } from "./node-conversations";
 import { StatusBadge } from "./status-badge";
 
 /**
@@ -41,11 +42,18 @@ export function useSessionStatusesAt(nodeId: NodeId): NodeStatus[] {
       .filter(
         (team) =>
           team.team_id === nodeId &&
+          !team.review_only &&
           team.status !== "idle" &&
           team.review?.state !== "accepted",
       )
       .map((team) => team.status),
   );
+}
+
+/** A team with what the sessions have going on at it. */
+export function useTeamAtWork(node: OrgNode): OrgNode {
+  const sessions = React.useContext(OrgSessionsContext);
+  return React.useMemo(() => teamAtWork(node, sessions), [node, sessions]);
 }
 
 /** Where a conversation is read in the normal chat window. */
@@ -113,7 +121,9 @@ function SessionRow({
     meta: { disableToast: true },
   });
   const above = nodes.get(session.above_id);
-  const started = session.teams.filter((team) => team.agents.length > 0);
+  const started = session.teams.filter(
+    (team) => team.agents.length > 0 && !team.review_only,
+  );
 
   return (
     <li

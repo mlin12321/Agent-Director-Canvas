@@ -209,7 +209,6 @@ describe("StartOrgNotice", () => {
         org={
           {
             root_id: null,
-            top_conversation_id: null,
             node_count: 0,
             repo_path: "/work/shop",
             directory: "",

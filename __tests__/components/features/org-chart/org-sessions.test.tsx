@@ -27,6 +27,7 @@ import { SubChatHost } from "#/components/features/org-chart/sub-chat-host";
 import { isAgentOnlyConversation } from "#/utils/conversation-tag-flags";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
+import { placeAt, reviewPlaceAt, sessionOf } from "./session-fixtures";
 
 function team(
   id: string,
@@ -42,9 +43,8 @@ function team(
     isolation: "shared",
     worktree_path: "/work",
     branch: "",
-    agents: [
-      { role: "ic", conversation_id: "c", status: "idle", kind: "openhands" },
-    ],
+    // Nobody works at a team itself.
+    agents: [],
     status: "idle",
     spec_summary: "",
     escalations: [],
@@ -67,6 +67,13 @@ vi.mock("#/components/features/org-chart/agent-conversation", () => ({
       {conversationId}
       <ConversationLinks conversationId={conversationId} />
     </div>
+  ),
+}));
+
+// The changes need a checkout; what matters here is whose they are.
+vi.mock("#/components/features/org-chart/team-changes", () => ({
+  TeamChanges: ({ node }: { node: OrgNode }) => (
+    <div data-testid="team-changes">{node.id}</div>
   ),
 }));
 
@@ -112,6 +119,53 @@ const SESSION: Session = {
   teams: [REFUNDS],
 };
 
+const ic = (conversationId: string | null, status = "idle") => ({
+  role: "ic" as const,
+  conversation_id: conversationId,
+  status,
+  kind: "openhands" as const,
+});
+
+// The session opened at the top team has a place at the API team too, and
+// is reviewed from the top team itself.
+const RELEASE = sessionOf("r9", "Release", [
+  placeAt(ROOT, "r9", { agents: [ic("top")], status: "working" }),
+  placeAt(API, "r9", { agents: [ic("c1")], status: "working" }),
+  reviewPlaceAt(ROOT, "r9", { agents: [ic("review-r9")] }),
+]);
+// Refunds was opened at the API team: the IC of the top team reviews it.
+const REFUNDS_REVIEWED: Session = {
+  ...SESSION,
+  teams: [
+    REFUNDS,
+    reviewPlaceAt(ROOT, SESSION.id, { agents: [ic("review-s1")] }),
+  ],
+};
+
+function memoryHandlers() {
+  server.use(
+    http.get("*/api/director/org/nodes/:id/memory", () =>
+      HttpResponse.json({
+        specs: [],
+        reports: [],
+        former_teams: [],
+        history: [],
+      }),
+    ),
+    http.get("*/api/director/org/nodes/:id/messages", () =>
+      HttpResponse.json([]),
+    ),
+  );
+}
+
+function drawer(node: OrgNode, sessions: Session[]) {
+  return renderWithProviders(
+    <OrgSessionsContext.Provider value={sessions}>
+      <AgentInspectorDrawer node={node} onClose={() => {}} />
+    </OrgSessionsContext.Provider>,
+  );
+}
+
 function opened(session: Session) {
   return { session, conversation_id: "c2", chosen_by: "path", reason: "" };
 }
@@ -154,14 +208,14 @@ describe("NodeCard", () => {
       ],
     });
     const merged = (id: string) => at(id, "done", "accepted");
-    const dots = (sessions: Session[], own: OrgNode = API) => {
+    const dots = (sessions: Session[]) => {
       const { unmount } = renderWithProviders(
         <OrgSessionsContext.Provider value={sessions}>
-          <NodeCard node={own} current={false} onOpenDetails={() => {}} />
+          <NodeCard node={API} current={false} onOpenDetails={() => {}} />
         </OrgSessionsContext.Provider>,
       );
       const found = within(
-        screen.getByTestId(`org-node-${own.id}`),
+        screen.getByTestId(`org-node-${API.id}`),
       ).getByTestId("org-status-dots");
       const seen = {
         counted: found.hasAttribute("data-counted"),
@@ -182,7 +236,7 @@ describe("NodeCard", () => {
       name: "1 ORG_CHART$STATUS_IDLE",
       states: ["idle"],
     });
-    // A session at work is shown, and the idle team beside it is not.
+    // A session at work is shown, and the ones that rest beside it are not.
     expect(dots([at("s1", "working"), merged("s2")]).states).toEqual([
       "working",
     ]);
@@ -190,12 +244,17 @@ describe("NodeCard", () => {
     expect(dots([at("s1", "done", "pending"), merged("s2")]).states).toEqual([
       "done",
     ]);
-    // The team's own work counts like a session's.
-    const busy = { ...API, status: "working" as const };
-    expect(dots([at("s1", "working"), at("s2", "blocked")], busy)).toEqual({
+    // The dots are the sessions' alone: the IC that reviews a session from
+    // here does no work of the team's.
+    const reviewed: Session = {
+      ...at("s3", "done", "pending"),
+      team_id: "services.api.db",
+      teams: [reviewPlaceAt(API, "s3", { status: "working" })],
+    };
+    expect(dots([at("s1", "working"), at("s2", "blocked"), reviewed])).toEqual({
       counted: false,
-      name: "1 ORG_CHART$STATUS_BLOCKED, 2 ORG_CHART$STATUS_WORKING",
-      states: ["working", "working", "blocked"],
+      name: "1 ORG_CHART$STATUS_BLOCKED, 1 ORG_CHART$STATUS_WORKING",
+      states: ["working", "blocked"],
     });
     // More than there is room for are counted by state; idle is never one.
     expect(
@@ -217,38 +276,22 @@ describe("NodeCard", () => {
 });
 
 describe("AgentInspectorDrawer", () => {
-  it("lists the conversations at a team, marks the ones the human started there, and opens one only when it is chosen", async () => {
-    server.use(
-      http.get("*/api/director/org/nodes/:id/memory", () =>
-        HttpResponse.json({
-          specs: [],
-          reports: [],
-          former_teams: [],
-          history: [],
-        }),
-      ),
-      http.get("*/api/director/org/nodes/:id/messages", () =>
-        HttpResponse.json([]),
-      ),
-    );
+  it("lists the conversations at a team with the session of each, marks the ones the human started there, and opens one only when it is chosen", async () => {
+    memoryHandlers();
     const user = userEvent.setup();
-    const { unmount } = renderWithProviders(
-      <OrgSessionsContext.Provider value={[SESSION]}>
-        <AgentInspectorDrawer node={API} onClose={() => {}} />
-      </OrgSessionsContext.Provider>,
-    );
+    drawer(API, [RELEASE, REFUNDS_REVIEWED]);
 
     const rows = within(
       screen.getByTestId("org-node-conversations"),
     ).getAllByRole("button");
     expect(rows.map((row) => row.textContent)).toEqual([
-      "ORG_CHART$ROLE_ICidle",
+      "ORG_CHART$ROLE_IC · Releaseidle",
       "ORG_CHART$ROLE_IC · Refundsidle",
     ]);
-    const [own, refunds] = rows;
-    // The team's own IC was started by the org; the session by the human.
-    expect(own).not.toHaveAttribute("data-mine");
-    expect(own).not.toHaveClass("text-feedback-error");
+    const [release, refunds] = rows;
+    // Release came down from the top team; Refunds the human opened here.
+    expect(release).not.toHaveAttribute("data-mine");
+    expect(release).not.toHaveClass("text-feedback-error");
     expect(refunds).toHaveAttribute("data-mine");
     expect(refunds).toHaveClass("text-feedback-error", "border-feedback-error");
     expect(screen.queryByTestId("agent-conversation")).toBeNull();
@@ -259,18 +302,114 @@ describe("AgentInspectorDrawer", () => {
     expect(await screen.findByTestId("agent-conversation")).toHaveTextContent(
       "c2",
     );
-    await user.click(own);
+    await user.click(release);
     expect(refunds).toHaveAttribute("aria-pressed", "false");
-    expect(own).toHaveAttribute("aria-pressed", "true");
+    expect(release).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("names the IC that reviews a session from a team as its reviewer, which the human did not start", async () => {
+    memoryHandlers();
+    const user = userEvent.setup();
+    drawer(ROOT, [RELEASE, REFUNDS_REVIEWED]);
+
+    const rows = within(
+      screen.getByTestId("org-node-conversations"),
+    ).getAllByRole("button");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "ORG_CHART$ROLE_IC · Releaseidle",
+      "ORG_CHART$REVIEWER · Releaseidle",
+      "ORG_CHART$REVIEWER · Refundsidle",
+    ]);
+    const [top, , reviewer] = rows;
+    // The session opened at the top team is the human's; a reviewer is not.
+    expect(top).toHaveAttribute("data-mine");
+    expect(reviewer).not.toHaveAttribute("data-mine");
+
+    await user.click(reviewer);
+    expect(await screen.findByTestId("agent-conversation")).toHaveTextContent(
+      "review-s1",
+    );
+  });
+
+  it("says under each session what it has at the team: why it is stopped, its review, and starting it again", () => {
+    memoryHandlers();
+    const stopped: Session = {
+      ...RELEASE,
+      teams: RELEASE.teams.map((place) =>
+        place.team_id === API.id
+          ? {
+              ...place,
+              status: "blocked",
+              stopped: {
+                at: "2026-11-01T11:00:00+00:00",
+                reason: "Two hours on one schema.",
+              },
+            }
+          : place,
+      ),
+    };
+    const lost: Session = {
+      ...SESSION,
+      teams: [
+        {
+          ...REFUNDS,
+          status: "working",
+          review: REVIEW,
+          agents: [ic(null, "lost")],
+        },
+      ],
+    };
+    // A session that rests here has nothing to say.
+    const resting = sessionOf("q7", "Search", [placeAt(API, "q7")]);
+    drawer(API, [stopped, lost, resting]);
+
+    const release = screen.getByTestId("org-session-work-r9");
+    expect(
+      within(release).getByRole("heading", { name: "Release" }),
+    ).toBeInTheDocument();
+    expect(within(release).getByRole("status")).toHaveTextContent(
+      "ORG_CHART$STOPPED_REASON",
+    );
+    expect(within(release).queryByTestId("org-start-again")).toBeNull();
+    const refunds = screen.getByTestId("org-session-work-s1a2b3c");
+    expect(
+      within(refunds).getByRole("heading", { name: "Refunds" }),
+    ).toBeInTheDocument();
+    expect(
+      within(refunds).getByRole("region", { name: "ORG_CHART$REVIEW" }),
+    ).toBeInTheDocument();
+    expect(within(refunds).getByTestId("org-start-again")).toBeInTheDocument();
+    expect(screen.queryByTestId("org-session-work-q7")).toBeNull();
+  });
+
+  it("shows the changes of the session whose conversation is open, and offers none where no session works", async () => {
+    memoryHandlers();
+    const user = userEvent.setup();
+    const { unmount } = drawer(API, [RELEASE, REFUNDS_REVIEWED]);
+
+    // With no conversation open, those of the first session here.
+    await user.click(screen.getByTestId("org-team-changes-tab"));
+    expect(await screen.findByTestId("team-changes")).toHaveTextContent(
+      /^services\.api@r9$/,
+    );
+
+    // Choosing a conversation puts the changes away; asked for again, they
+    // are those of that conversation's session.
+    await user.click(
+      screen.getByRole("button", { name: /ORG_CHART\$ROLE_IC · Refunds/ }),
+    );
+    await user.click(screen.getByTestId("org-team-changes-tab"));
+    expect(await screen.findByTestId("team-changes")).toHaveTextContent(
+      /^services\.api@s1a2b3c$/,
+    );
     unmount();
 
-    // The top team's IC is the conversation the human started the org with.
-    renderWithProviders(
-      <AgentInspectorDrawer node={ROOT} onClose={() => {}} />,
-    );
+    // Refunds is only reviewed from the top team: nothing is changed there.
+    drawer(ROOT, [REFUNDS_REVIEWED]);
     expect(
       within(screen.getByTestId("org-node-conversations")).getByRole("button"),
-    ).toHaveAttribute("data-mine");
+    ).toHaveTextContent("ORG_CHART$REVIEWER · Refunds");
+    expect(screen.queryByTestId("org-team-changes-tab")).toBeNull();
   });
 });
 
@@ -542,51 +681,39 @@ describe("conversations of agents in the chat window", () => {
   });
 });
 
-describe("MessageToTeam with sessions", () => {
-  it("opens a session at the team with what is written, and links to it", async () => {
+describe("MessageToTeam", () => {
+  it("opens a session at the team with what is written, under the name given, and links to it", async () => {
     const asked: unknown[] = [];
-    const messages: unknown[] = [];
     server.use(
       http.post("*/api/director/org/sessions", async ({ request }) => {
         asked.push(await request.json());
         return HttpResponse.json(opened(SESSION), { status: 201 });
       }),
-      http.post("*/api/director/org/messages", async ({ request }) => {
-        messages.push(await request.json());
-        return HttpResponse.json({});
-      }),
     );
     const user = userEvent.setup();
-    renderWithProviders(<MessageToTeam node={API} nodes={NODES} />);
+    renderWithProviders(<MessageToTeam node={API} />);
+    const box = screen.getByLabelText("ORG_CHART$MESSAGE_LABEL");
+    const name = screen.getByRole("textbox", {
+      name: "ORG_CHART$SESSION_NAME",
+    });
+    const send = screen.getByRole("button", { name: "ORG_CHART$MESSAGE_SEND" });
 
-    await user.type(
-      screen.getByLabelText("ORG_CHART$MESSAGE_LABEL"),
-      "Add refunds.",
-    );
-    await user.click(
-      screen.getByRole("checkbox", { name: "ORG_CHART$SESSION_NEW" }),
-    );
-    await user.type(
-      screen.getByRole("textbox", { name: "ORG_CHART$SESSION_NAME" }),
-      " Refunds ",
-    );
-    await user.click(
-      screen.getByRole("button", { name: "ORG_CHART$MESSAGE_SEND" }),
-    );
+    expect(send).toBeDisabled();
+    await user.type(box, "  Add refunds.  ");
+    await user.type(name, " Refunds ");
+    await user.click(send);
 
     await waitFor(() =>
       expect(asked).toEqual([
         { text: "Add refunds.", title: "Refunds", node_id: API.id },
       ]),
     );
-    expect(messages).toEqual([]);
     expect(
       await screen.findByRole("link", { name: "ORG_CHART$SESSION_OPENED" }),
     ).toHaveAttribute("href", "/conversations/c2");
-    // The next thing written is a message again.
-    expect(
-      screen.getByRole("checkbox", { name: "ORG_CHART$SESSION_NEW" }),
-    ).not.toBeChecked();
+    // The next thing written is a session of its own.
+    expect(box).toHaveValue("");
+    expect(name).toHaveValue("");
   });
 
   it("leaves the team to the director for a session opened from the top team", async () => {
@@ -598,14 +725,11 @@ describe("MessageToTeam with sessions", () => {
       }),
     );
     const user = userEvent.setup();
-    renderWithProviders(<MessageToTeam node={ROOT} nodes={NODES} />);
+    renderWithProviders(<MessageToTeam node={ROOT} />);
 
     await user.type(
       screen.getByLabelText("ORG_CHART$MESSAGE_LABEL"),
       "Add refunds.",
-    );
-    await user.click(
-      screen.getByRole("checkbox", { name: "ORG_CHART$SESSION_NEW" }),
     );
     await user.click(
       screen.getByRole("button", { name: "ORG_CHART$MESSAGE_SEND" }),

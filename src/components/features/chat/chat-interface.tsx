@@ -34,12 +34,10 @@ import { ChatSuggestions } from "./chat-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 import { useSendMessage } from "#/hooks/use-send-message";
 import { useQueryClient } from "@tanstack/react-query";
-import { routeFromChat } from "#/api/director/route-from-chat";
 import { sessionRequestOf } from "#/api/director/session-from-chat";
 import { DirectorClient } from "#/api/director/director-client";
 import { joinFromChat } from "#/api/director/join-from-chat";
 import { ConversationLinks } from "#/components/features/org-chart/conversation-links";
-import { ExplicitAgentChatContext } from "#/context/explicit-agent-chat";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { useIsArchivedConversation } from "#/hooks/use-is-archived-conversation";
 import { useHandleBuildPlanClick } from "#/hooks/use-handle-build-plan-click";
@@ -131,7 +129,6 @@ export function ChatInterface({
   const isProvisioningTask = isTask;
   const conversationWebSocket = useConversationWebSocket();
   const { send } = useSendMessage();
-  const isExplicitAgentChat = React.useContext(ExplicitAgentChatContext);
   const {
     renderableEvents,
     allConversationEvents,
@@ -144,9 +141,6 @@ export function ChatInterface({
   );
   const markPendingMessageError = useOptimisticUserMessageStore(
     (state) => state.markPendingMessageError,
-  );
-  const markPendingMessageRouted = useOptimisticUserMessageStore(
-    (state) => state.markPendingMessageRouted,
   );
   const pendingMessages = useOptimisticUserMessageStore(
     (state) => state.pendingMessages,
@@ -568,32 +562,17 @@ export function ChatInterface({
     setMessageToSend("");
 
     try {
-      // What is written to the top team's IC is for the org as a whole: its
-      // director may send it straight to the team it concerns. Attachments
-      // travel with the conversation, so a message with any goes as it is.
-      const routed =
-        !isExplicitAgentChat && !imageUrls.length && !uploadedFiles.length
-          ? await routeFromChat(conversationId!, prompt)
-          : null;
-      if (routed && routed.conversation_id !== conversationId) {
-        markPendingMessageRouted(pendingId, {
-          nodeId: routed.node_id,
-          team: routed.team || routed.node_id,
-          reason: routed.reason,
-        });
-      }
-      if (!routed) {
-        await send(
-          createChatMessage(prompt, imageUrls, uploadedFiles, timestamp),
-        );
-        // Written straight to an agent the director started: from now on
-        // the conversation is listed with the human's own.
-        joinFromChat(conversationId!, activeConversation?.tags).then(
-          (joined) => {
-            if (joined) queryClient.invalidateQueries({ queryKey: ["user"] });
-          },
-        );
-      }
+      // What is written in a conversation goes to that conversation: a
+      // session's IC is written to directly, and the director sends
+      // nothing on. A request of its own is a new session.
+      await send(
+        createChatMessage(prompt, imageUrls, uploadedFiles, timestamp),
+      );
+      // Written straight to an agent the director started: from now on
+      // the conversation is listed with the human's own.
+      joinFromChat(conversationId!, activeConversation?.tags).then((joined) => {
+        if (joined) queryClient.invalidateQueries({ queryKey: ["user"] });
+      });
       const errors = useErrorMessageStore.getState();
       if (errors.errorCode === STARTUP_UPLOAD_ERROR_CODE)
         errors.removeErrorMessage();

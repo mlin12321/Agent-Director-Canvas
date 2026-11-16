@@ -295,6 +295,8 @@ export interface DirectorSettings {
    * another team, may go straight to the team the director chooses.
    */
   route_requests: boolean;
+  /** Whether a session works in a git worktree of its own. */
+  session_worktrees: boolean;
 }
 
 /** The settings, beside what the org has now. */
@@ -321,11 +323,6 @@ export interface TeamMatch {
 export interface OrgSummary {
   /** `null` when no org has been started. */
   root_id: NodeId | null;
-  /**
-   * The conversation of the top team's IC; `null` when there is no org or
-   * that IC has no conversation here.
-   */
-  top_conversation_id: string | null;
   node_count: number;
   /**
    * The directory the org works in. For a server started in a git submodule
@@ -430,6 +427,11 @@ export interface SessionTeam extends OrgNode {
   session: string;
   /** The team of the org. */
   team_id: NodeId;
+  /**
+   * Whether this is the place the session's work is reviewed from: the team
+   * above the one the session was opened at, whose IC only reviews here.
+   */
+  review_only?: boolean;
 }
 
 /**
@@ -541,7 +543,7 @@ export interface RoutedMessage {
 export interface OpenEscalation {
   /** The team of the org that raised it. */
   node_id: NodeId;
-  /** The session it was raised in and its title; empty for the org's own. */
+  /** The session it was raised in and its title. */
   session_id: string;
   session: string;
   escalation: Escalation;

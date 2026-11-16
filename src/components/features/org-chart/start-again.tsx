@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { RotateCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DirectorClient, DirectorError } from "#/api/director/director-client";
-import type { OrgNode } from "#/api/director/types";
+import type { OrgNode, SessionTeam } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
 
 /** Whether a team's agents are missing here while its work is not done. */
@@ -17,10 +17,10 @@ export function isLost(node: OrgNode) {
  * Starts a team again whose agents have no conversation on this server.
  * The server says why when it cannot, e.g. that the team above is lost too.
  */
-export function StartAgain({ node }: { node: OrgNode }) {
+export function StartAgain({ node }: { node: SessionTeam }) {
   const { t } = useTranslation("openhands");
   const start = useMutation({
-    mutationFn: () => DirectorClient.startAgain(node.id),
+    mutationFn: () => DirectorClient.startAgain(node.session, node.team_id),
     meta: { disableToast: true },
   });
 

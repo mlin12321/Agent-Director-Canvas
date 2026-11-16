@@ -8,8 +8,6 @@ import { createChatMessage } from "#/services/chat-service";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { matchesPendingConversationId } from "#/utils/pending-task-message-link";
 import { ImageCarousel } from "#/components/features/images/image-carousel";
-import { NavigationLink } from "#/components/shared/navigation-link";
-import { orgNodePath } from "#/constants/org-chart";
 import { ChatMessage } from "./chat-message";
 
 /**
@@ -119,9 +117,7 @@ export function PendingUserMessages({
           type="user"
           message={message.text}
           pendingStatus={
-            conversationId?.startsWith("task-") || message.status === "routed"
-              ? undefined
-              : message.status
+            conversationId?.startsWith("task-") ? undefined : message.status
           }
           pendingLabel={pendingLabel}
           showPendingStatus={showPendingStatus}
@@ -144,22 +140,6 @@ export function PendingUserMessages({
           {message.imageUrls.length > 0 && (
             <ImageCarousel size="small" images={message.imageUrls} />
           )}
-          {message.routedTo ? (
-            <p
-              role="status"
-              data-testid="routed-to-team"
-              className="mt-1 text-xs text-muted"
-            >
-              {t(I18nKey.ORG_CHART$ROUTED_TO)}{" "}
-              <NavigationLink
-                to={orgNodePath(message.routedTo.nodeId)}
-                className="text-contrast hover:text-link hover:underline"
-              >
-                {message.routedTo.team}
-              </NavigationLink>
-              {message.routedTo.reason ? ` (${message.routedTo.reason})` : null}
-            </p>
-          ) : null}
         </ChatMessage>
       ))}
     </>

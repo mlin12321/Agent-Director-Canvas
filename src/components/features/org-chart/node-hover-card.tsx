@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { OrgNode } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
+import { useTeamAtWork } from "./org-sessions";
 import { StatusBadge } from "./status-badge";
 import { useReviewLabel } from "./review-summary";
 import {
@@ -34,8 +35,10 @@ interface NodeHoverCardProps {
  * What a team is doing and what it owns. Shown only while its card is
  * hovered or focused, so the chart itself stays a plain picture of the org.
  */
-export function NodeHoverCard({ node }: NodeHoverCardProps) {
+export function NodeHoverCard({ node: team }: NodeHoverCardProps) {
   const { t } = useTranslation("openhands");
+  // Nobody works at a team itself: its work is what the sessions do there.
+  const node = useTeamAtWork(team);
   const { boundary } = node;
   const reviewLabel = useReviewLabel();
   // What a team above still holds is that team's to settle, not the human's.

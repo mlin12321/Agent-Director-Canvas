@@ -16,7 +16,6 @@ import {
   type NodeOwnership,
   type OrgEvent,
   type OrgMerge,
-  type OrgNode,
   type OrgSummary,
   type OrgSync,
   type Recovery,
@@ -169,21 +168,6 @@ export const DirectorClient = {
   },
 
   /**
-   * Answer an escalation that waits on the human, which settles it.
-   *
-   * @param nodeId The team that raised the escalation.
-   */
-  answerEscalation(nodeId: NodeId, escalationId: string, answer: string) {
-    return postJson<OrgNode>(
-      nodePath(
-        nodeId,
-        `escalations/${encodeURIComponent(escalationId)}/answer`,
-      ),
-      { answer },
-    );
-  },
-
-  /**
    * What became of the teams of the whole org, newest first.
    *
    * @param before Only events before this time, to read further back.
@@ -249,12 +233,16 @@ export const DirectorClient = {
   },
 
   /**
-   * Start afresh a team whose agents have no conversation on this server,
-   * on the work its branch has. Its IC starts like the IC of the team above.
+   * Start afresh what a session has at a team when its agents have no
+   * conversation on this server, on the work its branch has.
+   *
+   * @param nodeId The team of the org.
    */
-  startAgain(nodeId: NodeId) {
-    return postJson<OrgNode>(
-      `${ORG_PATH}/nodes/${encodeURIComponent(nodeId)}/start_again`,
+  startAgain(sessionId: string, nodeId: NodeId) {
+    return postJson<SessionTeam>(
+      `${ORG_PATH}/sessions/${encodeURIComponent(sessionId)}/teams/${encodeURIComponent(
+        nodeId,
+      )}/start_again`,
       {},
     );
   },

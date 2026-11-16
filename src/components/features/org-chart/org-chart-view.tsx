@@ -339,7 +339,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
           </section>
           <OwnershipMap node={current} ownership={ownership} />
           {org.data && !org.data.fixture ? (
-            <MessageToTeam key={current.id} node={current} nodes={nodes} />
+            <MessageToTeam key={current.id} node={current} />
           ) : null}
           {org.data ? (
             <p className="text-xs text-muted">

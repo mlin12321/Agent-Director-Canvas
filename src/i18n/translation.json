@@ -43829,24 +43829,6 @@
     "ca": "Envia",
     "id": "Kirim"
   },
-  "ORG_CHART$MESSAGE_SENT": {
-    "en": "Sent to the IC of {{team}}.",
-    "zh-CN": "已发送给 {{team}} 的 IC。",
-    "zh-TW": "已傳送給 {{team}} 的 IC。",
-    "de": "An den IC von {{team}} gesendet.",
-    "ko-KR": "{{team}}의 IC에게 보냈습니다.",
-    "no": "Sendt til IC-en i {{team}}.",
-    "it": "Inviato all'IC di {{team}}.",
-    "pt": "Enviado ao IC de {{team}}.",
-    "es": "Enviado al IC de {{team}}.",
-    "ar": "أُرسلت إلى الـ IC في {{team}}.",
-    "fr": "Envoyé à l'IC de {{team}}.",
-    "tr": "{{team}} ekibinin IC'sine gönderildi.",
-    "ja": "{{team}} の IC に送信しました。",
-    "uk": "Надіслано IC команди {{team}}.",
-    "ca": "Enviat a l'IC de {{team}}.",
-    "id": "Terkirim ke IC {{team}}."
-  },
   "ORG_CHART$CONVERSATIONS": {
     "en": "Conversations",
     "zh-CN": "对话",
@@ -44261,24 +44243,6 @@
     "ca": "No s'ha pogut tancar la sessió.",
     "id": "Sesi tidak dapat ditutup."
   },
-  "ORG_CHART$SESSION_NEW": {
-    "en": "As a new session",
-    "zh-CN": "作为新会话",
-    "zh-TW": "作為新工作階段",
-    "de": "Als neue Sitzung",
-    "ko-KR": "새 세션으로",
-    "no": "Som en ny økt",
-    "it": "Come nuova sessione",
-    "pt": "Como nova sessão",
-    "es": "Como sesión nueva",
-    "ar": "كجلسة جديدة",
-    "fr": "En tant que nouvelle session",
-    "tr": "Yeni oturum olarak",
-    "ja": "新しいセッションとして",
-    "uk": "Як нова сесія",
-    "ca": "Com a sessió nova",
-    "id": "Sebagai sesi baru"
-  },
   "ORG_CHART$SESSION_NAME": {
     "en": "Name of the session (optional)",
     "zh-CN": "会话名称（可选）",
@@ -44298,22 +44262,22 @@
     "id": "Nama sesi (opsional)"
   },
   "ORG_CHART$SESSION_NEW_HELP": {
-    "en": "A new IC works on this in a git worktree of its own, beside what the team is doing. The IC of the team above reviews the work.",
-    "zh-CN": "一个新的 IC 会在自己的 git 工作树中处理它，与团队现有工作并行。上级团队的 IC 负责审查。",
-    "zh-TW": "一個新的 IC 會在自己的 git 工作樹中處理它，與團隊現有工作並行。上層團隊的 IC 負責審查。",
-    "de": "Ein neuer IC bearbeitet dies in einem eigenen Git-Worktree, neben der laufenden Arbeit des Teams. Der IC des Teams darüber prüft die Arbeit.",
-    "ko-KR": "새 IC가 팀이 하던 일과 나란히 자체 git 워크트리에서 이 일을 합니다. 상위 팀의 IC가 작업을 검토합니다.",
-    "no": "En ny IC jobber med dette i sitt eget git-arbeidstre, ved siden av det teamet holder på med. IC-en i teamet over går gjennom arbeidet.",
-    "it": "Un nuovo IC ci lavora in un proprio worktree git, accanto a ciò che il team sta facendo. L'IC del team superiore revisiona il lavoro.",
-    "pt": "Um novo IC trabalha nisso em uma worktree git própria, ao lado do que a equipe está fazendo. O IC da equipe acima revisa o trabalho.",
-    "es": "Un IC nuevo trabaja en esto en un worktree de git propio, junto a lo que el equipo está haciendo. El IC del equipo superior revisa el trabajo.",
-    "ar": "يعمل IC جديد على هذا في شجرة عمل git خاصة به، بجانب ما يقوم به الفريق. يراجع IC الفريق الأعلى العمل.",
-    "fr": "Un nouvel IC y travaille dans son propre worktree git, à côté de ce que fait l'équipe. L'IC de l'équipe au-dessus relit le travail.",
-    "tr": "Yeni bir IC bunu, ekibin yaptığı işin yanında kendi git çalışma ağacında yürütür. Üst ekibin IC'si işi inceler.",
-    "ja": "新しい IC が、チームの作業と並行して専用の git ワークツリーで取り組みます。上位チームの IC が作業をレビューします。",
-    "uk": "Новий IC працює над цим у власному робочому дереві git, поряд із тим, що робить команда. IC команди вище перевіряє роботу.",
-    "ca": "Un IC nou hi treballa en un worktree de git propi, al costat del que fa l'equip. L'IC de l'equip superior revisa la feina.",
-    "id": "IC baru mengerjakan ini di worktree git miliknya sendiri, di samping pekerjaan tim. IC tim di atasnya meninjau hasilnya."
+    "en": "Every request is a session of its own: a new IC works on it in a git worktree of its own. The IC of the team above reviews the work before it is merged.",
+    "zh-CN": "每个请求都是一个独立的会话：新的 IC 在自己的 git 工作树中处理它。上级团队的 IC 在合并前审查工作。",
+    "zh-TW": "每個請求都是一個獨立的工作階段：新的 IC 在自己的 git 工作樹中處理它。上層團隊的 IC 在合併前審查工作。",
+    "de": "Jede Anfrage ist eine eigene Sitzung: Ein neuer IC bearbeitet sie in einem eigenen Git-Worktree. Der IC des Teams darüber prüft die Arbeit, bevor sie zusammengeführt wird.",
+    "ko-KR": "모든 요청은 별도의 세션입니다. 새 IC가 자체 git 워크트리에서 작업합니다. 상위 팀의 IC가 병합 전에 작업을 검토합니다.",
+    "no": "Hver forespørsel er en egen økt: en ny IC jobber med den i et eget git-arbeidstre. IC-en i teamet over gjennomgår arbeidet før det flettes.",
+    "it": "Ogni richiesta è una sessione a sé: un nuovo IC ci lavora in un proprio worktree git. L'IC del team superiore rivede il lavoro prima che venga unito.",
+    "pt": "Cada pedido é uma sessão própria: um novo IC trabalha nele numa worktree git própria. O IC da equipa acima revê o trabalho antes de ser integrado.",
+    "es": "Cada solicitud es una sesión propia: un nuevo IC trabaja en ella en un worktree de git propio. El IC del equipo superior revisa el trabajo antes de fusionarlo.",
+    "ar": "كل طلب هو جلسة مستقلة: يعمل عليه IC جديد في شجرة عمل git خاصة به. يراجع IC الفريق الأعلى العمل قبل دمجه.",
+    "fr": "Chaque demande est une session à part : un nouvel IC y travaille dans son propre worktree git. L'IC de l'équipe au-dessus relit le travail avant sa fusion.",
+    "tr": "Her istek kendi başına bir oturumdur: yeni bir IC, kendi git çalışma ağacında üzerinde çalışır. Üst takımın IC'si işi birleştirilmeden önce inceler.",
+    "ja": "各リクエストは独立したセッションです。新しい IC が専用の git ワークツリーで作業します。上位チームの IC がマージ前に作業をレビューします。",
+    "uk": "Кожен запит — це окрема сесія: новий IC працює над ним у власному робочому дереві git. IC команди вище перевіряє роботу перед злиттям.",
+    "ca": "Cada sol·licitud és una sessió pròpia: un nou IC hi treballa en un worktree de git propi. L'IC de l'equip superior revisa la feina abans de fusionar-la.",
+    "id": "Setiap permintaan adalah sesi tersendiri: IC baru mengerjakannya di worktree git miliknya sendiri. IC tim di atasnya meninjau pekerjaan sebelum digabung."
   },
   "ORG_CHART$SESSION_OPENED": {
     "en": "Session {{title}} opened at {{team}}",
@@ -44386,24 +44350,6 @@
     "uk": "Напишіть після /session, що має зробити сесія.",
     "ca": "Escriu després de /session què ha de fer la sessió.",
     "id": "Tulis setelah /session apa yang harus dikerjakan sesi."
-  },
-  "ORG_CHART$ROUTED_TO": {
-    "en": "Sent straight to the team",
-    "zh-CN": "已直接发送给团队",
-    "zh-TW": "已直接傳送給團隊",
-    "de": "Direkt an das Team gesendet:",
-    "ko-KR": "팀에 바로 보냈습니다:",
-    "no": "Sendt rett til teamet",
-    "it": "Inviato direttamente al team",
-    "pt": "Enviado diretamente à equipe",
-    "es": "Enviado directamente al equipo",
-    "ar": "أُرسل مباشرة إلى الفريق",
-    "fr": "Envoyé directement à l'équipe",
-    "tr": "Doğrudan ekibe gönderildi:",
-    "ja": "チームに直接送信しました:",
-    "uk": "Надіслано безпосередньо команді",
-    "ca": "Enviat directament a l'equip",
-    "id": "Dikirim langsung ke tim"
   },
   "ORG_CHART$HISTORY_ASKED": {
     "en": "asked directly by you",
@@ -47770,5 +47716,23 @@
     "uk": "Готово",
     "ca": "Fet",
     "id": "Selesai"
+  },
+  "ORG_CHART$REVIEWER": {
+    "en": "Reviewer",
+    "zh-CN": "评审者",
+    "zh-TW": "審查者",
+    "de": "Prüfer",
+    "ko-KR": "검토자",
+    "no": "Kontrollør",
+    "it": "Revisore",
+    "pt": "Revisor",
+    "es": "Revisor",
+    "ar": "المراجِع",
+    "fr": "Relecteur",
+    "tr": "İnceleyen",
+    "ja": "レビュアー",
+    "uk": "Рецензент",
+    "ca": "Revisor",
+    "id": "Peninjau"
   }
 }
