@@ -28,14 +28,21 @@ export function useSessionsAt(nodeId: NodeId): number {
 }
 
 /**
- * The state of each session that has agents at a team, whether it was
- * opened there or at a team above.
+ * The state of each session that is at work at a team, whether it was
+ * opened there or at a team above. A session that rests there, or whose
+ * work is finished, stays open until the human closes it and is not at
+ * work: it is left out, so that sessions kept open do not pile up as idle
+ * or done.
  */
 export function useSessionStatusesAt(nodeId: NodeId): NodeStatus[] {
   const sessions = React.useContext(OrgSessionsContext);
   return sessions.flatMap((session) =>
     session.teams
-      .filter((team) => team.team_id === nodeId && team.agents.length > 0)
+      .filter(
+        (team) =>
+          team.team_id === nodeId &&
+          (team.status === "working" || team.status === "blocked"),
+      )
       .map((team) => team.status),
   );
 }
