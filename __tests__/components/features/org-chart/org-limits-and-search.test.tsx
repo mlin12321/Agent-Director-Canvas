@@ -26,6 +26,7 @@ const STATE: DirectorSettingsState = {
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
+  route_requests: true,
 };
 
 function settingsHandlers(state: DirectorSettingsState = STATE) {
@@ -101,6 +102,7 @@ describe("OrgSettings", () => {
         stall_check_minutes: 120,
         manager_check_accepted_reviews: 5,
         manager_check_ic_setbacks: 3,
+        route_requests: true,
       },
     ]);
 
@@ -205,6 +207,7 @@ describe("OrgSettings", () => {
         stall_check_minutes: 120,
         manager_check_accepted_reviews: 5,
         manager_check_ic_setbacks: 3,
+        route_requests: true,
       },
     ]);
   });

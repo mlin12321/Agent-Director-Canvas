@@ -6,7 +6,8 @@ import type { RoutedMessage, RouteMessageRequest } from "./types";
  *
  * Where the folder's git repository has no org, the message starts one and
  * the conversation becomes the root team's IC. Where it has one, the message
- * goes to the nearest team at or above the folder and no conversation is
+ * goes to the nearest team at or above the folder, or to a team below that
+ * one which the director is sure it concerns, and no conversation is
  * started.
  *
  * @returns Where the message went, or `null` when the conversation is to
@@ -25,6 +26,7 @@ export async function routeToOrg(
     return await DirectorClient.routeMessage({
       text,
       path: folder,
+      auto: true,
       conversation,
     });
   } catch {

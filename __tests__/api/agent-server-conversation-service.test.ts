@@ -2947,6 +2947,9 @@ describe("AgentServerConversationService", () => {
           node_id: "root",
           conversation_id: "ignored",
           started_org: true,
+          team: "",
+          chosen_by: "path",
+          reason: "",
         });
 
         const task =
@@ -2971,6 +2974,9 @@ describe("AgentServerConversationService", () => {
           node_id: "services.api",
           conversation_id: "conv-api-ic",
           started_org: false,
+          team: "",
+          chosen_by: "path",
+          reason: "",
         });
 
         const task =
@@ -2985,6 +2991,9 @@ describe("AgentServerConversationService", () => {
           node_id: "root",
           conversation_id: "ignored",
           started_org: true,
+          team: "",
+          chosen_by: "path",
+          reason: "",
         });
 
         await AgentServerConversationService.createConversation({

@@ -95,6 +95,14 @@ export interface Escalation {
   held_by: NodeId | null;
   /** The nodes that passed it up, nearest to the one that raised it first. */
   handoffs: EscalationHandoff[];
+  /**
+   * A team that is not above the one that raised it, which the director
+   * asked to settle it directly. While set, that team's IC has it and
+   * `held_by` does not.
+   */
+  asked_of: NodeId | null;
+  /** When `asked_of` was asked (ISO 8601). */
+  asked_at: string | null;
 }
 
 export type StatusCounts = Record<NodeStatus, number>;
@@ -282,6 +290,11 @@ export interface DirectorSettings {
    * is woken to look at its teams. 0 turns the check off.
    */
   manager_check_ic_setbacks: number;
+  /**
+   * Whether what is written to the org as a whole, and what an IC asks of
+   * another team, may go straight to the team the director chooses.
+   */
+  route_requests: boolean;
 }
 
 /** The settings, beside what the org has now. */
@@ -308,6 +321,11 @@ export interface TeamMatch {
 export interface OrgSummary {
   /** `null` when no org has been started. */
   root_id: NodeId | null;
+  /**
+   * The conversation of the top team's IC; `null` when there is no org or
+   * that IC has no conversation here.
+   */
+  top_conversation_id: string | null;
   node_count: number;
   /**
    * The directory the org works in. For a server started in a git submodule
@@ -378,6 +396,12 @@ export interface RouteMessageRequest {
   /** The directory the message is about, repo-relative. Default: the root. */
   path?: string;
   /**
+   * Let the director choose a team below the one `path` gives, by the files
+   * the text names and by what a model makes of it. It moves down only when
+   * it is sure.
+   */
+  auto?: boolean;
+  /**
    * How to start the root team's IC when there is no org yet, as for a
    * normal conversation; the message then becomes the org's task and every
    * other agent is derived from this one.
@@ -403,10 +427,21 @@ export interface OrgHistory {
 export interface RoutedMessage {
   /** The team that received it. */
   node_id: NodeId;
+  /** The title of that team. */
+  team: string;
   /** The conversation of that team's IC. */
   conversation_id: string;
   /** There was no org, and the message started one. */
   started_org: boolean;
+  /**
+   * How the team was found. `path`: it owns the directory the message came
+   * from. `named`: the director chose it by the files the text names.
+   * `model`: by what a model made of the text. `top`: the director was not
+   * sure of any team below the one the directory gives.
+   */
+  chosen_by: "path" | "named" | "model" | "top";
+  /** Why this team, in a sentence, in the server's words; may be empty. */
+  reason: string;
 }
 
 /** An escalation that waits on the human, with the nodes it came up through. */
@@ -499,7 +534,11 @@ export type TeamEventKind =
   | "proposed"
   | "approved"
   | "declined"
-  | "needed";
+  | "needed"
+  | "asked"
+  | "misrouted"
+  | "asked_team"
+  | "answered";
 
 /** Something that became of a team directly below a team. */
 export interface TeamEvent {
@@ -522,7 +561,10 @@ export interface TeamEvent {
    * team's directory.
    */
   paths?: string[];
-  /** On `needed`, the team beside this one whose directory it needed. */
+  /**
+   * On `needed`, the team beside this one whose directory it needed; on
+   * `asked_team` and `answered`, the team it asked directly.
+   */
   other_id?: string;
   other?: string;
 }
