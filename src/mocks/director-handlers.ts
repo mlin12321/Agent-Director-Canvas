@@ -59,6 +59,8 @@ const ESCALATIONS: Record<NodeId, OrgNode["escalations"]> = {
       raised_at: "2026-11-10T09:12:00Z",
       raised_by: "ic",
       held_by: ROOT_ID,
+      asked_of: null,
+      asked_at: null,
       handoffs: [],
     },
   ],
@@ -71,6 +73,8 @@ const ESCALATIONS: Record<NodeId, OrgNode["escalations"]> = {
       raised_at: "2026-11-11T16:40:00Z",
       raised_by: "manager",
       held_by: null,
+      asked_of: null,
+      asked_at: null,
       handoffs: [
         {
           node_id: "payments",
@@ -419,6 +423,7 @@ export const DIRECTOR_HANDLERS = [
   http.get(`${BASE}/org`, () => {
     const body: OrgSummary = {
       root_id: ROOT_ID,
+      top_conversation_id: null,
       node_count: tree.size,
       repo_path: "/workspace/project",
       directory: "",
@@ -461,6 +466,9 @@ export const DIRECTOR_HANDLERS = [
       // The mock org's agents have no conversations.
       conversation_id: "",
       started_org: false,
+      team: "",
+      chosen_by: "path",
+      reason: "",
     };
     return HttpResponse.json(body);
   }),

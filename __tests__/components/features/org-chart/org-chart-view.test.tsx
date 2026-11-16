@@ -96,6 +96,8 @@ const TOKEN_DECISION: Escalation = {
   raised_at: "2026-11-10T00:00:00Z",
   raised_by: "ic",
   held_by: "auth",
+  asked_of: null,
+  asked_at: null,
   handoffs: [],
 };
 /** Passed up by every team above billing, so it waits on the human. */
@@ -107,6 +109,8 @@ const DOUBLE_CHARGE: Escalation = {
   raised_at: "2026-11-11T00:00:00Z",
   raised_by: "manager",
   held_by: null,
+  asked_of: null,
+  asked_at: null,
   handoffs: [
     {
       node_id: "root",
@@ -514,6 +518,8 @@ describe("OrgChartView", () => {
             id: "ledger",
             title: "Pick a ledger",
             held_by: "root",
+            asked_of: null,
+            asked_at: null,
           },
         ]),
       );
@@ -765,6 +771,7 @@ describe("OrgChartView", () => {
         http.get("*/api/director/org", () =>
           HttpResponse.json({
             root_id: "root",
+            top_conversation_id: null,
             node_count: 5,
             repo_path: "/work/shop",
             directory: "",
@@ -1009,6 +1016,8 @@ describe("OrgChartView", () => {
       const passedOnce: Escalation = {
         ...TOKEN_DECISION,
         held_by: "root",
+        asked_of: null,
+        asked_at: null,
         handoffs: [{ node_id: "auth", reason: "Affects billing too", at: "t" }],
       };
       store.upsert(
@@ -1025,6 +1034,8 @@ describe("OrgChartView", () => {
           {
             ...passedOnce,
             held_by: null,
+            asked_of: null,
+            asked_at: null,
             handoffs: [
               ...passedOnce.handoffs,
               { node_id: "root", reason: "A product call", at: "t" },
@@ -1210,6 +1221,7 @@ describe("OrgChartView", () => {
   describe("a director without an org", () => {
     const SUMMARY: OrgSummary = {
       root_id: null,
+      top_conversation_id: null,
       node_count: 0,
       repo_path: "/work/shop",
       directory: "",
@@ -1276,6 +1288,7 @@ describe("OrgChartView", () => {
         http.get("*/api/director/org", () =>
           HttpResponse.json({
             root_id: "root",
+            top_conversation_id: null,
             node_count: 5,
             repo_path: "/work/shop",
             directory: "",
@@ -1308,6 +1321,7 @@ describe("OrgChartView", () => {
           http.get("*/api/director/org", () =>
             HttpResponse.json({
               root_id: "root",
+              top_conversation_id: null,
               node_count: 5,
               repo_path: "/work/shop",
               directory: "",
@@ -1965,6 +1979,7 @@ describe("OrgChartView", () => {
         http.get("*/api/director/org", () =>
           HttpResponse.json({
             root_id: "root",
+            top_conversation_id: null,
             node_count: 5,
             repo_path: "/work/shop",
             directory: "",

@@ -6,6 +6,7 @@ import { server } from "#/mocks/node";
 
 const SUMMARY: OrgSummary = {
   root_id: null,
+  top_conversation_id: null,
   node_count: 0,
   repo_path: "/work/shop",
   directory: "",
@@ -18,6 +19,9 @@ const ROUTED: RoutedMessage = {
   node_id: "root",
   conversation_id: "conv-ic",
   started_org: true,
+  team: "",
+  chosen_by: "path",
+  reason: "",
 };
 const CONVERSATION = { conversation_id: "conv-ic" };
 
@@ -41,7 +45,12 @@ describe("routeToOrg", () => {
 
     expect(routed).toEqual(ROUTED);
     expect(sent).toEqual([
-      { text: "Build it", path: "/work/shop/api", conversation: CONVERSATION },
+      {
+        text: "Build it",
+        path: "/work/shop/api",
+        auto: true,
+        conversation: CONVERSATION,
+      },
     ]);
   });
 

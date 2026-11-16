@@ -9,8 +9,10 @@ import { I18nKey } from "#/i18n/declaration";
 /**
  * Writes to the team the page shows. The message goes the way every message
  * of the human goes: to the IC of the nearest team at or above the team's
- * directory that can take it, which the answer names. It only says
- * something; it prunes, replaces and splits nothing.
+ * directory that can take it, which the answer names. Written to the top
+ * team it is for the org as a whole, and may go straight to the team below
+ * that it concerns. It only says something; it prunes, replaces and splits
+ * nothing.
  */
 export function MessageToTeam({
   node,
@@ -24,7 +26,13 @@ export function MessageToTeam({
   const inputId = React.useId();
   const send = useMutation({
     mutationFn: (text: string) =>
-      DirectorClient.routeMessage({ text, path: node.boundary.path }),
+      DirectorClient.routeMessage({
+        text,
+        path: node.boundary.path,
+        // What is written to the top team is for the org as a whole, and
+        // its director may send it straight to the team it concerns.
+        auto: node.parent_id === null,
+      }),
     onSuccess: () => setDraft(""),
     meta: { disableToast: true },
   });
@@ -67,6 +75,9 @@ export function MessageToTeam({
           {t(I18nKey.ORG_CHART$MESSAGE_SENT, {
             team: taken?.title ?? send.data.node_id,
           })}
+          {send.data.node_id !== node.id && send.data.reason
+            ? ` (${send.data.reason})`
+            : null}
         </p>
       ) : null}
       {send.isError ? (

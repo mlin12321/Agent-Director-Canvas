@@ -42,6 +42,39 @@ describe("PendingUserMessages", () => {
     useOptimisticUserMessageStore.getState().clearPendingMessages();
   });
 
+  it("says which team a message went to when the org sent it elsewhere", () => {
+    const store = useOptimisticUserMessageStore.getState();
+    const id = store.enqueuePendingMessage({
+      conversationId: ACTIVE_CONVO,
+      text: "Add refunds",
+    });
+    store.markPendingMessageRouted(id, {
+      nodeId: "services.api",
+      team: "API",
+      reason: "",
+    });
+
+    renderWithProviders(<PendingUserMessages />);
+
+    expect(screen.getByTestId("user-message")).not.toHaveAttribute(
+      "data-pending-status",
+    );
+    expect(screen.getByTestId("routed-to-team")).toHaveTextContent(
+      /^ORG_CHART\$ROUTED_TO API$/,
+    );
+    expect(screen.getByRole("link", { name: "API" })).toHaveAttribute(
+      "href",
+      "/org/services.api",
+    );
+    // An echo of the same words in this conversation is another message.
+    expect(
+      store.consumeMatchingPendingMessage(ACTIVE_CONVO, "Add refunds", {
+        id: "event-1",
+        timestamp: new Date().toISOString(),
+      }),
+    ).toBeNull();
+  });
+
   it("renders nothing when the queue is empty", () => {
     const { container } = render(<PendingUserMessages />);
     expect(container).toBeEmptyDOMElement();
@@ -117,12 +150,10 @@ describe("PendingUserMessages", () => {
   });
 
   it("retains delivery errors, retry and stop while session progress owns the status", () => {
-    const id = useOptimisticUserMessageStore
-      .getState()
-      .enqueuePendingMessage({
-        conversationId: ACTIVE_CONVO,
-        text: "Continue safely",
-      });
+    const id = useOptimisticUserMessageStore.getState().enqueuePendingMessage({
+      conversationId: ACTIVE_CONVO,
+      text: "Continue safely",
+    });
     renderWithProviders(
       <PendingUserMessages
         showPendingStatus={false}

@@ -23,6 +23,7 @@ const DEFAULTS = {
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
+  route_requests: true,
 };
 const INPUT = "rounded-md border border-border bg-canvas-base px-3 py-2";
 
@@ -78,6 +79,7 @@ function SettingsForm({
   const [depth, setDepth] = React.useState(String(state.max_depth));
   const [allowed, setAllowed] = React.useState(state.allowed_profiles);
   const [resumes, setResumes] = React.useState(state.resume_on_start);
+  const [routes, setRoutes] = React.useState(state.route_requests);
   // 0 turns a check off.
   const [stall, setStall] = React.useState(String(state.stall_check_minutes));
   const [reviews, setReviews] = React.useState(
@@ -105,6 +107,7 @@ function SettingsForm({
         stall_check_minutes: Number(stall),
         manager_check_accepted_reviews: Number(reviews),
         manager_check_ic_setbacks: Number(setbacks),
+        route_requests: routes,
       }),
     onSuccess: (saved) => {
       queryClient.setQueryData(DIRECTOR_QUERY_KEYS.settings(backend.id), saved);
@@ -240,6 +243,20 @@ function SettingsForm({
               {t(I18nKey.ORG_CHART$SETTINGS_RESUME_ON_START_HELP)}
             </span>
           </label>
+          <label className="flex flex-col gap-2 text-sm">
+            <span className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={routes}
+                disabled={save.isPending}
+                onChange={(event) => setRoutes(event.target.checked)}
+              />
+              {t(I18nKey.ORG_CHART$SETTINGS_ROUTE_REQUESTS)}
+            </span>
+            <span className="text-xs text-muted">
+              {t(I18nKey.ORG_CHART$SETTINGS_ROUTE_REQUESTS_HELP)}
+            </span>
+          </label>
           <CountField
             label={t(I18nKey.ORG_CHART$SETTINGS_STALL_MINUTES)}
             help={t(I18nKey.ORG_CHART$SETTINGS_STALL_MINUTES_HELP)}
@@ -283,6 +300,7 @@ function SettingsForm({
                 setDepth(String(DEFAULTS.max_depth));
                 setAllowed(DEFAULTS.allowed_profiles);
                 setResumes(false);
+                setRoutes(DEFAULTS.route_requests);
                 setStall(String(DEFAULTS.stall_check_minutes));
                 setReviews(String(DEFAULTS.manager_check_accepted_reviews));
                 setSetbacks(String(DEFAULTS.manager_check_ic_setbacks));
@@ -352,6 +370,7 @@ export function OrgSettings() {
             settings.data.stall_check_minutes,
             settings.data.manager_check_accepted_reviews,
             settings.data.manager_check_ic_setbacks,
+            settings.data.route_requests,
           ].join(":")}
           state={settings.data}
           onClose={() => setIsOpen(false)}

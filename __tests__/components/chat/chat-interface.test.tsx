@@ -49,6 +49,9 @@ import { NO_BACKEND } from "#/api/backend-registry/active-store";
 import { SERVER_CONNECTION_ERROR_MESSAGE } from "#/constants/server-connection-error";
 import { I18nKey } from "#/i18n/declaration";
 import EventService from "#/api/event-service/event-service.api";
+import { http, HttpResponse } from "msw";
+import { server } from "#/mocks/node";
+import { ExplicitAgentChatContext } from "#/context/explicit-agent-chat";
 
 const mockSend = vi.fn();
 vi.mock("#/hooks/use-send-message", () => ({
@@ -921,6 +924,101 @@ describe("ChatInterface - Pending message queue", () => {
     const messages = screen.getAllByTestId("user-message");
     expect(messages[0]).toHaveTextContent("first");
     expect(messages[1]).toHaveTextContent("second");
+  });
+
+  /** An org whose top IC runs as ``topConversation``. */
+  function director(topConversation: string, wentTo: string) {
+    const sent: unknown[] = [];
+    server.use(
+      http.get("*/api/director/org", () =>
+        HttpResponse.json({
+          root_id: "root",
+          top_conversation_id: topConversation,
+          fixture: false,
+        }),
+      ),
+      http.post("*/api/director/org/messages", async ({ request }) => {
+        sent.push(await request.json());
+        return HttpResponse.json({
+          node_id: wentTo === "test-conversation-id" ? "root" : "services.api",
+          team: wentTo === "test-conversation-id" ? "Shop" : "API",
+          conversation_id: wentTo,
+          started_org: false,
+          chosen_by: wentTo === "test-conversation-id" ? "top" : "model",
+          reason: "It is about the API.",
+        });
+      }),
+    );
+    return sent;
+  }
+
+  it("sends what is written to the top IC through the org and says which team took it", async () => {
+    const sent = director("test-conversation-id", "conv-api");
+
+    renderInterface();
+    submitMessage("Add refunds");
+
+    const line = await screen.findByTestId("routed-to-team");
+    expect(line).toHaveTextContent(
+      "ORG_CHART$ROUTED_TO API (It is about the API.)",
+    );
+    expect(within(line).getByRole("link", { name: "API" })).toHaveAttribute(
+      "href",
+      "/org/services.api",
+    );
+    expect(sent).toEqual([{ text: "Add refunds", path: "", auto: true }]);
+    // The server delivered it; it is not sent to this conversation as well.
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(screen.getByTestId("user-message")).not.toHaveAttribute(
+      "data-pending-status",
+    );
+  });
+
+  it("leaves a message the top IC keeps to arrive by its echo", async () => {
+    const sent = director("test-conversation-id", "test-conversation-id");
+
+    renderInterface();
+    submitMessage("How far are we?");
+
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("routed-to-team")).not.toBeInTheDocument();
+    expect(screen.getByTestId("user-message")).toHaveAttribute(
+      "data-pending-status",
+      "sending",
+    );
+  });
+
+  it("sends to the conversation itself when it is not the top IC's", async () => {
+    const sent = director("another-conversation", "conv-api");
+    mockSend.mockResolvedValue({ queued: false });
+
+    renderInterface();
+    submitMessage("Add refunds");
+
+    await waitFor(() => expect(mockSend).toHaveBeenCalledTimes(1));
+    expect(sent).toEqual([]);
+  });
+
+  it("never routes what is written to an agent opened from the org chart", async () => {
+    const sent = director("test-conversation-id", "conv-api");
+    mockSend.mockResolvedValue({ queued: false });
+
+    render(
+      <ExplicitAgentChatContext.Provider value>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={["/test-conversation-id"]}>
+            <Routes>
+              <Route path=":conversationId" element={<ChatInterface />} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      </ExplicitAgentChatContext.Provider>,
+    );
+    submitMessage("Add refunds");
+
+    await waitFor(() => expect(mockSend).toHaveBeenCalledTimes(1));
+    expect(sent).toEqual([]);
   });
 
   function seedResolvedConversation(sandboxStatus = "RUNNING") {

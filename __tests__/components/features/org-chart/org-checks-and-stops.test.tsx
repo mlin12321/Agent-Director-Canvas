@@ -30,6 +30,7 @@ const STATE: DirectorSettingsState = {
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
+  route_requests: true,
 };
 
 function settingsHandlers(state: DirectorSettingsState) {
@@ -141,6 +142,7 @@ describe("the checks in the settings", () => {
         stall_check_minutes: 30,
         manager_check_accepted_reviews: 5,
         manager_check_ic_setbacks: 0,
+        route_requests: true,
       },
     ]);
   });
@@ -168,6 +170,7 @@ describe("the checks in the settings", () => {
       stall_check_minutes: 1,
       manager_check_accepted_reviews: 2,
       manager_check_ic_setbacks: 0,
+      route_requests: true,
     });
     const user = userEvent.setup();
     renderWithProviders(<OrgSettings />);

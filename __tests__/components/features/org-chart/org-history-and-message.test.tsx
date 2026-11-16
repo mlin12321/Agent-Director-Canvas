@@ -68,6 +68,19 @@ describe("OrgHistoryPanel", () => {
         team: "",
         detail: "API, Web: too small",
       }),
+      happened("2026-11-01T10:30:00+00:00", "answered", {
+        other_id: "apps.web",
+        other: "Web",
+        detail: "settled",
+      }),
+      happened("2026-11-01T10:20:00+00:00", "asked_team", {
+        other_id: "apps.web",
+        other: "Web",
+        detail: "Send the order id",
+      }),
+      happened("2026-11-01T10:10:00+00:00", "asked", {
+        detail: "Add refunds",
+      }),
       // A team that is gone is named, not linked.
       happened("2026-11-01T10:00:00+00:00", "pruned", {
         team_id: "apps.web",
@@ -99,12 +112,14 @@ describe("OrgHistoryPanel", () => {
       ),
       // About no single team: told of the team it is kept under.
       expect.stringContaining("ShopORG_CHART$TEAM_RECORD_DECLINED"),
+      expect.stringContaining("APIORG_CHART$HISTORY_ANSWERED"),
+      expect.stringContaining("APIORG_CHART$HISTORY_ASKED_TEAM"),
+      expect.stringContaining("APIORG_CHART$HISTORY_ASKED (Add refunds)"),
       expect.stringContaining("WebORG_CHART$HISTORY_PRUNED"),
     ]);
-    expect(within(panel).getByRole("link", { name: "API" })).toHaveAttribute(
-      "href",
-      "/org/services.api",
-    );
+    expect(
+      within(panel).getAllByRole("link", { name: "API" })[0],
+    ).toHaveAttribute("href", "/org/services.api");
     expect(within(panel).queryByRole("link", { name: "Web" })).toBeNull();
 
     await user.click(
@@ -112,7 +127,7 @@ describe("OrgHistoryPanel", () => {
     );
 
     await waitFor(() =>
-      expect(within(panel).getAllByRole("listitem")).toHaveLength(4),
+      expect(within(panel).getAllByRole("listitem")).toHaveLength(7),
     );
     expect(asked).toEqual([null, "2026-11-01T10:00:00+00:00"]);
     expect(
@@ -157,6 +172,9 @@ describe("MessageToTeam", () => {
           node_id: "root",
           conversation_id: "c",
           started_org: false,
+          team: "",
+          chosen_by: "path",
+          reason: "",
         });
       }),
     );
@@ -171,13 +189,49 @@ describe("MessageToTeam", () => {
 
     await waitFor(() =>
       expect(sent).toEqual([
-        { text: "Use the new price list.", path: "services/api" },
+        { text: "Use the new price list.", path: "services/api", auto: false },
       ]),
     );
     expect(await screen.findByRole("status")).toHaveTextContent(
       "ORG_CHART$MESSAGE_SENT",
     );
     expect(box).toHaveValue("");
+  });
+
+  it("lets the director choose the team for what is written to the top team", async () => {
+    const sent: unknown[] = [];
+    server.use(
+      http.post("*/api/director/org/messages", async ({ request }) => {
+        sent.push(await request.json());
+        return HttpResponse.json({
+          node_id: API.id,
+          team: API.title,
+          conversation_id: "c",
+          started_org: false,
+          chosen_by: "model",
+          reason: "It is about the price list.",
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<MessageToTeam node={ROOT} nodes={NODES} />);
+
+    await user.type(
+      screen.getByLabelText("ORG_CHART$MESSAGE_LABEL"),
+      "Use the new price list.",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "ORG_CHART$MESSAGE_SEND" }),
+    );
+
+    await waitFor(() =>
+      expect(sent).toEqual([
+        { text: "Use the new price list.", path: "", auto: true },
+      ]),
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "ORG_CHART$MESSAGE_SENT (It is about the price list.)",
+    );
   });
 
   it("keeps what was written and says why when the server refuses it", async () => {
