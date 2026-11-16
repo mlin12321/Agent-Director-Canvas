@@ -332,6 +332,8 @@ function escalationsWaiting(): OpenEscalation[] {
         .filter((escalation) => escalation.held_by === null)
         .map((escalation) => ({
           node_id: node.id,
+          session_id: "",
+          session: "",
           escalation,
           path: [...ancestorsOf(node), node].map(({ id, title }) => ({
             id,
@@ -362,6 +364,7 @@ function snapshot(focusId: NodeId, full: boolean): OrgEvent | null {
     focus_id: focusId,
     nodes: [...nodes.values()],
     escalations: escalationsWaiting(),
+    sessions: [],
     paused: null,
     merging: false,
   };

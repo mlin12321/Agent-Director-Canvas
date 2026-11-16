@@ -9,6 +9,8 @@ import { I18nKey } from "#/i18n/declaration";
 import { useOrgChartStore } from "#/stores/org-chart-store";
 import { cn } from "#/utils/utils";
 import { NodeHoverCard } from "./node-hover-card";
+import { useSessionsAt, useSessionStatusesAt } from "./org-sessions";
+import { StatusDots } from "./status-badge";
 
 interface NodeCardProps {
   node: OrgNode;
@@ -69,10 +71,21 @@ export const NodeCard = React.memo(function NodeCard({
   const notStarted = node.agents.length === 0;
   // An agent that was working when the org was paused.
   const paused = node.agents.some((agent) => agent.status === "paused");
+  // Sessions are no part of the chart; the card says how many are open here.
+  const sessions = useSessionsAt(node.id);
+  const subTeams = node.child_ids.length;
+  // One state for the team's own work and one for each session at work
+  // here: a team with sessions is in several states at once.
+  const sessionStatuses = useSessionStatusesAt(node.id);
+  const statuses = React.useMemo(
+    () => [node.status, ...sessionStatuses],
+    [node.status, sessionStatuses],
+  );
 
   const body = (
     <>
       <span className="flex w-full items-center gap-1.5">
+        <StatusDots statuses={statuses} />
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-contrast">
           {node.title}
         </span>
@@ -134,9 +147,15 @@ export const NodeCard = React.memo(function NodeCard({
           {node.headline}
         </span>
       ) : null}
-      {node.child_ids.length > 0 ? (
-        <span className="text-[11px] text-contrast">
-          {t(I18nKey.ORG_CHART$SUB_TEAMS, { count: node.child_ids.length })}
+      {subTeams > 0 || sessions > 0 ? (
+        <span className="w-full truncate text-[11px] text-contrast">
+          {subTeams > 0
+            ? t(I18nKey.ORG_CHART$SUB_TEAMS, { count: subTeams })
+            : null}
+          {subTeams > 0 && sessions > 0 ? " · " : null}
+          {sessions > 0
+            ? t(I18nKey.ORG_CHART$SESSIONS_COUNT, { count: sessions })
+            : null}
         </span>
       ) : null}
     </>

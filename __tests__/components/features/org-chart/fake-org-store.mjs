@@ -244,7 +244,13 @@ export class OrgStore {
       node.escalations
         .filter((escalation) => escalation.held_by === null)
         .forEach((escalation) => {
-          found.push({ node_id: node.id, escalation, path });
+          found.push({
+            node_id: node.id,
+            session_id: "",
+            session: "",
+            escalation,
+            path,
+          });
         });
       stack.push(...this.children(node.id).reverse());
     }
@@ -281,6 +287,7 @@ export class OrgStore {
       focus_id: focusId,
       nodes: [...nodes.values()],
       escalations: this.#waitingAnywhere(),
+      sessions: [],
     };
   }
 

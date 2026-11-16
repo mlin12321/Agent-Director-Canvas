@@ -9,6 +9,7 @@ import type {
   OrgEvent,
   OrgNode,
   PauseReason,
+  Session,
 } from "#/api/director/types";
 
 interface OrgTreeState {
@@ -16,6 +17,7 @@ interface OrgTreeState {
   focusId: NodeId | null;
   nodes: ReadonlyMap<NodeId, OrgNode>;
   escalations: OpenEscalation[];
+  sessions: Session[];
   orgState: OrgRunState | null;
 }
 
@@ -35,6 +37,7 @@ const INITIAL_STATE: OrgTreeState = {
   focusId: null,
   nodes: new Map(),
   escalations: [],
+  sessions: [],
   orgState: null,
 };
 
@@ -63,6 +66,7 @@ function reduce(state: OrgTreeState, action: OrgTreeAction): OrgTreeState {
         focusId: event.focus_id,
         nodes: new Map(event.nodes.map((node) => [node.id, node])),
         escalations: event.escalations,
+        sessions: event.sessions,
         orgState: { paused: event.paused, merging: event.merging },
       };
     case "org_state":
@@ -86,6 +90,8 @@ function reduce(state: OrgTreeState, action: OrgTreeAction): OrgTreeState {
     }
     case "escalations":
       return { ...state, escalations: event.escalations };
+    case "sessions":
+      return { ...state, sessions: event.sessions };
     default:
       return state;
   }
@@ -99,6 +105,11 @@ export interface OrgTreeView {
   nodes: ReadonlyMap<NodeId, OrgNode>;
   /** Every escalation in the tree that waits on the human. */
   escalations: OpenEscalation[];
+  /**
+   * The sessions that are open: lines of work beside the org's own. They
+   * are no nodes of the tree.
+   */
+  sessions: Session[];
   /** As the stream last said it; `null` before its first event. */
   orgState: OrgRunState | null;
 }

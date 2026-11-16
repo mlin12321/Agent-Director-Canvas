@@ -7,6 +7,11 @@ import {
   type FileSides,
   type NodeMemory,
   type OrgHistory,
+  type OpenedSession,
+  type OpenSessionRequest,
+  type Session,
+  type SessionTeam,
+  type ConversationPlace,
   type NodeId,
   type NodeOwnership,
   type OrgEvent,
@@ -98,6 +103,69 @@ export const DirectorClient = {
    */
   routeMessage(request: RouteMessageRequest) {
     return postJson<RoutedMessage>(`${ORG_PATH}/messages`, request);
+  },
+
+  /** The sessions that are open, oldest first. */
+  listSessions() {
+    return requestJson<Session[]>(`${ORG_PATH}/sessions`);
+  },
+
+  /**
+   * Answer an escalation a team raised in a session and that waits on the
+   * human. The answer goes to the session's IC at that team.
+   */
+  answerSessionEscalation(
+    sessionId: string,
+    nodeId: NodeId,
+    escalationId: string,
+    answer: string,
+  ) {
+    return postJson<SessionTeam>(
+      `${ORG_PATH}/sessions/${encodeURIComponent(sessionId)}/teams/${encodeURIComponent(
+        nodeId,
+      )}/escalations/${encodeURIComponent(escalationId)}/answer`,
+      { answer },
+    );
+  },
+
+  /**
+   * Where an agent's conversation is in the org, with the conversations one
+   * level from it. Refused (404) for a conversation that is no agent's.
+   */
+  getConversationPlace(conversationId: string) {
+    return requestJson<ConversationPlace>(
+      `${ORG_PATH}/conversations/${encodeURIComponent(conversationId)}`,
+    );
+  },
+
+  /**
+   * Note that the human has written in an agent's conversation, so that it
+   * is listed with the conversations the human started.
+   */
+  joinConversation(conversationId: string) {
+    return postJson<ConversationPlace>(
+      `${ORG_PATH}/conversations/${encodeURIComponent(conversationId)}/joined`,
+      {},
+    );
+  },
+
+  /**
+   * Open a session with a request: the team it is opened at gets an IC of
+   * its own for it, in a git worktree of its own.
+   */
+  openSession(request: OpenSessionRequest) {
+    return postJson<OpenedSession>(`${ORG_PATH}/sessions`, request);
+  },
+
+  /**
+   * Close a session: its agents are stopped and removed with its checkout.
+   * Work that was accepted stays merged; the rest is kept under a git ref.
+   */
+  closeSession(sessionId: string) {
+    return requestJson<unknown>(
+      `${ORG_PATH}/sessions/${encodeURIComponent(sessionId)}`,
+      { method: "DELETE" },
+    );
   },
 
   /**

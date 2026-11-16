@@ -70,7 +70,7 @@ import { useUpdateConversationTagFlags } from "#/hooks/mutation/use-update-conve
 import {
   ARCHIVED_CONVERSATION_TAG_KEY,
   hasConversationTagFlag,
-  isAgentStartedConversation,
+  isAgentOnlyConversation,
   PINNED_CONVERSATION_TAG_KEY,
 } from "#/utils/conversation-tag-flags";
 import { uniqueById } from "#/utils/unique-by-id";
@@ -367,7 +367,7 @@ export function ConversationPanel({
         (conversation) =>
           (showArchivedConversations || !isRowArchived(conversation)) &&
           (showAgentStartedConversations ||
-            !isAgentStartedConversation(conversation.tags)),
+            !isAgentOnlyConversation(conversation.tags)),
       ),
     [
       allLoadedConversations,

@@ -52,6 +52,9 @@ export function TeamReports({ node }: TeamReportsProps) {
                 {report.compacted
                   ? ` · ${t(I18nKey.ORG_CHART$REPORT_COMPACTED)}`
                   : null}
+                {report.session
+                  ? ` · ${t(I18nKey.ORG_CHART$SESSION_MARK, { title: report.session })}`
+                  : null}
               </span>
             </li>
           ))}

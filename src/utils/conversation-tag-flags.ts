@@ -30,6 +30,25 @@ export function isAgentStartedConversation(
   return Boolean(tags?.[STARTED_BY_TAG_KEY]);
 }
 
+/**
+ * Set by the director, beside `startedby`, once the human has written in a
+ * conversation it started. Such a conversation is the human's as well.
+ */
+export const HUMAN_JOINED_TAG_KEY = "humanjoined";
+
+/**
+ * Whether a conversation is an agent's own business: started by an agent's
+ * runtime and never written in by the human. These are left out of the list
+ * of conversations unless the human asks for them.
+ */
+export function isAgentOnlyConversation(
+  tags: Record<string, string> | null | undefined,
+): boolean {
+  return (
+    isAgentStartedConversation(tags) && tags?.[HUMAN_JOINED_TAG_KEY] !== "true"
+  );
+}
+
 /** Value stamped for an enabled flag. Any other value counts as disabled. */
 export const CONVERSATION_TAG_FLAG_VALUE = "true";
 

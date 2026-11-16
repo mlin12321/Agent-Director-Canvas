@@ -50,6 +50,9 @@ export const PLAN_COMMAND = "/plan";
 /** The /code slash command — switches the conversation back to Code mode. */
 export const CODE_COMMAND = "/code";
 
+/** The /session slash command — opens a session in the org with a request. */
+export const SESSION_COMMAND = "/session";
+
 /** Built-in slash commands surfaced in the menu for V1 conversations. */
 export const BUILT_IN_COMMANDS: SlashCommandItem[] = [
   {
@@ -115,6 +118,17 @@ export const BUILT_IN_COMMANDS: SlashCommandItem[] = [
       triggers: [CODE_COMMAND],
     },
     command: CODE_COMMAND,
+  },
+  {
+    skill: {
+      name: "session",
+      type: "agentskills",
+      source: null,
+      content:
+        "Have a request worked on in a session of its own, beside what the org's teams are doing — /session <request>",
+      triggers: [SESSION_COMMAND],
+    },
+    command: SESSION_COMMAND,
   },
 ];
 

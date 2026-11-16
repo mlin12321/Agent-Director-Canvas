@@ -26,6 +26,11 @@ import { OrgByState } from "./org-by-state";
 import { OrgTree } from "./org-tree";
 import { MessageToTeam } from "./message-to-team";
 import { HistoryButton, OrgHistoryPanel } from "./org-history";
+import {
+  OrgSessionsContext,
+  OrgSessionsPanel,
+  SessionsButton,
+} from "./org-sessions";
 import { OwnershipMap } from "./ownership-map";
 import { HOME_PATH, StartOrgNotice } from "./start-org-notice";
 import { TeamSearch } from "./team-search";
@@ -113,10 +118,8 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
   // Both views of the whole org; `byState` says which.
   const full = view !== "focused";
   // The whole org is one subscription whichever team the page is on.
-  const { status, focusId, nodes, escalations, orgState } = useOrgTree(
-    full ? null : nodeId,
-    full,
-  );
+  const { status, focusId, nodes, escalations, sessions, orgState } =
+    useOrgTree(full ? null : nodeId, full);
   // A director without a tree answers the stream like a server without a
   // director; only asking tells "start an org" from "nothing to talk to".
   // It also says how far the server holds teams to their boundaries.
@@ -156,6 +159,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
   const closeDetails = React.useCallback(() => setDetailsId(null), []);
   // The room the chart has, less the space kept free around what is drawn.
   const [showsHistory, setShowsHistory] = React.useState(false);
+  const [showsSessions, setShowsSessions] = React.useState(false);
   const [frame, setFrame] = React.useState<HTMLElement | null>(null);
   const [space, setSpace] = React.useState({ width: 0, height: 0 });
   React.useLayoutEffect(() => {
@@ -257,97 +261,108 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
       );
 
   return (
-    <div data-testid="org-chart" className="flex h-full min-h-0">
-      <div className="flex min-w-0 flex-1 flex-col gap-4 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <OrgBreadcrumb ancestors={ancestors} current={current} />
-          <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2">
-            {stale ? (
-              <span role="status" className="text-xs text-feedback-warning">
-                {t(I18nKey.ORG_CHART$RECONNECTING)}
-              </span>
-            ) : null}
-            <TeamSearch />
-            {org.data && !org.data.fixture ? (
-              <HistoryButton
-                open={showsHistory}
-                onToggle={() => setShowsHistory((shown) => !shown)}
-              />
-            ) : null}
-            {org.data && !org.data.fixture ? (
-              <OrgSync merging={org.data.merging} />
-            ) : null}
-            <ChartToolbar />
-            {org.data && !org.data.fixture && org.data.paused === null ? (
-              <PauseButton />
-            ) : null}
-            {org.data && !org.data.fixture ? <OrgSettings /> : null}
+    <OrgSessionsContext.Provider value={sessions}>
+      <div data-testid="org-chart" className="flex h-full min-h-0">
+        <div className="flex min-w-0 flex-1 flex-col gap-4 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <OrgBreadcrumb ancestors={ancestors} current={current} />
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2">
+              {stale ? (
+                <span role="status" className="text-xs text-feedback-warning">
+                  {t(I18nKey.ORG_CHART$RECONNECTING)}
+                </span>
+              ) : null}
+              <TeamSearch />
+              {org.data && !org.data.fixture ? (
+                <HistoryButton
+                  open={showsHistory}
+                  onToggle={() => setShowsHistory((shown) => !shown)}
+                />
+              ) : null}
+              {org.data && !org.data.fixture ? (
+                <SessionsButton
+                  open={showsSessions}
+                  onToggle={() => setShowsSessions((shown) => !shown)}
+                />
+              ) : null}
+              {org.data && !org.data.fixture ? (
+                <OrgSync merging={org.data.merging} />
+              ) : null}
+              <ChartToolbar />
+              {org.data && !org.data.fixture && org.data.paused === null ? (
+                <PauseButton />
+              ) : null}
+              {org.data && !org.data.fixture ? <OrgSettings /> : null}
+            </div>
           </div>
+          {org.data ? <PausedBanner paused={org.data.paused} /> : null}
+          {org.data?.merging ? <MergeConflicts /> : null}
+          <EscalationsPanel escalations={escalations} />
+          {showsHistory ? <OrgHistoryPanel nodes={nodes} /> : null}
+          {showsSessions ? (
+            <OrgSessionsPanel sessions={sessions} nodes={nodes} />
+          ) : null}
+          <section
+            ref={setFrame}
+            aria-label={t(I18nKey.ORG_CHART$NAV)}
+            className="min-h-0 flex-1 overflow-auto rounded-xl border border-border"
+          >
+            {byState ? (
+              <OrgByState
+                nodes={nodes}
+                currentId={current.id}
+                collidingIds={colliding}
+                onOpenDetails={openDetails}
+              />
+            ) : (
+              <ChartCanvas full={full} zoom={zoom * fit.scale}>
+                {full ? (
+                  <OrgTree
+                    root={top}
+                    nodes={nodes}
+                    currentId={current.id}
+                    collidingIds={colliding}
+                    onOpenDetails={openDetails}
+                  />
+                ) : (
+                  <FocusedChart
+                    current={current}
+                    parent={ancestors.at(-1) ?? null}
+                    reports={reports}
+                    columns={fit.columns}
+                    collidingIds={colliding}
+                    onOpenDetails={openDetails}
+                  />
+                )}
+              </ChartCanvas>
+            )}
+          </section>
+          <OwnershipMap node={current} ownership={ownership} />
+          {org.data && !org.data.fixture ? (
+            <MessageToTeam key={current.id} node={current} nodes={nodes} />
+          ) : null}
+          {org.data ? (
+            <p className="text-xs text-muted">
+              {t(I18nKey.ORG_CHART$TALK_HINT, { path: org.data.repo_path })}{" "}
+              <NavigationLink
+                to={HOME_PATH}
+                className="text-link hover:underline"
+              >
+                {t(I18nKey.ORG_CHART$START_SUBMIT)}
+              </NavigationLink>
+            </p>
+          ) : null}
         </div>
-        {org.data ? <PausedBanner paused={org.data.paused} /> : null}
-        {org.data?.merging ? <MergeConflicts /> : null}
-        <EscalationsPanel escalations={escalations} />
-        {showsHistory ? <OrgHistoryPanel nodes={nodes} /> : null}
-        <section
-          ref={setFrame}
-          aria-label={t(I18nKey.ORG_CHART$NAV)}
-          className="min-h-0 flex-1 overflow-auto rounded-xl border border-border"
-        >
-          {byState ? (
-            <OrgByState
-              nodes={nodes}
-              currentId={current.id}
-              collidingIds={colliding}
-              onOpenDetails={openDetails}
-            />
-          ) : (
-            <ChartCanvas full={full} zoom={zoom * fit.scale}>
-              {full ? (
-                <OrgTree
-                  root={top}
-                  nodes={nodes}
-                  currentId={current.id}
-                  collidingIds={colliding}
-                  onOpenDetails={openDetails}
-                />
-              ) : (
-                <FocusedChart
-                  current={current}
-                  parent={ancestors.at(-1) ?? null}
-                  reports={reports}
-                  columns={fit.columns}
-                  collidingIds={colliding}
-                  onOpenDetails={openDetails}
-                />
-              )}
-            </ChartCanvas>
-          )}
-        </section>
-        <OwnershipMap node={current} ownership={ownership} />
-        {org.data && !org.data.fixture ? (
-          <MessageToTeam key={current.id} node={current} nodes={nodes} />
-        ) : null}
-        {org.data ? (
-          <p className="text-xs text-muted">
-            {t(I18nKey.ORG_CHART$TALK_HINT, { path: org.data.repo_path })}{" "}
-            <NavigationLink
-              to={HOME_PATH}
-              className="text-link hover:underline"
-            >
-              {t(I18nKey.ORG_CHART$START_SUBMIT)}
-            </NavigationLink>
-          </p>
+        {detailsId === current.id ? (
+          <AgentInspectorDrawer
+            key={current.id}
+            node={current}
+            nodes={nodes}
+            enforcement={org.data?.boundary_enforcement}
+            onClose={closeDetails}
+          />
         ) : null}
       </div>
-      {detailsId === current.id ? (
-        <AgentInspectorDrawer
-          key={current.id}
-          node={current}
-          nodes={nodes}
-          enforcement={org.data?.boundary_enforcement}
-          onClose={closeDetails}
-        />
-      ) : null}
-    </div>
+    </OrgSessionsContext.Provider>
   );
 }

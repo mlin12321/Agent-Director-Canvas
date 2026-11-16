@@ -409,6 +409,99 @@ export interface RouteMessageRequest {
   conversation?: Record<string, unknown>;
 }
 
+/** A request the human wants worked on beside what a team is doing. */
+export interface OpenSessionRequest {
+  text: string;
+  /** What to call the session; taken from the text when left out. */
+  title?: string;
+  /** The team to open it at. Left out, the director chooses the team. */
+  node_id?: NodeId;
+}
+
+/**
+ * What a session has at one team of the org: agents, a checkout, a review
+ * and escalations of its own. It is no node of the org tree. `id` is its
+ * own, `parent_id` what the session has at the team above (for the team it
+ * was opened at: the team whose IC reviews it), `child_ids` what it has at
+ * the team's sub-teams.
+ */
+export interface SessionTeam extends OrgNode {
+  /** The session. */
+  session: string;
+  /** The team of the org. */
+  team_id: NodeId;
+}
+
+/**
+ * A line of work the human opened at a team, beside the org's own. It is
+ * not part of the org tree, which is the org's structure: it has agents and
+ * a checkout of its own at the team it was opened at and, once they are
+ * given a task in it, at the teams below. The IC of the team above reviews
+ * its work.
+ */
+export interface Session {
+  id: string;
+  title: string;
+  /** The team of the org it was opened at, and that team's title. */
+  team_id: NodeId;
+  team: string;
+  /** The team whose IC reviews its work. */
+  above_id: NodeId;
+  /** What the human asked of it. */
+  request: string;
+  opened_at: string;
+  status: NodeStatus;
+  review: ReviewState | null;
+  /** The conversation of its IC at the team it was opened at. */
+  conversation_id: string | null;
+  /** What it has at each of its teams, the one it was opened at first. */
+  teams: SessionTeam[];
+}
+
+/**
+ * Where an agent is from a conversation: `above` an agent of the team that
+ * reviews its team's work, `beside` the other agent of its own team,
+ * `below` the IC of a team directly below, `session` the IC of a session
+ * whose work its team reviews.
+ */
+export type ConversationRelation = "above" | "beside" | "below" | "session";
+
+/** An agent's conversation, as it is reached from another one. */
+export interface ConversationLink {
+  conversation_id: string;
+  relation: ConversationRelation;
+  /** The team of the org the agent works for, and its title. */
+  node_id: NodeId;
+  team: string;
+  role: AgentRole;
+  /** The session the agent works in and its title; empty for none. */
+  session_id: string;
+  session: string;
+  status: string;
+}
+
+/** Where an agent's conversation is in the org, and those a level away. */
+export interface ConversationPlace {
+  conversation_id: string;
+  node_id: NodeId;
+  team: string;
+  role: AgentRole;
+  session_id: string;
+  session: string;
+  /** Whether the human has written in this conversation. */
+  human_joined: boolean;
+  /** Above first, then beside, below and sessions. */
+  links: ConversationLink[];
+}
+
+/** A session that was just opened. */
+export interface OpenedSession {
+  session: Session;
+  conversation_id: string;
+  chosen_by: RoutedMessage["chosen_by"];
+  reason: string;
+}
+
 /** One event of an org's history, with the team whose record holds it. */
 export interface HistoryEvent extends TeamEvent {
   /** The team directly above the event's team. */
@@ -446,8 +539,11 @@ export interface RoutedMessage {
 
 /** An escalation that waits on the human, with the nodes it came up through. */
 export interface OpenEscalation {
-  /** The node that raised it. */
+  /** The team of the org that raised it. */
   node_id: NodeId;
+  /** The session it was raised in and its title; empty for the org's own. */
+  session_id: string;
+  session: string;
   escalation: Escalation;
   /** Root first, ending at the node that raised it. */
   path: Array<{ id: NodeId; title: string }>;
@@ -460,6 +556,8 @@ export interface Report {
   /** Which agent of the team wrote it. */
   role: AgentRole;
   text: string;
+  /** The title of the session its writer works in; empty for the org's own. */
+  session?: string;
   /** True for the one report a model wrote in place of earlier ones. */
   compacted?: boolean;
   /**
@@ -538,7 +636,9 @@ export type TeamEventKind =
   | "asked"
   | "misrouted"
   | "asked_team"
-  | "answered";
+  | "answered"
+  | "session_opened"
+  | "session_closed";
 
 /** Something that became of a team directly below a team. */
 export interface TeamEvent {
@@ -550,6 +650,8 @@ export interface TeamEvent {
    */
   team_id?: string;
   team?: string;
+  /** The title of the session the team works in, when it works in one. */
+  session?: string;
   /**
    * For `woken`, why the Manager was woken; for `proposed`, `approved` and
    * `declined`, the sub-teams, and for `declined` the Manager's reason. In
@@ -745,12 +847,15 @@ export type OrgEvent =
       focus_id: NodeId;
       nodes: OrgNode[];
       escalations: OpenEscalation[];
+      /** The sessions that are open. They are no nodes of the tree. */
+      sessions: Session[];
       paused: PauseReason | null;
       merging: boolean;
     }
   | { type: "org_state"; paused: PauseReason | null; merging: boolean }
   | { type: "node_upsert"; node: OrgNode }
   | { type: "node_removed"; id: NodeId }
-  | { type: "escalations"; escalations: OpenEscalation[] };
+  | { type: "escalations"; escalations: OpenEscalation[] }
+  | { type: "sessions"; sessions: Session[] };
 
 export const DIRECTOR_BASE_PATH = "/api/director";

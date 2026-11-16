@@ -9,6 +9,7 @@ import { orgNodePath } from "#/constants/org-chart";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { ESCALATION_LABEL_KEYS } from "./org-chart-presentation";
+import { SessionMark } from "./org-sessions";
 
 interface EscalationsPanelProps {
   /** In the server's order: critical issues first, then longest waiting. */
@@ -30,8 +31,16 @@ function EscalationCard({ item }: { item: OpenEscalation }) {
   const titles = new Map(item.path.map((step) => [step.id, step.title]));
   const answer = useMutation({
     meta: { disableToast: true },
-    mutationFn: (text: string) =>
-      DirectorClient.answerEscalation(item.node_id, escalation.id, text),
+    // One a team raised in a session is answered to the session's IC.
+    mutationFn: (text: string): Promise<unknown> =>
+      item.session_id
+        ? DirectorClient.answerSessionEscalation(
+            item.session_id,
+            item.node_id,
+            escalation.id,
+            text,
+          )
+        : DirectorClient.answerEscalation(item.node_id, escalation.id, text),
   });
   const text = draft.trim();
 
@@ -61,6 +70,11 @@ function EscalationCard({ item }: { item: OpenEscalation }) {
       >
         {item.path.map((step) => step.title).join(" › ")}
       </NavigationLink>
+      {item.session ? (
+        <span className="flex">
+          <SessionMark title={item.session} />
+        </span>
+      ) : null}
       {escalation.handoffs.length > 0 ? (
         <span className="flex flex-col gap-0.5 border-t border-border pt-1 text-xs text-text-secondary">
           <span className="text-muted">
