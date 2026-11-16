@@ -600,7 +600,9 @@ export const DIRECTOR_HANDLERS = [
       );
     }
     const body: RoutedMessage = {
-      node_id: nearestTeam(payload.path ?? "").id,
+      node_id:
+        mockSessions.find((session) => session.id === payload.session_id)
+          ?.team_id ?? nearestTeam(payload.path ?? "").id,
       // The mock org's agents have no conversations.
       conversation_id: "",
       started_org: false,

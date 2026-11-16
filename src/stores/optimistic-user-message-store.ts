@@ -4,7 +4,20 @@ import { parseDateAsUTC } from "#/utils/format-time-delta";
 import { matchesPendingConversationId } from "#/utils/pending-task-message-link";
 import type { BaseEvent } from "#/types/agent-server/core/base/event";
 
-export type PendingUserMessageStatus = "sending" | "error";
+/**
+ * "routed": the org's director sent it straight to a team of the session
+ * below the one whose conversation it was written in, so no echo of it
+ * comes here.
+ */
+export type PendingUserMessageStatus = "sending" | "error" | "routed";
+
+/** The team of a session a message written in it went to. */
+export interface RoutedTo {
+  nodeId: string;
+  team: string;
+  /** Why this team, in the server's words; may be empty. */
+  reason: string;
+}
 
 /**
  * How long a pending message is allowed to stay in "sending" state before we
@@ -44,6 +57,7 @@ export interface PendingUserMessage {
   timestamp: string;
   afterTimestamp?: number;
   errorMessage?: string;
+  routedTo?: RoutedTo;
 }
 
 interface OptimisticUserMessageState {
@@ -76,6 +90,8 @@ interface OptimisticUserMessageActions {
   enqueuePendingMessage: (payload: EnqueuePendingMessagePayload) => string;
   /** Mark a pending message as failed (the API rejected it). */
   markPendingMessageError: (id: string, errorMessage?: string) => void;
+  /** The message went to another team's conversation; it stays shown. */
+  markPendingMessageRouted: (id: string, routedTo: RoutedTo) => void;
   /** Mark a pending message as sending again (used when retrying). */
   markPendingMessageSending: (id: string) => void;
   /** Drop a pending message from the queue (e.g., after success/cancellation). */
@@ -192,6 +208,15 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
         ),
       })),
 
+    markPendingMessageRouted: (id, routedTo) =>
+      set((state) => ({
+        pendingMessages: state.pendingMessages.map((message) =>
+          message.id === id
+            ? { ...message, status: "routed", routedTo }
+            : message,
+        ),
+      })),
+
     markPendingMessageSending: (id) => {
       set((state) => ({
         pendingMessages: state.pendingMessages.map((message) =>
@@ -234,7 +259,11 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
         let target = state.pendingMessages.findIndex(
           (message) => message.status === "sending" && matches(message),
         );
-        if (target === -1) target = state.pendingMessages.findIndex(matches);
+        // A message that went to another team is never echoed here.
+        if (target === -1)
+          target = state.pendingMessages.findIndex(
+            (message) => message.status !== "routed" && matches(message),
+          );
         if (target === -1) return state;
         consumed = state.pendingMessages[target];
         return {

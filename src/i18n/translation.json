@@ -44351,6 +44351,24 @@
     "ca": "Escriu després de /session què ha de fer la sessió.",
     "id": "Tulis setelah /session apa yang harus dikerjakan sesi."
   },
+  "ORG_CHART$ROUTED_TO": {
+    "en": "Sent straight to the team",
+    "zh-CN": "已直接发送给团队",
+    "zh-TW": "已直接傳送給團隊",
+    "de": "Direkt an das Team gesendet:",
+    "ko-KR": "팀에 바로 보냈습니다:",
+    "no": "Sendt rett til teamet",
+    "it": "Inviato direttamente al team",
+    "pt": "Enviado diretamente à equipe",
+    "es": "Enviado directamente al equipo",
+    "ar": "أُرسل مباشرة إلى الفريق",
+    "fr": "Envoyé directement à l'équipe",
+    "tr": "Doğrudan ekibe gönderildi:",
+    "ja": "チームに直接送信しました:",
+    "uk": "Надіслано безпосередньо команді",
+    "ca": "Enviat directament a l'equip",
+    "id": "Dikirim langsung ke tim"
+  },
   "ORG_CHART$HISTORY_ASKED": {
     "en": "asked directly by you",
     "zh-CN": "由你直接提出请求",

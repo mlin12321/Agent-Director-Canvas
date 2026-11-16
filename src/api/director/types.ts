@@ -399,6 +399,11 @@ export interface RouteMessageRequest {
    */
   auto?: boolean;
   /**
+   * The session the message continues, when it begins no new one: it goes to
+   * one of that session's own teams and `path` and `auto` are ignored.
+   */
+  session_id?: string;
+  /**
    * How to start the root team's IC when there is no org yet, as for a
    * normal conversation; the message then becomes the org's task and every
    * other agent is derived from this one.
