@@ -12,6 +12,7 @@ import type {
   Session,
   SessionTeam,
 } from "#/api/director/types";
+import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-inspector-drawer";
 import { ConversationLinks } from "#/components/features/org-chart/conversation-links";
 import { EscalationsPanel } from "#/components/features/org-chart/escalations-panel";
 import { MessageToTeam } from "#/components/features/org-chart/message-to-team";
@@ -78,6 +79,9 @@ const NODES = new Map([ROOT, API].map((node) => [node.id, node]));
 const REFUNDS: SessionTeam = {
   ...team("services.api@s1a2b3c", "API", "services/api", {
     isolation: "worktree",
+    agents: [
+      { role: "ic", conversation_id: "c2", status: "idle", kind: "openhands" },
+    ],
   }),
   session: "s1a2b3c",
   team_id: API.id,
@@ -117,6 +121,116 @@ describe("NodeCard", () => {
     expect(api).toHaveTextContent("ORG_CHART$SESSIONS_COUNT");
     expect(api).not.toHaveTextContent("ORG_CHART$SUB_TEAMS");
     expect(screen.queryByTestId("org-session-mark")).toBeNull();
+  });
+
+  it("shows a dot for the team's own work and one for each session at work there, and counts them when there is no room", () => {
+    const at = (id: string, status: Session["status"]): Session => ({
+      ...SESSION,
+      id,
+      status,
+      teams: [{ ...REFUNDS, id: `${API.id}@${id}`, session: id, status }],
+    });
+    const dots = (testId: string) => {
+      const found = within(screen.getByTestId(testId)).getByTestId(
+        "org-status-dots",
+      );
+      return {
+        found,
+        states: [...found.querySelectorAll("[data-status]")].map(
+          (dot) => `${dot.getAttribute("data-status")}${dot.textContent}`,
+        ),
+      };
+    };
+    const { unmount } = renderWithProviders(
+      <OrgSessionsContext.Provider value={[at("s1", "working")]}>
+        <NodeCard node={ROOT} current={false} onOpenDetails={() => {}} />
+        <NodeCard node={API} current={false} onOpenDetails={() => {}} />
+      </OrgSessionsContext.Provider>,
+    );
+
+    // A team without sessions has the one dot of its own state.
+    expect(dots("org-node-root").states).toEqual(["idle"]);
+    const few = dots("org-node-services.api");
+    expect(few.states).toEqual(["idle", "working"]);
+    expect(few.found).not.toHaveAttribute("data-counted");
+    expect(few.found).toHaveAccessibleName(
+      "1 ORG_CHART$STATUS_WORKING, 1 ORG_CHART$STATUS_IDLE",
+    );
+    unmount();
+
+    renderWithProviders(
+      <OrgSessionsContext.Provider
+        value={[
+          at("s1", "working"),
+          at("s2", "working"),
+          at("s3", "blocked"),
+          at("s4", "done"),
+        ]}
+      >
+        <NodeCard node={API} current={false} onOpenDetails={() => {}} />
+      </OrgSessionsContext.Provider>,
+    );
+    const many = dots("org-node-services.api");
+    expect(many.found).toHaveAttribute("data-counted");
+    expect(many.states).toEqual(["blocked1", "working2", "idle1", "done1"]);
+  });
+});
+
+describe("AgentInspectorDrawer", () => {
+  it("lists the conversations at a team, marks the ones the human started there, and opens one only when it is chosen", async () => {
+    server.use(
+      http.get("*/api/director/org/nodes/:id/memory", () =>
+        HttpResponse.json({
+          specs: [],
+          reports: [],
+          former_teams: [],
+          history: [],
+        }),
+      ),
+      http.get("*/api/director/org/nodes/:id/messages", () =>
+        HttpResponse.json([]),
+      ),
+    );
+    const user = userEvent.setup();
+    const { unmount } = renderWithProviders(
+      <OrgSessionsContext.Provider value={[SESSION]}>
+        <AgentInspectorDrawer node={API} onClose={() => {}} />
+      </OrgSessionsContext.Provider>,
+    );
+
+    const rows = within(
+      screen.getByTestId("org-node-conversations"),
+    ).getAllByRole("button");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "ORG_CHART$ROLE_ICidle",
+      "ORG_CHART$ROLE_IC · Refundsidle",
+    ]);
+    const [own, refunds] = rows;
+    // The team's own IC was started by the org; the session by the human.
+    expect(own).not.toHaveAttribute("data-mine");
+    expect(own).not.toHaveClass("text-feedback-error");
+    expect(refunds).toHaveAttribute("data-mine");
+    expect(refunds).toHaveClass("text-feedback-error", "border-feedback-error");
+    expect(screen.queryByTestId("agent-conversation")).toBeNull();
+    expect(screen.getByText("ORG_CHART$CONVERSATION_PICK")).toBeInTheDocument();
+
+    await user.click(refunds);
+    expect(refunds).toHaveAttribute("aria-pressed", "true");
+    expect(await screen.findByTestId("agent-conversation")).toHaveTextContent(
+      "c2",
+    );
+    await user.click(own);
+    expect(refunds).toHaveAttribute("aria-pressed", "false");
+    expect(own).toHaveAttribute("aria-pressed", "true");
+    unmount();
+
+    // The top team's IC is the conversation the human started the org with.
+    renderWithProviders(
+      <AgentInspectorDrawer node={ROOT} onClose={() => {}} />,
+    );
+    expect(
+      within(screen.getByTestId("org-node-conversations")).getByRole("button"),
+    ).toHaveAttribute("data-mine");
   });
 });
 

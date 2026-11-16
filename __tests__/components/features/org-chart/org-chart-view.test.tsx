@@ -1343,7 +1343,7 @@ describe("OrgChartView", () => {
       },
     );
 
-    it("opens when the team the page is on is clicked, on its first agent, and closes again", async () => {
+    it("opens when the team the page is on is clicked, on the list of its conversations, and closes again", async () => {
       memoryHandlers();
       const user = userEvent.setup();
       renderWithProviders(<OrgChartView nodeId="auth" />);
@@ -1352,13 +1352,20 @@ describe("OrgChartView", () => {
       await user.click(currentCard());
 
       const drawer = screen.getByRole("dialog", { name: "auth team" });
+      // An agent without a conversation cannot be opened; nothing is open
+      // until a conversation is chosen.
       expect(
         within(drawer).getByRole("button", {
           name: /ORG_CHART\$ROLE_IC/,
         }),
-      ).toHaveAttribute("aria-pressed", "true");
+      ).toBeDisabled();
       expect(
-        within(drawer).getByText("ORG_CHART$NO_CONVERSATION"),
+        within(drawer).getByRole("button", {
+          name: /ORG_CHART\$ROLE_MANAGER/,
+        }),
+      ).toHaveAttribute("aria-pressed", "false");
+      expect(
+        within(drawer).getByText("ORG_CHART$CONVERSATION_PICK"),
       ).toBeInTheDocument();
       expect(screen.queryByTestId("conversation-view")).toBeNull();
 
@@ -1798,8 +1805,11 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId="root" />);
       await findCard("auth");
 
+      // The dots of a team's state are its only mark.
       const marks = ["auth", "search", "billing"].flatMap((id) =>
-        within(card(id)).queryAllByRole("img"),
+        within(card(id))
+          .queryAllByRole("img")
+          .filter((mark) => mark.dataset.testid !== "org-status-dots"),
       );
       expect(marks).toEqual([]);
     });

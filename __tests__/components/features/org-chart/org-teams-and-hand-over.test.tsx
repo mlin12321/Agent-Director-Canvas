@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type {
   DirectorSettingsState,
   NodeMemory,
@@ -19,6 +19,14 @@ import {
 import { TeamReports } from "#/components/features/org-chart/team-reports";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
+
+// The chat stack needs a live agent server; what matters here is which
+// conversation the drawer opens.
+vi.mock("#/components/features/org-chart/agent-conversation", () => ({
+  AgentConversation: ({ conversationId }: { conversationId: string }) => (
+    <div data-testid="conversation-view">{conversationId}</div>
+  ),
+}));
 
 const STATE: DirectorSettingsState = {
   max_teams: 32,
@@ -226,14 +234,14 @@ describe("a team that has not been given a task", () => {
 });
 
 describe("an IC in hand-over mode", () => {
-  it("stays one agent, with a switch between its two conversations", async () => {
+  it("stays one agent, with its two conversations in the list", async () => {
     memoryHandlers();
     const handing = {
       ...NOT_STARTED,
       agents: [
         {
           role: "ic",
-          conversation_id: null,
+          conversation_id: "main-1",
           status: "idle",
           hand_over: { conversation_id: "side-1", status: "working" },
         },
@@ -244,28 +252,36 @@ describe("an IC in hand-over mode", () => {
       <AgentInspectorDrawer node={handing} onClose={() => {}} />,
     );
 
-    // No tab of its own: the team has the agents it had.
-    const agents = screen.getByRole("group", { name: "ORG_CHART$AGENTS" });
-    expect(within(agents).getAllByRole("button")).toHaveLength(2);
-    const modes = screen.getByRole("group", {
-      name: "ORG_CHART$HAND_OVER_MODE",
-    });
-    const main = within(modes).getByRole("button", {
-      name: "ORG_CHART$MAIN_CONVERSATION",
-    });
-    const mode = within(modes).getByRole("button", {
-      name: /ORG_CHART\$HAND_OVER_MODE/,
-    });
-    expect(main).toHaveAttribute("aria-pressed", "true");
+    const list = screen.getByTestId("org-node-conversations");
+    const [main, mode] = within(list).getAllByRole("button");
+    expect(within(list).getAllByRole("button")).toHaveLength(2);
+    expect(main).toHaveTextContent("ORG_CHART$ROLE_IC");
+    expect(mode).toHaveTextContent(
+      "ORG_CHART$ROLE_IC · ORG_CHART$HAND_OVER_MODE",
+    );
     expect(mode).toHaveTextContent("working");
+    // Nothing is open until a conversation is chosen.
+    expect(main).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByTestId("conversation-view")).toBeNull();
     expect(screen.queryByText("ORG_CHART$HAND_OVER_MODE_HELP")).toBeNull();
 
     await user.click(mode);
-
     expect(mode).toHaveAttribute("aria-pressed", "true");
     expect(
       screen.getByText("ORG_CHART$HAND_OVER_MODE_HELP"),
     ).toBeInTheDocument();
+    expect(await screen.findByTestId("conversation-view")).toHaveTextContent(
+      "side-1",
+    );
+
+    // Choosing another flips to it; choosing the open one puts it away.
+    await user.click(main);
+    expect(mode).toHaveAttribute("aria-pressed", "false");
+    expect(await screen.findByTestId("conversation-view")).toHaveTextContent(
+      "main-1",
+    );
+    await user.click(main);
+    expect(screen.queryByTestId("conversation-view")).toBeNull();
   });
 
   it("says so when the hand-over could not be started, and opens nothing", () => {
@@ -295,7 +311,7 @@ describe("an IC in hand-over mode", () => {
     );
   });
 
-  it("shows no switch for an IC that has no hand-over", () => {
+  it("lists one conversation for an IC that has no hand-over", () => {
     memoryHandlers();
     const plain = {
       ...NOT_STARTED,
@@ -306,8 +322,10 @@ describe("an IC in hand-over mode", () => {
     );
 
     expect(
-      screen.queryByRole("group", { name: "ORG_CHART$HAND_OVER_MODE" }),
-    ).toBeNull();
+      within(screen.getByTestId("org-node-conversations")).getAllByRole(
+        "button",
+      ),
+    ).toHaveLength(1);
   });
 });
 

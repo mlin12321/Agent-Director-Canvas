@@ -3,7 +3,12 @@ import { useMutation } from "@tanstack/react-query";
 import { GitBranch } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DirectorClient, DirectorError } from "#/api/director/director-client";
-import type { NodeId, OrgNode, Session } from "#/api/director/types";
+import type {
+  NodeId,
+  NodeStatus,
+  OrgNode,
+  Session,
+} from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { orgNodePath } from "#/constants/org-chart";
 import { I18nKey } from "#/i18n/declaration";
@@ -20,6 +25,19 @@ export const OrgSessionsContext = React.createContext<readonly Session[]>([]);
 export function useSessionsAt(nodeId: NodeId): number {
   const sessions = React.useContext(OrgSessionsContext);
   return sessions.filter((session) => session.team_id === nodeId).length;
+}
+
+/**
+ * The state of each session that has agents at a team, whether it was
+ * opened there or at a team above.
+ */
+export function useSessionStatusesAt(nodeId: NodeId): NodeStatus[] {
+  const sessions = React.useContext(OrgSessionsContext);
+  return sessions.flatMap((session) =>
+    session.teams
+      .filter((team) => team.team_id === nodeId && team.agents.length > 0)
+      .map((team) => team.status),
+  );
 }
 
 /** Where a conversation is read in the normal chat window. */
