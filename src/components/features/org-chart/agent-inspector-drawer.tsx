@@ -182,6 +182,39 @@ export function AgentInspectorDrawer({
             </section>
           ) : null,
         )}
+        {placesAt(node.id, sessions).map((place) =>
+          place.review_only && place.org_change?.teams.length ? (
+            <section
+              key={place.id}
+              data-testid={`org-change-${place.session}`}
+              className="flex flex-col gap-1"
+            >
+              <h3 className="text-xs font-medium text-text-secondary">
+                {titles.get(place.session) ?? place.session}
+              </h3>
+              <p role="status" className="text-xs text-feedback-warning">
+                {t(I18nKey.ORG_CHART$TEAMS_WAIT)}
+              </p>
+              <ul className="flex flex-col gap-1 text-xs">
+                {place.org_change.teams.map((team) => (
+                  <li key={team.team_id}>
+                    <span className="text-contrast">
+                      {team.title || team.team_id}
+                    </span>
+                    <span className="block text-muted">
+                      {t(I18nKey.ORG_CHART$TEAMS_WAIT_SESSION, {
+                        what: team.session,
+                      })}
+                    </span>
+                    <span className="block text-muted">
+                      {t(I18nKey.ORG_CHART$TEAMS_WAIT_ORG, { what: team.org })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null,
+        )}
         <SpecAndContracts node={node} />
         <TeamReports node={node} />
         <TeamRecord node={node} />
@@ -242,7 +275,7 @@ export function AgentInspectorDrawer({
                   )}
                 >
                   <span className="min-w-0 flex-1 truncate">
-                    {candidate.review
+                    {candidate.review && candidate.role === "ic"
                       ? t(I18nKey.ORG_CHART$REVIEWER)
                       : t(ROLE_LABEL_KEYS[candidate.role])}
                     {` · ${candidate.session}`}

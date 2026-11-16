@@ -307,6 +307,53 @@ describe("AgentInspectorDrawer", () => {
     expect(release).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("shows the sub-teams of a session that wait for the Manager of the team above, and lists that Manager", () => {
+    memoryHandlers();
+    const waits = {
+      teams: [
+        {
+          team_id: "services.api.jobs",
+          title: "Jobs",
+          session: "services/api/jobs, under services.api",
+          org: "services/api/workers, under services.api",
+        },
+      ],
+    };
+    const { unmount } = drawer(ROOT, [
+      {
+        ...SESSION,
+        teams: [
+          REFUNDS,
+          reviewPlaceAt(ROOT, SESSION.id, {
+            agents: [
+              ic("review-s1"),
+              { ...ic("settle-s1"), role: "manager" as const },
+            ],
+            org_change: waits,
+          }),
+        ],
+      },
+    ]);
+
+    const block = screen.getByTestId(`org-change-${SESSION.id}`);
+    expect(block).toHaveTextContent("Refunds");
+    expect(block).toHaveTextContent("ORG_CHART$TEAMS_WAIT");
+    expect(within(block).getByRole("listitem")).toHaveTextContent("Jobs");
+    expect(
+      within(screen.getByTestId("org-node-conversations"))
+        .getAllByRole("button")
+        .map((row) => row.textContent),
+    ).toEqual([
+      "ORG_CHART$REVIEWER · Refundsidle",
+      "ORG_CHART$ROLE_MANAGER · Refundsidle",
+    ]);
+    unmount();
+
+    // Nothing waits when the session's teams are settled.
+    drawer(ROOT, [REFUNDS_REVIEWED]);
+    expect(screen.queryByTestId(`org-change-${SESSION.id}`)).toBeNull();
+  });
+
   it("names the IC that reviews a session from a team as its reviewer, which the human did not start", async () => {
     memoryHandlers();
     const user = userEvent.setup();

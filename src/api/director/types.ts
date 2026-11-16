@@ -437,6 +437,28 @@ export interface SessionTeam extends OrgNode {
    * above the one the session was opened at, whose IC only reviews here.
    */
   review_only?: boolean;
+  /**
+   * On the place a session is reviewed from: the sub-teams of the session
+   * that wait for this place's Manager, because the org made something else
+   * of them while the session worked. The session's code is merged all the
+   * same.
+   */
+  org_change?: OrgChange | null;
+}
+
+/** A team a session and the org each made something else of. */
+export interface OrgChangeTeam {
+  team_id: NodeId;
+  title: string;
+  /** What the session made of it, in words. */
+  session: string;
+  /** What the org has there now, in words. */
+  org: string;
+}
+
+/** Sub-teams of a session that wait to be settled before they are the org's. */
+export interface OrgChange {
+  teams: OrgChangeTeam[];
 }
 
 /**
