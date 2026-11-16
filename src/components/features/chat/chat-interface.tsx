@@ -34,6 +34,8 @@ import { ChatSuggestions } from "./chat-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 import { useSendMessage } from "#/hooks/use-send-message";
 import { routeFromChat } from "#/api/director/route-from-chat";
+import { sessionRequestOf } from "#/api/director/session-from-chat";
+import { DirectorClient } from "#/api/director/director-client";
 import { ExplicitAgentChatContext } from "#/context/explicit-agent-chat";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { useIsArchivedConversation } from "#/hooks/use-is-archived-conversation";
@@ -42,7 +44,10 @@ import { useHandleBuildPlanClick } from "#/hooks/use-handle-build-plan-click";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ChatMessagesSkeleton } from "./chat-messages-skeleton";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
 import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { SERVER_CONNECTION_ERROR_MESSAGE } from "#/constants/server-connection-error";
@@ -454,6 +459,37 @@ export function ChatInterface({
         return;
       }
       newConversationCommand();
+      return;
+    }
+
+    // `/session <request>` opens a session in the org and sends nothing to
+    // this conversation.
+    const sessionRequest = sessionRequestOf(content);
+    if (sessionRequest !== null) {
+      if (!sessionRequest) {
+        displayErrorToast(t(I18nKey.CHAT_INTERFACE$SESSION_REQUEST_REQUIRED));
+        return;
+      }
+      if (conversationId)
+        setConversationState(conversationId, { draftMessage: null });
+      setMessageToSend("");
+      try {
+        const { session } = await DirectorClient.openSession({
+          text: sessionRequest,
+        });
+        displaySuccessToast(
+          t(I18nKey.ORG_CHART$SESSION_OPENED, {
+            title: session.title,
+            team: session.team,
+          }),
+        );
+      } catch (openError) {
+        displayErrorToast(
+          openError instanceof Error
+            ? openError.message
+            : t(I18nKey.CHAT_INTERFACE$FAILED_TO_SEND_MESSAGE),
+        );
+      }
       return;
     }
 

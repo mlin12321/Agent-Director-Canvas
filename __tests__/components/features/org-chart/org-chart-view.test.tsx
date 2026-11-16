@@ -84,6 +84,9 @@ function input(
     review: null,
     waiting_to_start: false,
     old_specs: [],
+    session: "",
+    session_title: "",
+    instance_of: null,
   };
 }
 

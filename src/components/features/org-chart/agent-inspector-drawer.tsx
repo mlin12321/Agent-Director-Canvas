@@ -15,6 +15,7 @@ import { TeamRecord } from "./team-record";
 import { TeamReports } from "./team-reports";
 import { ReviewSummary } from "./review-summary";
 import { SpecAndContracts } from "./spec-and-contracts";
+import { SessionMark } from "./org-sessions";
 import { StartAgain } from "./start-again";
 import {
   ENFORCEMENT_LABEL_KEYS,
@@ -103,6 +104,7 @@ export function AgentInspectorDrawer({
         >
           {node.title}
         </h2>
+        {node.session ? <SessionMark title={node.session_title} /> : null}
         <button
           type="button"
           onClick={onClose}

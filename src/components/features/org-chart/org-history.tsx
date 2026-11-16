@@ -13,6 +13,7 @@ import { orgNodePath } from "#/constants/org-chart";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { I18nKey } from "#/i18n/declaration";
+import { SessionMark } from "./org-sessions";
 
 const PAGE = 50;
 const REFRESH_MS = 15_000;
@@ -53,6 +54,19 @@ function EventWords({ event }: { event: HistoryEvent }) {
         other: event.other ?? "",
         how: detail,
       });
+    case "session_opened":
+    case "session_closed":
+      return (
+        <>
+          {t(
+            event.kind === "session_opened"
+              ? I18nKey.ORG_CHART$HISTORY_SESSION_OPENED
+              : I18nKey.ORG_CHART$HISTORY_SESSION_CLOSED,
+            { session: event.session ?? "" },
+          )}
+          {detail ? ` (${detail})` : null}
+        </>
+      );
     default:
       return (
         <>
@@ -152,6 +166,7 @@ export function OrgHistoryPanel({
               ) : (
                 <span className="text-contrast">{name}</span>
               )}
+              {event.session ? <SessionMark title={event.session} /> : null}
               <span>
                 <EventWords event={event} />
               </span>

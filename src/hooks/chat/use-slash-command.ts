@@ -1,7 +1,11 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useConversationSkills } from "#/hooks/query/use-conversation-skills";
 import { SkillInfo } from "#/types/settings";
-import { BUILT_IN_COMMANDS, MODEL_COMMAND } from "#/utils/constants";
+import {
+  BUILT_IN_COMMANDS,
+  MODEL_COMMAND,
+  SESSION_COMMAND,
+} from "#/utils/constants";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
 import { useFreeModels } from "#/hooks/query/use-free-models";
@@ -57,6 +61,8 @@ export const useSlashCommand = (
   const slashItems = useMemo(() => {
     const items: SlashCommandItem[] = BUILT_IN_COMMANDS.filter((cmd) => {
       if (cmd.command === "/new") return isCloud;
+      // The director runs on a local Agent Server only.
+      if (cmd.command === SESSION_COMMAND) return !isCloud;
       return true;
     });
 

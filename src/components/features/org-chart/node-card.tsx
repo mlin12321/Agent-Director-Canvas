@@ -9,6 +9,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { useOrgChartStore } from "#/stores/org-chart-store";
 import { cn } from "#/utils/utils";
 import { NodeHoverCard } from "./node-hover-card";
+import { SessionMark } from "./org-sessions";
 
 interface NodeCardProps {
   node: OrgNode;
@@ -69,6 +70,9 @@ export const NodeCard = React.memo(function NodeCard({
   const notStarted = node.agents.length === 0;
   // An agent that was working when the org was paused.
   const paused = node.agents.some((agent) => agent.status === "paused");
+  // What is below it is its sub-teams and the sessions its IC reviews.
+  const sessions = node.session_ids.length;
+  const subTeams = node.child_ids.length - sessions;
 
   const body = (
     <>
@@ -76,6 +80,7 @@ export const NodeCard = React.memo(function NodeCard({
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-contrast">
           {node.title}
         </span>
+        {node.session ? <SessionMark title={node.session_title} /> : null}
         {paused ? (
           <span
             role="img"
@@ -134,9 +139,15 @@ export const NodeCard = React.memo(function NodeCard({
           {node.headline}
         </span>
       ) : null}
-      {node.child_ids.length > 0 ? (
-        <span className="text-[11px] text-contrast">
-          {t(I18nKey.ORG_CHART$SUB_TEAMS, { count: node.child_ids.length })}
+      {subTeams > 0 || sessions > 0 ? (
+        <span className="w-full truncate text-[11px] text-contrast">
+          {subTeams > 0
+            ? t(I18nKey.ORG_CHART$SUB_TEAMS, { count: subTeams })
+            : null}
+          {subTeams > 0 && sessions > 0 ? " · " : null}
+          {sessions > 0
+            ? t(I18nKey.ORG_CHART$SESSIONS_COUNT, { count: sessions })
+            : null}
         </span>
       ) : null}
     </>

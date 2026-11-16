@@ -7,6 +7,9 @@ import {
   type FileSides,
   type NodeMemory,
   type OrgHistory,
+  type OpenedSession,
+  type OpenSessionRequest,
+  type Session,
   type NodeId,
   type NodeOwnership,
   type OrgEvent,
@@ -98,6 +101,30 @@ export const DirectorClient = {
    */
   routeMessage(request: RouteMessageRequest) {
     return postJson<RoutedMessage>(`${ORG_PATH}/messages`, request);
+  },
+
+  /** The sessions that are open, in the order of the org tree. */
+  listSessions() {
+    return requestJson<Session[]>(`${ORG_PATH}/sessions`);
+  },
+
+  /**
+   * Open a session with a request: the team it is opened at gets an IC of
+   * its own for it, in a git worktree of its own.
+   */
+  openSession(request: OpenSessionRequest) {
+    return postJson<OpenedSession>(`${ORG_PATH}/sessions`, request);
+  },
+
+  /**
+   * Close a session: its agents are stopped and removed with its teams.
+   * Work that was accepted stays merged; the rest is kept under a git ref.
+   */
+  closeSession(sessionId: string) {
+    return requestJson<unknown>(
+      `${ORG_PATH}/sessions/${encodeURIComponent(sessionId)}`,
+      { method: "DELETE" },
+    );
   },
 
   /**

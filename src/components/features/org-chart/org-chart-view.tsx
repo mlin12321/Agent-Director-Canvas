@@ -26,6 +26,7 @@ import { OrgByState } from "./org-by-state";
 import { OrgTree } from "./org-tree";
 import { MessageToTeam } from "./message-to-team";
 import { HistoryButton, OrgHistoryPanel } from "./org-history";
+import { OrgSessionsPanel, SessionsButton } from "./org-sessions";
 import { OwnershipMap } from "./ownership-map";
 import { HOME_PATH, StartOrgNotice } from "./start-org-notice";
 import { TeamSearch } from "./team-search";
@@ -156,6 +157,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
   const closeDetails = React.useCallback(() => setDetailsId(null), []);
   // The room the chart has, less the space kept free around what is drawn.
   const [showsHistory, setShowsHistory] = React.useState(false);
+  const [showsSessions, setShowsSessions] = React.useState(false);
   const [frame, setFrame] = React.useState<HTMLElement | null>(null);
   const [space, setSpace] = React.useState({ width: 0, height: 0 });
   React.useLayoutEffect(() => {
@@ -275,6 +277,12 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
               />
             ) : null}
             {org.data && !org.data.fixture ? (
+              <SessionsButton
+                open={showsSessions}
+                onToggle={() => setShowsSessions((shown) => !shown)}
+              />
+            ) : null}
+            {org.data && !org.data.fixture ? (
               <OrgSync merging={org.data.merging} />
             ) : null}
             <ChartToolbar />
@@ -288,6 +296,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
         {org.data?.merging ? <MergeConflicts /> : null}
         <EscalationsPanel escalations={escalations} />
         {showsHistory ? <OrgHistoryPanel nodes={nodes} /> : null}
+        {showsSessions ? <OrgSessionsPanel nodes={nodes} /> : null}
         <section
           ref={setFrame}
           aria-label={t(I18nKey.ORG_CHART$NAV)}

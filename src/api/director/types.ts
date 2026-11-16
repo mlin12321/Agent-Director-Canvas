@@ -198,7 +198,19 @@ export interface Stopped {
 export interface OrgNode {
   id: NodeId;
   parent_id: NodeId | null;
+  /** Everything directly below: sub-teams, and the sessions of `session_ids`. */
   child_ids: NodeId[];
+  /**
+   * Those of `child_ids` that are no sub-teams of this team: the teams
+   * sessions were opened at, whose work this team's IC reviews.
+   */
+  session_ids: NodeId[];
+  /** The session the team works in; `""` for a team of the org itself. */
+  session: string;
+  /** What the human called that session. */
+  session_title: string;
+  /** On a team of a session, the team of the org it is there for. */
+  instance_of: NodeId | null;
   title: string;
   boundary: Boundary;
   isolation: IsolationMode;
@@ -393,6 +405,11 @@ export type BoundaryEnforcement = "sandbox" | "checks";
 /** Something the human says to the org, from somewhere in the repository. */
 export interface RouteMessageRequest {
   text: string;
+  /**
+   * Write to this team and no other, whatever its directory: how a message
+   * reaches a team of a session.
+   */
+  node_id?: NodeId;
   /** The directory the message is about, repo-relative. Default: the root. */
   path?: string;
   /**
@@ -407,6 +424,44 @@ export interface RouteMessageRequest {
    * other agent is derived from this one.
    */
   conversation?: Record<string, unknown>;
+}
+
+/** A request the human wants worked on beside what a team is doing. */
+export interface OpenSessionRequest {
+  text: string;
+  /** What to call the session; taken from the text when left out. */
+  title?: string;
+  /** The team to open it at. Left out, the director chooses the team. */
+  node_id?: NodeId;
+}
+
+/**
+ * A line of work the human opened at a team, beside the org's own. The team
+ * and its sub-teams are in the org once more for it, with agents and a
+ * checkout of their own; the IC of the team above reviews its work.
+ */
+export interface Session {
+  id: string;
+  title: string;
+  /** The team of the session it was opened at. */
+  node_id: NodeId;
+  /** The team of the org that one is there for, and its title. */
+  team_id: NodeId;
+  team: string;
+  /** The team whose IC reviews its work. */
+  above_id: NodeId;
+  status: NodeStatus;
+  review: ReviewState | null;
+  /** How many of its teams have started. */
+  teams: number;
+}
+
+/** A session that was just opened. */
+export interface OpenedSession {
+  session: Session;
+  conversation_id: string;
+  chosen_by: RoutedMessage["chosen_by"];
+  reason: string;
 }
 
 /** One event of an org's history, with the team whose record holds it. */
@@ -460,6 +515,8 @@ export interface Report {
   /** Which agent of the team wrote it. */
   role: AgentRole;
   text: string;
+  /** The title of the session its writer works in; empty for the org's own. */
+  session?: string;
   /** True for the one report a model wrote in place of earlier ones. */
   compacted?: boolean;
   /**
@@ -538,7 +595,9 @@ export type TeamEventKind =
   | "asked"
   | "misrouted"
   | "asked_team"
-  | "answered";
+  | "answered"
+  | "session_opened"
+  | "session_closed";
 
 /** Something that became of a team directly below a team. */
 export interface TeamEvent {
@@ -550,6 +609,8 @@ export interface TeamEvent {
    */
   team_id?: string;
   team?: string;
+  /** The title of the session the team works in, when it works in one. */
+  session?: string;
   /**
    * For `woken`, why the Manager was woken; for `proposed`, `approved` and
    * `declined`, the sub-teams, and for `declined` the Manager's reason. In

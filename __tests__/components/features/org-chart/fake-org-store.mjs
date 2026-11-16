@@ -24,7 +24,7 @@ export function emptyStatusCounts() {
 
 /**
  * What a caller supplies; the store fills in the derived fields.
- * @typedef {Omit<OrgNode, "child_ids" | "descendant_counts" | "escalation_count">} OrgNodeInput
+ * @typedef {Omit<OrgNode, "child_ids" | "session_ids" | "descendant_counts" | "escalation_count">} OrgNodeInput
  * @typedef {(event: OrgEvent) => void} OrgListener
  * @typedef {{ event: OrgEvent, id: NodeId, parent_id: NodeId | null }} Emission
  */
@@ -143,6 +143,7 @@ export class OrgStore {
     const node = {
       ...structuredClone(input),
       child_ids: existing ? existing.child_ids : [],
+      session_ids: existing ? existing.session_ids : [],
       descendant_counts: existing
         ? existing.descendant_counts
         : emptyStatusCounts(),
@@ -163,6 +164,10 @@ export class OrgStore {
         this.#nodes.set(parent.id, {
           ...parent,
           child_ids: [...parent.child_ids, node.id],
+          session_ids:
+            node.session === parent.session
+              ? parent.session_ids
+              : [...parent.session_ids, node.id],
         });
       }
     }
@@ -204,6 +209,7 @@ export class OrgStore {
         this.#nodes.set(parent.id, {
           ...parent,
           child_ids: parent.child_ids.filter((childId) => childId !== id),
+          session_ids: parent.session_ids.filter((childId) => childId !== id),
         });
       }
     }
