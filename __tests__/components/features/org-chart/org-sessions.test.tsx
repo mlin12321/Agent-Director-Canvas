@@ -345,6 +345,68 @@ describe("AgentInspectorDrawer", () => {
     expect(screen.queryByTestId(`org-change-${SESSION.id}`)).toBeNull();
   });
 
+  it("shows where a team would go whose team above is gone, and the contracts that wait", () => {
+    memoryHandlers();
+    drawer(ROOT, [
+      {
+        ...SESSION,
+        teams: [
+          REFUNDS,
+          reviewPlaceAt(ROOT, SESSION.id, {
+            org_change: {
+              teams: [
+                {
+                  team_id: "services.api.jobs",
+                  title: "Jobs",
+                  session: "services/api/jobs, under services.api",
+                  org: "no such team",
+                  moved_to: ROOT.id,
+                },
+              ],
+              contracts: [
+                {
+                  path: "services",
+                  session: "Refunds go through Jobs.",
+                  org: "Orders go through Jobs.",
+                },
+              ],
+            },
+          }),
+        ],
+      },
+    ]);
+
+    const block = screen.getByTestId(`org-change-${SESSION.id}`);
+    const [team, contracts] = within(block).getAllByRole("listitem");
+    expect(team).toHaveTextContent("Jobs");
+    expect(team).toHaveTextContent("ORG_CHART$TEAMS_WAIT_MOVED");
+    expect(contracts).toHaveTextContent("ORG_CHART$CONTRACTS_WAIT");
+  });
+
+  it("shows contracts that wait when no team does", () => {
+    memoryHandlers();
+    drawer(ROOT, [
+      {
+        ...SESSION,
+        teams: [
+          REFUNDS,
+          reviewPlaceAt(ROOT, SESSION.id, {
+            org_change: {
+              teams: [],
+              contracts: [{ path: "", session: "A", org: "B" }],
+            },
+          }),
+        ],
+      },
+    ]);
+
+    const block = screen.getByTestId(`org-change-${SESSION.id}`);
+    expect(block).not.toHaveTextContent(/ORG_CHART\$TEAMS_WAIT(?!_)/);
+    expect(within(block).getByRole("listitem")).toHaveTextContent(
+      "ORG_CHART$CONTRACTS_WAIT",
+    );
+  });
+
   it("names the IC that reviews a session from a team as its reviewer, which the human did not start", async () => {
     memoryHandlers();
     const user = userEvent.setup();

@@ -478,6 +478,39 @@ describe("the record of the teams below a team", () => {
     expect(removed).toHaveTextContent("db serves http");
   });
 
+  it("shows what a session wrote for a team the org did not take", async () => {
+    memoryHandlers({
+      specs: [],
+      reports: [],
+      history: [],
+      former_teams: [
+        {
+          id: "services.api.jobs",
+          title: "Jobs",
+          path: "services/api/jobs",
+          purpose: "Run the refund jobs",
+          ended: "not_taken",
+          at: at(7),
+          compacted_report: "Chose a ledger.",
+          spec: "# Refund jobs",
+          session: "Refunds",
+        },
+      ],
+    });
+    renderWithProviders(<TeamRecord node={NOT_STARTED} />);
+
+    const removed = await screen.findByRole("region", {
+      name: "ORG_CHART$FORMER_TEAMS_TITLE",
+    });
+    expect(removed).toHaveTextContent("Jobs");
+    expect(removed).toHaveTextContent(
+      "ORG_CHART$FORMER_TEAM_NOT_TAKEN · Refunds",
+    );
+    expect(removed).toHaveTextContent("ORG_CHART$FORMER_TEAM_SPEC");
+    expect(removed).toHaveTextContent("# Refund jobs");
+    expect(removed).toHaveTextContent("Chose a ledger.");
+  });
+
   it("shows nothing for a team with no record", async () => {
     memoryHandlers();
     const { container } = renderWithProviders(

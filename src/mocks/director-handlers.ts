@@ -338,6 +338,13 @@ function buildMockSessions(): MockSession[] {
             org: "identity/worker, under identity.api",
           },
         ],
+        contracts: [
+          {
+            path: "identity",
+            session: "Passkeys are verified by the worker.",
+            org: "Sign-in tokens are issued by the API.",
+          },
+        ],
       },
       work: [
         {
