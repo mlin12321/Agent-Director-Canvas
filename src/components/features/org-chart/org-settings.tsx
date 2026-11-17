@@ -24,7 +24,12 @@ const DEFAULTS = {
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
+  report_compaction_chars: 24_000,
+  session_token_limit: 0,
+  max_open_sessions: 0,
 };
+// The least the director takes for the length reports are kept at.
+const LEAST_COMPACTION = 1000;
 const INPUT = "rounded-md border border-border bg-canvas-base px-3 py-2";
 
 function whole(text: string, least: number) {
@@ -38,19 +43,21 @@ function CountField({
   value,
   disabled,
   onChange,
+  least = 0,
 }: {
   label: string;
   help: string;
   value: string;
   disabled: boolean;
   onChange: (value: string) => void;
+  least?: number;
 }) {
   return (
     <label className="flex flex-col gap-2 text-sm">
       {label}
       <input
         type="number"
-        min={0}
+        min={least}
         step={1}
         required
         value={value}
@@ -88,6 +95,12 @@ function SettingsForm({
   const [setbacks, setSetbacks] = React.useState(
     String(state.manager_check_ic_setbacks),
   );
+  // 0: no limit.
+  const [tokens, setTokens] = React.useState(String(state.session_token_limit));
+  const [most, setMost] = React.useState(String(state.max_open_sessions));
+  const [compaction, setCompaction] = React.useState(
+    String(state.report_compaction_chars),
+  );
   const profiles = useAgentProfiles().data;
   // A profile that was allowed and has since been deleted can still be
   // unticked.
@@ -108,6 +121,9 @@ function SettingsForm({
         manager_check_accepted_reviews: Number(reviews),
         manager_check_ic_setbacks: Number(setbacks),
         route_requests: routes,
+        session_token_limit: Number(tokens),
+        max_open_sessions: Number(most),
+        report_compaction_chars: Number(compaction),
       }),
     onSuccess: (saved) => {
       queryClient.setQueryData(DIRECTOR_QUERY_KEYS.settings(backend.id), saved);
@@ -118,7 +134,8 @@ function SettingsForm({
   const valid =
     whole(size, 1) &&
     whole(depth, 1) &&
-    [stall, reviews, setbacks].every((count) => whole(count, 0));
+    whole(compaction, LEAST_COMPACTION) &&
+    [stall, reviews, setbacks, tokens, most].every((count) => whole(count, 0));
 
   return (
     <ModalBackdrop
@@ -278,6 +295,28 @@ function SettingsForm({
             disabled={save.isPending}
             onChange={setSetbacks}
           />
+          <CountField
+            label={t(I18nKey.ORG_CHART$SETTINGS_SESSION_TOKENS)}
+            help={t(I18nKey.ORG_CHART$SETTINGS_SESSION_TOKENS_HELP)}
+            value={tokens}
+            disabled={save.isPending}
+            onChange={setTokens}
+          />
+          <CountField
+            label={t(I18nKey.ORG_CHART$SETTINGS_MAX_SESSIONS)}
+            help={t(I18nKey.ORG_CHART$SETTINGS_MAX_SESSIONS_HELP)}
+            value={most}
+            disabled={save.isPending}
+            onChange={setMost}
+          />
+          <CountField
+            label={t(I18nKey.ORG_CHART$SETTINGS_COMPACTION)}
+            help={t(I18nKey.ORG_CHART$SETTINGS_COMPACTION_HELP)}
+            value={compaction}
+            disabled={save.isPending}
+            onChange={setCompaction}
+            least={LEAST_COMPACTION}
+          />
           {state.max_concurrent_runs !== null ? (
             <p className="text-xs text-muted">
               {t(I18nKey.ORG_CHART$SETTINGS_RUNS, {
@@ -305,6 +344,9 @@ function SettingsForm({
                 setStall(String(DEFAULTS.stall_check_minutes));
                 setReviews(String(DEFAULTS.manager_check_accepted_reviews));
                 setSetbacks(String(DEFAULTS.manager_check_ic_setbacks));
+                setTokens(String(DEFAULTS.session_token_limit));
+                setMost(String(DEFAULTS.max_open_sessions));
+                setCompaction(String(DEFAULTS.report_compaction_chars));
               }}
             >
               {t(I18nKey.ORG_CHART$SETTINGS_RESET)}

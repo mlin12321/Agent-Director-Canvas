@@ -35,6 +35,8 @@ const STATE: DirectorSettingsState = {
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
+  session_token_limit: 0,
+  max_open_sessions: 0,
 };
 
 function settingsHandlers(state: DirectorSettingsState) {
@@ -160,8 +162,57 @@ describe("the checks in the settings", () => {
         manager_check_accepted_reviews: 5,
         manager_check_ic_setbacks: 0,
         route_requests: true,
+        session_token_limit: 0,
+        max_open_sessions: 0,
+        report_compaction_chars: 24000,
       },
     ]);
+  });
+
+  it("saves the limits on sessions and the length reports are kept at", async () => {
+    const saved = settingsHandlers(STATE);
+    const user = userEvent.setup();
+    renderWithProviders(<OrgSettings />);
+    const modal = await openSettings(user);
+
+    const tokens = within(modal).getByLabelText(
+      /ORG_CHART\$SETTINGS_SESSION_TOKENS/,
+    );
+    const most = within(modal).getByLabelText(
+      /ORG_CHART\$SETTINGS_MAX_SESSIONS/,
+    );
+    const length = within(modal).getByLabelText(
+      /ORG_CHART\$SETTINGS_COMPACTION/,
+    );
+    expect(tokens).toHaveValue(0);
+    expect(most).toHaveValue(0);
+    expect(length).toHaveValue(24000);
+
+    // Reports are kept at 1000 characters at least.
+    await user.clear(length);
+    await user.type(length, "500");
+    expect(
+      within(modal).getByRole("button", { name: "BUTTON$SAVE" }),
+    ).toBeDisabled();
+
+    await user.clear(length);
+    await user.type(length, "12000");
+    await user.clear(tokens);
+    await user.type(tokens, "2000000");
+    await user.clear(most);
+    await user.type(most, "3");
+    await user.click(
+      within(modal).getByRole("button", { name: "BUTTON$SAVE" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("org-settings-modal")).toBeNull(),
+    );
+    expect(saved[0]).toMatchObject({
+      session_token_limit: 2000000,
+      max_open_sessions: 3,
+      report_compaction_chars: 12000,
+    });
   });
 
   it("does not save a check that is empty or below 0", async () => {
@@ -188,6 +239,9 @@ describe("the checks in the settings", () => {
       manager_check_accepted_reviews: 2,
       manager_check_ic_setbacks: 0,
       route_requests: true,
+      session_token_limit: 0,
+      max_open_sessions: 0,
+      report_compaction_chars: 24000,
     });
     const user = userEvent.setup();
     renderWithProviders(<OrgSettings />);

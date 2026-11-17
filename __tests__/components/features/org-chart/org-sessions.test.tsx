@@ -115,6 +115,8 @@ const SESSION: Session = {
   request: "Add refunds.",
   opened_at: "2026-11-01T10:00:00+00:00",
   branch: "main",
+  usage: { input_tokens: 0, output_tokens: 0, cost: 0 },
+  token_allowance: 0,
   status: "working",
   review: null,
   conversation_id: "c2",
@@ -627,6 +629,40 @@ describe("OrgSessionsPanel", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "No session 's1a2b3c' is open",
     );
+  });
+
+  it("shows what each session has used, against its limit where it has one, and the total", () => {
+    const limited: Session = {
+      ...SESSION,
+      usage: { input_tokens: 9000, output_tokens: 1000, cost: 1.5 },
+      token_allowance: 50000,
+    };
+    const free: Session = {
+      ...SESSION,
+      id: "s2",
+      usage: { input_tokens: 400, output_tokens: 100, cost: 0 },
+    };
+    const unused: Session = { ...SESSION, id: "s3" };
+    renderWithProviders(
+      <OrgSessionsPanel sessions={[limited, free, unused]} nodes={NODES} />,
+    );
+
+    const first = screen.getByTestId("org-session-use-s1a2b3c");
+    expect(first).toHaveTextContent("ORG_CHART$SESSION_USE_OF");
+    expect(first).toHaveTextContent("$1.50");
+    const second = screen.getByTestId("org-session-use-s2");
+    expect(second).toHaveTextContent("ORG_CHART$SESSIONS_USE");
+    expect(second).not.toHaveTextContent("·");
+    expect(screen.queryByTestId("org-session-use-s3")).toBeNull();
+    expect(screen.getByTestId("org-sessions-use")).toHaveTextContent("$1.50");
+  });
+
+  it("shows no total while nothing was used", () => {
+    renderWithProviders(
+      <OrgSessionsPanel sessions={[SESSION]} nodes={NODES} />,
+    );
+
+    expect(screen.queryByTestId("org-sessions-use")).toBeNull();
   });
 });
 
