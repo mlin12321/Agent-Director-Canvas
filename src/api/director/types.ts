@@ -437,11 +437,32 @@ export interface OrgChangeTeam {
   session: string;
   /** What the org has there now, in words. */
   org: string;
+  /**
+   * The team of the org it would be put under, when the team the session
+   * has above it is not in the org any more.
+   */
+  moved_to?: NodeId | null;
 }
 
-/** Sub-teams of a session that wait to be settled before they are the org's. */
+/** Contracts of one directory that a session and the org each changed. */
+export interface OrgChangeContracts {
+  /** The directory whose sub-teams they bind. */
+  path: string;
+  /** The contracts as the session has them. */
+  session: string;
+  /** The contracts as the org has them now. */
+  org: string;
+  /** The waiting team they come with, when they hold only if it is taken. */
+  with_team?: NodeId | null;
+}
+
+/**
+ * What a session changed of its teams that waits to be settled before it
+ * is the org's.
+ */
 export interface OrgChange {
   teams: OrgChangeTeam[];
+  contracts?: OrgChangeContracts[];
 }
 
 /**
@@ -576,6 +597,8 @@ export interface Report {
    * there before this one. The team's own agents did not write it.
    */
   handed_over?: boolean;
+  /** Names the report, so that it is added to a team's record once. */
+  id?: string;
 }
 
 /** One message between a Manager and an IC. */
@@ -650,7 +673,9 @@ export type TeamEventKind =
   | "asked_team"
   | "answered"
   | "session_opened"
-  | "session_closed";
+  | "session_closed"
+  | "not_taken"
+  | "moved";
 
 /** Something that became of a team directly below a team. */
 export interface TeamEvent {
@@ -689,12 +714,20 @@ export interface FormerTeam {
   title: string;
   path: string;
   purpose: string;
-  ended: "replaced" | "pruned";
+  /**
+   * How it ended. `not_taken`: a session set it up or changed it, and the
+   * org did not make it its own when the session's work was accepted.
+   */
+  ended: "replaced" | "pruned" | "not_taken";
   at: string;
   /** Its agents' reports as one report. */
   compacted_report?: string;
   /** The contracts between its own sub-teams. */
   contracts?: string;
+  /** The spec a session wrote for it that the org did not take. */
+  spec?: string;
+  /** The title of the session it was a team of. */
+  session?: string;
 }
 
 export interface NodeMemory {

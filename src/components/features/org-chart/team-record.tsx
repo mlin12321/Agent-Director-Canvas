@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { OrgNode, TeamEvent } from "#/api/director/types";
+import type { FormerTeam, OrgNode, TeamEvent } from "#/api/director/types";
 import { useNodeMemory } from "#/hooks/query/use-node-memory";
 import { I18nKey } from "#/i18n/declaration";
 
@@ -24,6 +24,12 @@ interface Counts {
   /** How the team ended, when it is gone. */
   ended: "replaced" | "pruned" | null;
 }
+
+const ENDED_KEYS = {
+  replaced: I18nKey.ORG_CHART$FORMER_TEAM_REPLACED,
+  pruned: I18nKey.ORG_CHART$FORMER_TEAM_PRUNED,
+  not_taken: I18nKey.ORG_CHART$FORMER_TEAM_NOT_TAKEN,
+} satisfies Record<FormerTeam["ended"], I18nKey>;
 
 const WOKEN_SHOWN = 3;
 const DECISIONS_SHOWN = 5;
@@ -201,11 +207,8 @@ export function TeamRecord({ node }: TeamRecordProps) {
                         {" · "}
                         {team.path}
                         {" · "}
-                        {t(
-                          team.ended === "pruned"
-                            ? I18nKey.ORG_CHART$FORMER_TEAM_PRUNED
-                            : I18nKey.ORG_CHART$FORMER_TEAM_REPLACED,
-                        )}
+                        {t(ENDED_KEYS[team.ended])}
+                        {team.session ? ` · ${team.session}` : null}
                       </span>
                     </summary>
                     <div className="mt-1 flex flex-col gap-1.5 border-l border-border pl-2">
@@ -225,6 +228,16 @@ export function TeamRecord({ node }: TeamRecordProps) {
                           </p>
                           <p className="whitespace-pre-wrap break-words">
                             {team.compacted_report}
+                          </p>
+                        </>
+                      ) : null}
+                      {team.spec ? (
+                        <>
+                          <p className="text-muted">
+                            {t(I18nKey.ORG_CHART$FORMER_TEAM_SPEC)}
+                          </p>
+                          <p className="whitespace-pre-wrap break-words">
+                            {team.spec}
                           </p>
                         </>
                       ) : null}

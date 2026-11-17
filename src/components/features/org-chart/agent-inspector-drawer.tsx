@@ -188,7 +188,9 @@ export function AgentInspectorDrawer({
           ) : null,
         )}
         {placesAt(node.id, sessions).map((place) =>
-          place.review_only && place.org_change?.teams.length ? (
+          place.review_only &&
+          (place.org_change?.teams.length ||
+            place.org_change?.contracts?.length) ? (
             <section
               key={place.id}
               data-testid={`org-change-${place.session}`}
@@ -197,9 +199,11 @@ export function AgentInspectorDrawer({
               <h3 className="text-xs font-medium text-text-secondary">
                 {titles.get(place.session) ?? place.session}
               </h3>
-              <p role="status" className="text-xs text-feedback-warning">
-                {t(I18nKey.ORG_CHART$TEAMS_WAIT)}
-              </p>
+              {place.org_change.teams.length ? (
+                <p role="status" className="text-xs text-feedback-warning">
+                  {t(I18nKey.ORG_CHART$TEAMS_WAIT)}
+                </p>
+              ) : null}
               <ul className="flex flex-col gap-1 text-xs">
                 {place.org_change.teams.map((team) => (
                   <li key={team.team_id}>
@@ -213,6 +217,33 @@ export function AgentInspectorDrawer({
                     </span>
                     <span className="block text-muted">
                       {t(I18nKey.ORG_CHART$TEAMS_WAIT_ORG, { what: team.org })}
+                    </span>
+                    {team.moved_to ? (
+                      <span className="block text-muted">
+                        {t(I18nKey.ORG_CHART$TEAMS_WAIT_MOVED, {
+                          team:
+                            nodes?.get(team.moved_to)?.title ?? team.moved_to,
+                        })}
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+                {(place.org_change.contracts ?? []).map((agreed) => (
+                  <li key={`contracts-${agreed.path}`}>
+                    <span role="status" className="text-feedback-warning">
+                      {t(I18nKey.ORG_CHART$CONTRACTS_WAIT, {
+                        path: agreed.path || "/",
+                      })}
+                    </span>
+                    <span className="block whitespace-pre-wrap break-words text-muted">
+                      {t(I18nKey.ORG_CHART$TEAMS_WAIT_SESSION, {
+                        what: agreed.session,
+                      })}
+                    </span>
+                    <span className="block whitespace-pre-wrap break-words text-muted">
+                      {t(I18nKey.ORG_CHART$TEAMS_WAIT_ORG, {
+                        what: agreed.org,
+                      })}
                     </span>
                   </li>
                 ))}

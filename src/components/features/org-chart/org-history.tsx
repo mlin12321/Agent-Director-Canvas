@@ -29,6 +29,8 @@ const KIND_KEYS = {
   pruned: I18nKey.ORG_CHART$HISTORY_PRUNED,
   asked: I18nKey.ORG_CHART$HISTORY_ASKED,
   misrouted: I18nKey.ORG_CHART$HISTORY_MISROUTED,
+  not_taken: I18nKey.ORG_CHART$HISTORY_NOT_TAKEN,
+  moved: I18nKey.ORG_CHART$HISTORY_MOVED,
 } satisfies Partial<Record<TeamEventKind, I18nKey>>;
 
 function EventWords({ event }: { event: HistoryEvent }) {
