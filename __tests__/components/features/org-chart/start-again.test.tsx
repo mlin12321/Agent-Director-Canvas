@@ -21,6 +21,8 @@ const API: OrgNode = {
   isolation: "worktree",
   spec_summary: "",
   old_specs: [],
+  headline: "",
+  agent_profile: null,
   child_ids: [],
 };
 
@@ -28,8 +30,20 @@ const API: OrgNode = {
 function team(status: NodeStatus, ic: AgentRef["status"]): SessionTeam {
   return placeAt(API, "s1a2b3c", {
     agents: [
-      { role: "ic", conversation_id: null, status: ic, kind: "openhands" },
-      { role: "manager", conversation_id: null, status: ic, kind: "openhands" },
+      {
+        role: "ic",
+        conversation_id: null,
+        status: ic,
+        kind: "openhands",
+        acp_server: null,
+      },
+      {
+        role: "manager",
+        conversation_id: null,
+        status: ic,
+        kind: "openhands",
+        acp_server: null,
+      },
     ],
     status,
   });

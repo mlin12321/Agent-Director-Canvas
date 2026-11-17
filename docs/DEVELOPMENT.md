@@ -108,14 +108,14 @@ Owning repositories:
 
 #### Source of truth
 
-| Surface                                    | Supported version lives in                                                    |
-| ------------------------------------------ | ----------------------------------------------------------------------------- |
-| Bundled Agent Server / SDK PyPI pin        | [`config/defaults.json`](../config/defaults.json) `versions.agentServer`      |
-| Bundled automation PyPI pin                | `config/defaults.json` `versions.automation`                                  |
-| Oldest Agent Server this frontend accepts  | `config/defaults.json` `compatibility.minimumAgentServer`                     |
-| `@openhands/typescript-client`             | [`package.json`](../package.json) (exact npm pin)                             |
-| `@openhands/extensions`                    | `package.json` (exact npm pin)                                                |
-| Released automation ↔ SDK dependency match | [`scripts/check-sdk-version-sync.mjs`](../scripts/check-sdk-version-sync.mjs) |
+| Surface                                    | Supported version lives in                                                                                                                                     |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bundled Agent Server / SDK PyPI pin        | [`config/defaults.json`](../config/defaults.json) `versions.agentServer`                                                                                       |
+| Bundled automation PyPI pin                | `config/defaults.json` `versions.automation`                                                                                                                   |
+| Oldest Agent Server this frontend accepts  | `config/defaults.json` `compatibility.minimumAgentServer`                                                                                                      |
+| `@openhands/typescript-client`             | [`package.json`](../package.json): this fork's build, packed in `vendor/` by [`scripts/vendor-typescript-client.mjs`](../scripts/vendor-typescript-client.mjs) |
+| `@openhands/extensions`                    | `package.json` (exact npm pin)                                                                                                                                 |
+| Released automation ↔ SDK dependency match | [`scripts/check-sdk-version-sync.mjs`](../scripts/check-sdk-version-sync.mjs)                                                                                  |
 
 `config/defaults.json` is the source of truth for the Python backend pins used
 by the npm and Docker install paths. `agent-canvas --info` prints the same

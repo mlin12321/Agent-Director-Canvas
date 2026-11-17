@@ -43,6 +43,8 @@ function team(
     isolation: "shared",
     spec_summary: "",
     old_specs: [],
+    headline: "",
+    agent_profile: null,
     child_ids: [],
     ...rest,
   };
@@ -80,7 +82,13 @@ const REFUNDS: SessionTeam = placeAt(
     worktree_path: "/work",
     branch: "",
     agents: [
-      { role: "ic", conversation_id: "c2", status: "idle", kind: "openhands" },
+      {
+        role: "ic",
+        conversation_id: "c2",
+        status: "idle",
+        kind: "openhands",
+        acp_server: null,
+      },
     ],
   },
 );
@@ -115,6 +123,7 @@ const ic = (conversationId: string | null, status = "idle") => ({
   conversation_id: conversationId,
   status,
   kind: "openhands" as const,
+  acp_server: null,
 });
 
 // The session opened at the top team has a place at the API team too, and
@@ -471,6 +480,7 @@ describe("AgentInspectorDrawer", () => {
               stopped: {
                 at: "2026-11-01T11:00:00+00:00",
                 reason: "Two hours on one schema.",
+                running: [],
               },
             }
           : place,
@@ -642,8 +652,6 @@ describe("EscalationsPanel with sessions", () => {
         raised_at: "2026-11-01T10:00:00+00:00",
         raised_by: "ic",
         held_by: null,
-        asked_of: null,
-        asked_at: null,
         handoffs: [],
       },
       path: [

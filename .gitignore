@@ -34,6 +34,8 @@ __pycache__
 ralph/
 .vercel
 *.tgz
+# The fork's build of the typed client, which is not published.
+!vendor/*.tgz
 
 # Local runtime artifacts produced by static-server / agent-server runs
 workspace/

@@ -29,6 +29,7 @@ function work(status: NodeStatus, given: Given = {}): TeamWork {
               conversation_id: null,
               status: "idle",
               kind: "openhands",
+              acp_server: null,
             },
           ],
     status,
@@ -65,6 +66,8 @@ function team(id: string, status: NodeStatus, given: Given = {}) {
     isolation: "shared",
     spec_summary: "",
     old_specs: [],
+    headline: "",
+    agent_profile: null,
     child_ids: [],
   };
   return { node, work: work(status, given) };

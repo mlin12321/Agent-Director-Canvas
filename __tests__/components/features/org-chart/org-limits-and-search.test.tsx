@@ -26,11 +26,11 @@ const STATE: DirectorSettingsState = {
   max_concurrent_runs: 10,
   allowed_profiles: [],
   resume_on_start: false,
+  report_compaction_chars: 24000,
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
-  session_worktrees: true,
 };
 
 function settingsHandlers(state: DirectorSettingsState = STATE) {
@@ -178,7 +178,12 @@ describe("OrgSettings", () => {
       http.get("*/api/agent-profiles", () =>
         HttpResponse.json({
           profiles: [
-            { id: "1", name: "default", agent_kind: "openhands" },
+            {
+              id: "1",
+              name: "default",
+              agent_kind: "openhands",
+              acp_server: null,
+            },
             { id: "2", name: "codex", agent_kind: "acp" },
           ],
           active_agent_profile_id: "1",
@@ -316,6 +321,7 @@ describe("NodeCard", () => {
     spec_summary: "",
     headline: "Token refresh",
     old_specs: [],
+    agent_profile: null,
     child_ids: [],
   };
   const IC: SessionTeam["agents"][number] = {

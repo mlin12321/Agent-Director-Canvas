@@ -15,6 +15,7 @@ import { renderWithProviders } from "test-utils";
 
 const MERGE: OrgMerge = {
   remote: "origin",
+  theirs: "abc123",
   conflicts: [
     {
       id: "field:services.api:headline",
@@ -42,6 +43,7 @@ const MERGE: OrgMerge = {
 const DONE: SyncResult = {
   remote: "origin",
   result: "merged",
+  head: null,
   merge: null,
   memory: null,
 };

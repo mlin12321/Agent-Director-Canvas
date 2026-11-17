@@ -40,15 +40,39 @@ const BASE = `*${DIRECTOR_BASE_PATH}`;
 const ROOT_ID = "root";
 
 const TEAM_AGENTS: AgentRef[] = [
-  { role: "ic", conversation_id: null, status: "working", kind: "openhands" },
-  { role: "manager", conversation_id: null, status: "idle", kind: "openhands" },
+  {
+    role: "ic",
+    conversation_id: null,
+    status: "working",
+    kind: "openhands",
+    acp_server: null,
+  },
+  {
+    role: "manager",
+    conversation_id: null,
+    status: "idle",
+    kind: "openhands",
+    acp_server: null,
+  },
 ];
 
 /** The two agents that take a session's work in: the IC reviews it, the
  * Manager settles its teams and contracts. */
 const DIVISION_LEADS: AgentRef[] = [
-  { role: "ic", conversation_id: null, status: "idle", kind: "openhands" },
-  { role: "manager", conversation_id: null, status: "idle", kind: "openhands" },
+  {
+    role: "ic",
+    conversation_id: null,
+    status: "idle",
+    kind: "openhands",
+    acp_server: null,
+  },
+  {
+    role: "manager",
+    conversation_id: null,
+    status: "idle",
+    kind: "openhands",
+    acp_server: null,
+  },
 ];
 
 const DOMAINS = ["platform", "payments", "identity", "search"];
@@ -63,8 +87,6 @@ const SESSION_TOKENS: Escalation = {
   raised_at: "2026-11-10T09:12:00Z",
   raised_by: "ic",
   held_by: "identity",
-  asked_of: null,
-  asked_at: null,
   handoffs: [],
 };
 
@@ -76,8 +98,6 @@ const IDEMPOTENCY_COLLISION: Escalation = {
   raised_at: "2026-11-11T16:40:00Z",
   raised_by: "manager",
   held_by: null,
-  asked_of: null,
-  asked_at: null,
   handoffs: [
     {
       node_id: "payments",
@@ -205,6 +225,8 @@ function referenceTeam(
     id,
     parent_id: parentId,
     child_ids: childIds,
+    headline: "",
+    agent_profile: null,
     ...given,
     old_specs: [],
   };
@@ -428,6 +450,9 @@ function sessionsNow(): Session[] {
           ...team,
           worktree_path: `.worktrees/${session.id}`,
           branch: `director/session/${session.id}`,
+          base_commit: "",
+          boundary_enforcement: "sandbox",
+          division_lead: false,
           agents: TEAM_AGENTS,
           pending_split: null,
           waiting_to_start: false,
@@ -457,6 +482,8 @@ function sessionsNow(): Session[] {
       child_ids: [first.id],
       worktree_path: ".",
       branch: "main",
+      base_commit: "",
+      boundary_enforcement: "sandbox",
       agents: DIVISION_LEADS,
       status: "idle",
       escalations: [],
@@ -671,11 +698,11 @@ export const DIRECTOR_HANDLERS = [
       max_depth: 5,
       allowed_profiles: [],
       resume_on_start: false,
+      report_compaction_chars: 24000,
       stall_check_minutes: 30,
       manager_check_accepted_reviews: 5,
       manager_check_ic_setbacks: 3,
       route_requests: true,
-      session_worktrees: true,
       teams: tree.size,
       depth: 3,
       max_concurrent_runs: null,

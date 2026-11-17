@@ -30,11 +30,11 @@ const STATE: DirectorSettingsState = {
   max_concurrent_runs: null,
   allowed_profiles: [],
   resume_on_start: false,
+  report_compaction_chars: 24000,
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
-  session_worktrees: true,
 };
 
 function settingsHandlers(state: DirectorSettingsState) {
@@ -93,6 +93,8 @@ const NODE: OrgNode = {
   isolation: "shared",
   spec_summary: "",
   old_specs: [],
+  headline: "",
+  agent_profile: null,
   child_ids: [],
 };
 
@@ -112,6 +114,7 @@ function atTeam(work: Partial<SessionTeam>, children: React.ReactNode) {
 const STOPPED = {
   at: "2026-11-14T10:00:00+00:00",
   reason: "Two hours on one schema.",
+  running: [],
 };
 
 describe("the checks in the settings", () => {
@@ -281,6 +284,7 @@ describe("proposed sub-teams", () => {
                 readonly: [],
                 isolation: "shared",
                 task: "Take orders.",
+                agent_profile: null,
               },
             ],
             contracts: "",
@@ -313,6 +317,7 @@ describe("proposed sub-teams", () => {
       readonly: [],
       isolation: "shared" as const,
       task: "Take orders.",
+      agent_profile: null,
     };
     renderWithProviders(
       <ProposedTeams

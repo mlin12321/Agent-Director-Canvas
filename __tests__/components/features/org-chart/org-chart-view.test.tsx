@@ -50,12 +50,19 @@ vi.mock("#/components/features/org-chart/agent-conversation", () => ({
 }));
 
 const TEAM_AGENTS: AgentRef[] = [
-  { role: "ic", conversation_id: null, status: "working", kind: "openhands" },
+  {
+    role: "ic",
+    conversation_id: null,
+    status: "working",
+    kind: "openhands",
+    acp_server: null,
+  },
   {
     role: "manager",
     conversation_id: "conv-manager",
     status: "idle",
     kind: "openhands",
+    acp_server: null,
   },
 ];
 
@@ -75,6 +82,8 @@ function team(id: string, parentId: string | null, path: string): OrgNodeInput {
     isolation: parentId === "auth" ? "shared" : "worktree",
     spec_summary: `Spec for ${id}`,
     old_specs: [],
+    headline: "",
+    agent_profile: null,
   };
 }
 
@@ -105,8 +114,6 @@ const TOKEN_DECISION: Escalation = {
   raised_at: "2026-11-10T00:00:00Z",
   raised_by: "ic",
   held_by: "auth",
-  asked_of: null,
-  asked_at: null,
   handoffs: [],
 };
 /** Passed up by every team above billing, so it waits on the human. */
@@ -118,8 +125,6 @@ const DOUBLE_CHARGE: Escalation = {
   raised_at: "2026-11-11T00:00:00Z",
   raised_by: "manager",
   held_by: null,
-  asked_of: null,
-  asked_at: null,
   handoffs: [
     {
       node_id: "root",
@@ -528,8 +533,6 @@ describe("OrgChartView", () => {
           id: "ledger",
           title: "Pick a ledger",
           held_by: "root",
-          asked_of: null,
-          asked_at: null,
         },
       ]);
       renderWithProviders(<OrgChartView nodeId={null} />);
@@ -1022,8 +1025,6 @@ describe("OrgChartView", () => {
       const passedOnce: Escalation = {
         ...TOKEN_DECISION,
         held_by: "root",
-        asked_of: null,
-        asked_at: null,
         handoffs: [{ node_id: "auth", reason: "Affects billing too", at: "t" }],
       };
       put("oauth", "auth", "done", "services/auth/oauth", [passedOnce]);
@@ -1037,8 +1038,6 @@ describe("OrgChartView", () => {
         {
           ...passedOnce,
           held_by: null,
-          asked_of: null,
-          asked_at: null,
           handoffs: [
             ...passedOnce.handoffs,
             { node_id: "root", reason: "A product call", at: "t" },
@@ -1188,6 +1187,7 @@ describe("OrgChartView", () => {
               readonly: [],
               isolation: "shared",
               task: "Build the indexer",
+              agent_profile: null,
             },
             {
               title: "query",
@@ -1196,6 +1196,7 @@ describe("OrgChartView", () => {
               readonly: [],
               isolation: "shared",
               task: "Build the query API",
+              agent_profile: null,
             },
           ],
           contracts: "",
@@ -1911,6 +1912,7 @@ describe("OrgChartView", () => {
             path: "services/auth",
             spec: "Tokens are opaque.",
             readonly: false,
+            old: false,
           },
         ],
         contracts: [
@@ -1991,6 +1993,7 @@ describe("OrgChartView", () => {
     const SYNCED: OrgSync = {
       remote: "origin",
       result: "up_to_date",
+      head: null,
       merge: null,
       memory: null,
     };
@@ -2013,7 +2016,6 @@ describe("OrgChartView", () => {
               head: "abc",
               changed: true,
               kept_local: ["services/auth/spec.md"],
-              pushed: false,
             },
           } satisfies OrgSync);
         }),
