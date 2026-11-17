@@ -16,7 +16,7 @@ import { TeamReports } from "./team-reports";
 import { ReviewSummary } from "./review-summary";
 import { SpecAndContracts } from "./spec-and-contracts";
 import { isLost, StartAgain } from "./start-again";
-import { conversationsAt, placesAt, workPlacesAt } from "./node-conversations";
+import { conversationsAt, placesAt, workPlacesAt } from "./team-places";
 import { OrgSessionsContext } from "./org-sessions";
 import {
   ENFORCEMENT_LABEL_KEYS,
@@ -200,7 +200,7 @@ export function AgentInspectorDrawer({
         <SpecAndContracts node={node} />
         <TeamReports node={node} />
         <TeamRecord node={node} />
-        <TeamMessages node={node} nodes={nodes} />
+        <TeamMessages node={node} places={places} nodes={nodes} />
       </div>
 
       <div

@@ -210,7 +210,12 @@ function readClientPin() {
   const pkg = JSON.parse(
     readFileSync(join(projectRoot, "package.json"), "utf-8"),
   );
-  return pkg.dependencies?.[CLIENT_PACKAGE_NAME] ?? null;
+  const pin = pkg.dependencies?.[CLIENT_PACKAGE_NAME] ?? null;
+  // The fork's build is packed into vendor/, named by its version.
+  const packed = /^file:vendor\/openhands-typescript-client-([0-9][^/]*)\.tgz$/.exec(
+    pin ?? "",
+  );
+  return packed ? packed[1] : pin;
 }
 
 /**

@@ -12,8 +12,8 @@ import type {
   Thread,
 } from "#/api/director/types";
 import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-inspector-drawer";
-import { NodeCard } from "#/components/features/org-chart/node-card";
-import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
+import { TeamCard } from "#/components/features/org-chart/team-card";
+import { TeamHoverCard } from "#/components/features/org-chart/team-hover-card";
 import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { ProposedTeams } from "#/components/features/org-chart/proposed-teams";
@@ -30,11 +30,11 @@ const STATE: DirectorSettingsState = {
   max_concurrent_runs: null,
   allowed_profiles: [],
   resume_on_start: false,
+  report_compaction_chars: 24000,
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
-  session_worktrees: true,
 };
 
 function settingsHandlers(state: DirectorSettingsState) {
@@ -82,6 +82,7 @@ const IC = {
   status: "idle",
   kind: "openhands" as const,
   acp_server: null,
+  hand_over: null,
 };
 
 // A team of the org: nobody works at it itself.
@@ -93,6 +94,8 @@ const NODE: OrgNode = {
   isolation: "shared",
   spec_summary: "",
   old_specs: [],
+  headline: "",
+  agent_profile: null,
   child_ids: [],
 };
 
@@ -112,6 +115,7 @@ function atTeam(work: Partial<SessionTeam>, children: React.ReactNode) {
 const STOPPED = {
   at: "2026-11-14T10:00:00+00:00",
   reason: "Two hours on one schema.",
+  running: [],
 };
 
 describe("the checks in the settings", () => {
@@ -207,7 +211,7 @@ describe("the checks in the settings", () => {
 describe("a stopped team", () => {
   it("is marked on its card only while it is stopped", () => {
     const shopCard = (
-      <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />
+      <TeamCard node={NODE} current={false} onOpenDetails={() => {}} />
     );
     const { rerender } = renderWithProviders(atTeam({}, shopCard));
     expect(screen.queryByRole("img", { name: "ORG_CHART$STOPPED" })).toBeNull();
@@ -223,7 +227,7 @@ describe("a stopped team", () => {
     memoryHandlers();
     const stopped = { status: "blocked" as const, stopped: STOPPED };
     const { unmount } = renderWithProviders(
-      atTeam(stopped, <NodeHoverCard node={NODE} />),
+      atTeam(stopped, <TeamHoverCard node={NODE} />),
     );
 
     expect(screen.getByText("ORG_CHART$STOPPED")).toBeInTheDocument();
@@ -244,7 +248,7 @@ describe("a stopped team", () => {
 describe("a Manager that has not been written to", () => {
   it("is said to be not started in the hover card", () => {
     renderWithProviders(
-      atTeam({ agents: [IC] }, <NodeHoverCard node={NODE} />),
+      atTeam({ agents: [IC] }, <TeamHoverCard node={NODE} />),
     );
 
     expect(
@@ -255,7 +259,7 @@ describe("a Manager that has not been written to", () => {
   });
 
   it("is not mentioned for a team that has its Manager", () => {
-    renderWithProviders(atTeam({}, <NodeHoverCard node={NODE} />));
+    renderWithProviders(atTeam({}, <TeamHoverCard node={NODE} />));
 
     expect(screen.getByText(/ORG_CHART\$ROLE_MANAGER/)).toBeInTheDocument();
     expect(screen.queryByText(/ORG_CHART\$MANAGER_NOT_STARTED/)).toBeNull();
@@ -281,6 +285,7 @@ describe("proposed sub-teams", () => {
                 readonly: [],
                 isolation: "shared",
                 task: "Take orders.",
+                agent_profile: null,
               },
             ],
             contracts: "",
@@ -313,6 +318,7 @@ describe("proposed sub-teams", () => {
       readonly: [],
       isolation: "shared" as const,
       task: "Take orders.",
+      agent_profile: null,
     };
     renderWithProviders(
       <ProposedTeams
@@ -402,13 +408,14 @@ describe("what one IC wrote to the IC below", () => {
   });
 
   it("is a thread of its own beside the Manager's with the same team", async () => {
+    // Threads are kept per place of a session, and name places.
     memoryHandlers([
-      thread("shop", "shop.web", false),
-      thread("shop", "shop.web", true),
-      thread("root", "shop", true),
+      thread("shop@s1", "shop.web@s1", false),
+      thread("shop@s1", "shop.web@s1", true),
+      thread("root@s1", "shop@s1", true),
     ]);
     renderWithProviders(
-      <AgentInspectorDrawer node={NODE} onClose={() => {}} />,
+      atTeam({}, <AgentInspectorDrawer node={NODE} onClose={() => {}} />),
     );
 
     const messages = await screen.findByRole("region", {

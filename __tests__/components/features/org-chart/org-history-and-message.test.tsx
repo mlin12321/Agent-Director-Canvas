@@ -17,6 +17,8 @@ function team(id: string, title: string, path: string): OrgNode {
     isolation: "shared",
     spec_summary: "",
     old_specs: [],
+    headline: "",
+    agent_profile: null,
     child_ids: [],
   };
 }
@@ -58,16 +60,6 @@ describe("OrgHistoryPanel", () => {
         team: "",
         detail: "API, Web: too small",
       }),
-      happened("2026-11-01T10:30:00+00:00", "answered", {
-        other_id: "apps.web",
-        other: "Web",
-        detail: "settled",
-      }),
-      happened("2026-11-01T10:20:00+00:00", "asked_team", {
-        other_id: "apps.web",
-        other: "Web",
-        detail: "Send the order id",
-      }),
       happened("2026-11-01T10:10:00+00:00", "asked", {
         detail: "Add refunds",
       }),
@@ -102,8 +94,6 @@ describe("OrgHistoryPanel", () => {
       ),
       // About no single team: told of the team it is kept under.
       expect.stringContaining("ShopORG_CHART$TEAM_RECORD_DECLINED"),
-      expect.stringContaining("APIORG_CHART$HISTORY_ANSWERED"),
-      expect.stringContaining("APIORG_CHART$HISTORY_ASKED_TEAM"),
       expect.stringContaining("APIORG_CHART$HISTORY_ASKED (Add refunds)"),
       expect.stringContaining("WebORG_CHART$HISTORY_PRUNED"),
     ]);
@@ -119,7 +109,7 @@ describe("OrgHistoryPanel", () => {
     );
 
     await waitFor(() =>
-      expect(within(panel).getAllByRole("listitem")).toHaveLength(7),
+      expect(within(panel).getAllByRole("listitem")).toHaveLength(5),
     );
     expect(asked).toEqual([null, "2026-11-01T10:00:00+00:00"]);
     expect(

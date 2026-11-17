@@ -12,7 +12,7 @@ import type {
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { orgNodePath } from "#/constants/org-chart";
 import { I18nKey } from "#/i18n/declaration";
-import { teamWork, workPlacesAt, type TeamWork } from "./node-conversations";
+import { teamWork, workPlacesAt, type TeamWork } from "./team-places";
 import { StatusBadge } from "./status-badge";
 
 /**

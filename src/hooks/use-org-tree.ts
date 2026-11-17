@@ -67,7 +67,10 @@ function reduce(state: OrgTreeState, action: OrgTreeAction): OrgTreeState {
         nodes: new Map(event.nodes.map((node) => [node.id, node])),
         escalations: event.escalations,
         sessions: event.sessions,
-        orgState: { paused: event.paused, merging: event.merging },
+        orgState: {
+          paused: event.paused ?? null,
+          merging: event.merging ?? false,
+        },
       };
     case "org_state":
       return {

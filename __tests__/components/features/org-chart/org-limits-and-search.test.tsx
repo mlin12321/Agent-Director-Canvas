@@ -9,8 +9,8 @@ import type {
   TeamMatch,
 } from "#/api/director/types";
 import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-inspector-drawer";
-import { NodeCard } from "#/components/features/org-chart/node-card";
-import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
+import { TeamCard } from "#/components/features/org-chart/team-card";
+import { TeamHoverCard } from "#/components/features/org-chart/team-hover-card";
 import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { TeamSearch } from "#/components/features/org-chart/team-search";
@@ -26,11 +26,11 @@ const STATE: DirectorSettingsState = {
   max_concurrent_runs: 10,
   allowed_profiles: [],
   resume_on_start: false,
+  report_compaction_chars: 24000,
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
-  session_worktrees: true,
 };
 
 function settingsHandlers(state: DirectorSettingsState = STATE) {
@@ -178,7 +178,13 @@ describe("OrgSettings", () => {
       http.get("*/api/agent-profiles", () =>
         HttpResponse.json({
           profiles: [
-            { id: "1", name: "default", agent_kind: "openhands" },
+            {
+              id: "1",
+              name: "default",
+              agent_kind: "openhands",
+              acp_server: null,
+              hand_over: null,
+            },
             { id: "2", name: "codex", agent_kind: "acp" },
           ],
           active_agent_profile_id: "1",
@@ -306,7 +312,7 @@ describe("TeamSearch", () => {
   });
 });
 
-describe("NodeCard", () => {
+describe("TeamCard", () => {
   const NODE: OrgNode = {
     id: "auth",
     parent_id: "root",
@@ -316,6 +322,7 @@ describe("NodeCard", () => {
     spec_summary: "",
     headline: "Token refresh",
     old_specs: [],
+    agent_profile: null,
     child_ids: [],
   };
   const IC: SessionTeam["agents"][number] = {
@@ -324,6 +331,7 @@ describe("NodeCard", () => {
     status: "idle",
     kind: "openhands",
     acp_server: null,
+    hand_over: null,
   };
 
   /** The team beside a session that has `work` at it. */
@@ -339,7 +347,7 @@ describe("NodeCard", () => {
 
   it("says a team waits for a free run slot in place of what it is delivering", () => {
     const authCard = (
-      <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />
+      <TeamCard node={NODE} current={false} onOpenDetails={() => {}} />
     );
     const { rerender } = renderWithProviders(atTeam({}, authCard));
     expect(screen.getByText("Token refresh")).toBeInTheDocument();
@@ -368,6 +376,7 @@ describe("NodeCard", () => {
               status: "working",
               kind: "acp",
               acp_server: "codex",
+              hand_over: null,
             },
             {
               role: "manager",
@@ -375,10 +384,11 @@ describe("NodeCard", () => {
               status: "idle",
               kind: "acp",
               acp_server: null,
+              hand_over: null,
             },
           ],
         },
-        <NodeHoverCard node={{ ...NODE, agent_profile: "codex" }} />,
+        <TeamHoverCard node={{ ...NODE, agent_profile: "codex" }} />,
       ),
     );
 

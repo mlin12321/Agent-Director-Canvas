@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { OrgNode } from "#/api/director/types";
-import { useNodeMemory } from "#/hooks/query/use-node-memory";
+import { useTeamMemory } from "#/hooks/query/use-team-memory";
 import { I18nKey } from "#/i18n/declaration";
 import { ROLE_LABEL_KEYS } from "./org-chart-presentation";
 
@@ -14,7 +14,7 @@ interface TeamReportsProps {
  */
 export function TeamReports({ node }: TeamReportsProps) {
   const { t } = useTranslation("openhands");
-  const memory = useNodeMemory(node.id);
+  const memory = useTeamMemory(node.id);
 
   let body: React.ReactNode;
   if (memory.isPending) {

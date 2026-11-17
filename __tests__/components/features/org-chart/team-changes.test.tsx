@@ -40,8 +40,18 @@ const NODE: SessionTeam = {
   isolation: "worktree",
   worktree_path: "/work/api",
   branch: "agents/api",
+  base_commit: "",
+  boundary_enforcement: "sandbox",
+  division_lead: false,
   agents: [
-    { role: "ic", conversation_id: null, status: "idle", kind: "openhands" },
+    {
+      role: "ic",
+      conversation_id: null,
+      status: "idle",
+      kind: "openhands",
+      acp_server: null,
+      hand_over: null,
+    },
   ],
   status: "working",
   spec_summary: "",
@@ -50,6 +60,8 @@ const NODE: SessionTeam = {
   review: null,
   waiting_to_start: false,
   old_specs: [],
+  headline: "",
+  agent_profile: null,
   child_ids: [],
 };
 

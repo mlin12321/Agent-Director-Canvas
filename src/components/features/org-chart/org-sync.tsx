@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { DirectorClient, DirectorError } from "#/api/director/director-client";
-import type { OrgSync as SyncResult } from "#/api/director/types";
+import type { OrgSync as OrgSyncResult } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
 
 const BUTTON =
@@ -13,7 +13,7 @@ const OUTCOME_KEYS = {
   merged: I18nKey.ORG_CHART$SYNC_PULLED,
   conflicts: I18nKey.ORG_CHART$SYNC_CONFLICTS,
   pushed: I18nKey.ORG_CHART$SYNC_PUSHED,
-} satisfies Record<SyncResult["result"], I18nKey>;
+} satisfies Record<OrgSyncResult["result"], I18nKey>;
 
 /**
  * Exchanges the org with the repository's `origin`, as git does a branch:

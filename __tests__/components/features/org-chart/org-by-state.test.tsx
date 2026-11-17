@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { NodeStatus, OrgNode, ReviewState } from "#/api/director/types";
-import type { TeamWork } from "#/components/features/org-chart/node-conversations";
+import type { TeamWork } from "#/components/features/org-chart/team-places";
 import {
   OrgByState,
   teamStateOf,
@@ -29,6 +29,8 @@ function work(status: NodeStatus, given: Given = {}): TeamWork {
               conversation_id: null,
               status: "idle",
               kind: "openhands",
+              acp_server: null,
+              hand_over: null,
             },
           ],
     status,
@@ -65,6 +67,8 @@ function team(id: string, status: NodeStatus, given: Given = {}) {
     isolation: "shared",
     spec_summary: "",
     old_specs: [],
+    headline: "",
+    agent_profile: null,
     child_ids: [],
   };
   return { node, work: work(status, given) };

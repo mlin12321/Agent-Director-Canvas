@@ -8,7 +8,7 @@ import type {
   OrgNode,
 } from "#/api/director/types";
 import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-inspector-drawer";
-import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
+import { TeamHoverCard } from "#/components/features/org-chart/team-hover-card";
 import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { SpecAndContracts } from "#/components/features/org-chart/spec-and-contracts";
@@ -41,7 +41,7 @@ const STATE: DirectorSettingsState = {
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
-  session_worktrees: true,
+  report_compaction_chars: 24000,
 };
 
 function settingsHandlers(state: DirectorSettingsState) {
@@ -95,6 +95,7 @@ const NOT_STARTED: OrgNode = {
   headline: "Sells the goods",
   spec_summary: "",
   old_specs: [],
+  agent_profile: null,
   child_ids: [],
 };
 
@@ -187,7 +188,7 @@ describe("a team that has not been given a task", () => {
   it("says so in its hover card and its details, with how it starts", () => {
     memoryHandlers();
     const { unmount } = renderWithProviders(
-      <NodeHoverCard node={NOT_STARTED} />,
+      <TeamHoverCard node={NOT_STARTED} />,
     );
 
     expect(screen.getByText("ORG_CHART$TEAM_NOT_STARTED")).toBeInTheDocument();
@@ -215,7 +216,15 @@ function detailsWithIc(ic: Record<string, unknown>) {
   return renderWithProviders(
     <OrgSessionsContext.Provider
       value={atWork(NOT_STARTED, {
-        agents: [{ role: "ic", kind: "openhands", ...ic }],
+        agents: [
+          {
+            role: "ic",
+            kind: "openhands",
+            acp_server: null,
+            hand_over: null,
+            ...ic,
+          },
+        ],
       } as never)}
     >
       <AgentInspectorDrawer node={NOT_STARTED} onClose={() => {}} />

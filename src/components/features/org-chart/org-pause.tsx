@@ -9,7 +9,7 @@ import type {
   RecoveryItem,
 } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
-import { orgNodePath } from "#/constants/org-chart";
+import { orgNodePath, teamOfPlace } from "#/constants/org-chart";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { I18nKey } from "#/i18n/declaration";
@@ -77,7 +77,7 @@ function Items({ items }: { items: RecoveryItem[] }) {
         <li key={index} className="flex gap-2">
           {item.node_id ? (
             <NavigationLink
-              to={orgNodePath(item.node_id)}
+              to={orgNodePath(teamOfPlace(item.node_id))}
               className="shrink-0 font-medium text-link hover:underline"
             >
               {item.title || item.node_id}

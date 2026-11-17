@@ -12,7 +12,7 @@ import type {
 } from "#/api/director/types";
 
 /** One conversation that goes on at a team. */
-export interface NodeConversation {
+export interface PlaceConversation {
   key: string;
   /** `null` while the agent has no conversation to open. */
   conversationId: string | null;
@@ -63,8 +63,8 @@ export function workPlacesAt(
 export function conversationsAt(
   node: OrgNode,
   sessions: readonly Session[],
-): NodeConversation[] {
-  const found: NodeConversation[] = [];
+): PlaceConversation[] {
+  const found: PlaceConversation[] = [];
   sessions.forEach((session) => {
     placesAt(node.id, [session]).forEach((place) => {
       const divisionLead = Boolean(place.division_lead);

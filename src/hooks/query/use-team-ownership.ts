@@ -12,7 +12,7 @@ import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
  * teams' committed work collides. Asked again whenever the team's reports
  * change, and every few seconds.
  */
-export function useNodeOwnership(node: OrgNode | null) {
+export function useTeamOwnership(node: OrgNode | null) {
   const { backend } = useActiveBackend();
   return useQuery({
     queryKey: [

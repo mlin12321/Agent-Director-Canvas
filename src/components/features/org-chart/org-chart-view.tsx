@@ -8,7 +8,7 @@ import { ORG_CHART_PATH, orgNodePath } from "#/constants/org-chart";
 import { useNavigation } from "#/context/navigation-context";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
-import { useNodeOwnership } from "#/hooks/query/use-node-ownership";
+import { useTeamOwnership } from "#/hooks/query/use-team-ownership";
 import { useOrgTree } from "#/hooks/use-org-tree";
 import { I18nKey } from "#/i18n/declaration";
 import { useOrgChartStore } from "#/stores/org-chart-store";
@@ -204,7 +204,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [parentId, detailsId, navigate]);
   // A server without the route answers with an error and gets no map.
-  const ownership = useNodeOwnership(current).data;
+  const ownership = useTeamOwnership(current).data;
   const colliding = React.useMemo(
     () =>
       new Set(ownership?.collisions.flatMap((collision) => collision.node_ids)),

@@ -8,7 +8,7 @@ import type {
   OrgNode,
   Recovery,
 } from "#/api/director/types";
-import { NodeCard } from "#/components/features/org-chart/node-card";
+import { TeamCard } from "#/components/features/org-chart/team-card";
 import {
   PauseButton,
   PausedBanner,
@@ -158,24 +158,34 @@ describe("a team whose agent was paused while working", () => {
     headline: "Serves the checkout API",
     spec_summary: "",
     old_specs: [],
+    agent_profile: null,
     child_ids: [],
   };
 
   // The agents are a session's: nobody works at a team itself.
   const AGENTS: AgentRef[] = [
-    { role: "ic", conversation_id: "c1", status: "paused", kind: "openhands" },
+    {
+      role: "ic",
+      conversation_id: "c1",
+      status: "paused",
+      kind: "openhands",
+      acp_server: null,
+      hand_over: null,
+    },
     {
       role: "manager",
       conversation_id: "c2",
       status: "idle",
       kind: "openhands",
+      acp_server: null,
+      hand_over: null,
     },
   ];
 
   function cardWith(agents: AgentRef[]) {
     return renderWithProviders(
       <OrgSessionsContext.Provider value={atWork(NODE, { agents })}>
-        <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />
+        <TeamCard node={NODE} current={false} onOpenDetails={() => {}} />
       </OrgSessionsContext.Provider>,
     );
   }
@@ -206,11 +216,11 @@ describe("the setting to resume on start", () => {
     max_concurrent_runs: 10,
     allowed_profiles: [],
     resume_on_start: false,
+    report_compaction_chars: 24000,
     stall_check_minutes: 120,
     manager_check_accepted_reviews: 5,
     manager_check_ic_setbacks: 3,
     route_requests: true,
-    session_worktrees: true,
   };
 
   function settings(state: DirectorSettingsState) {

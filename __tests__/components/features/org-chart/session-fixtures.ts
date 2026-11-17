@@ -16,6 +16,8 @@ const DIVISION_LEAD_IC: AgentRef = {
   conversation_id: null,
   status: "idle",
   kind: "openhands",
+  acp_server: null,
+  hand_over: null,
 };
 
 /** What a session has at a team: the team's title and boundary, and `work`. */
@@ -30,6 +32,9 @@ export function placeAt(
     child_ids: [],
     worktree_path: ".",
     branch: "main",
+    base_commit: "",
+    boundary_enforcement: null,
+    division_lead: false,
     agents: [],
     status: "idle",
     escalations: [],
