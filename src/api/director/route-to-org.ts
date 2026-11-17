@@ -1,5 +1,21 @@
-import { DirectorClient } from "./director-client";
+import i18n from "#/i18n";
+import { I18nKey } from "#/i18n/declaration";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { DirectorClient, DirectorError } from "./director-client";
 import type { RoutedMessage, RouteMessageRequest } from "./types";
+
+// What an org answers when it has the message's folder and still does not
+// take the message: no team can, or the server runs all it can.
+const REFUSALS = [409, 429];
+
+/** Say that the org did not take a message, in the director's words. */
+export function tellOfRefusal(error: unknown) {
+  if (error instanceof DirectorError) {
+    displayErrorToast(
+      i18n.t(I18nKey.ORG_CHART$ROUTE_REFUSED, { reason: error.message }),
+    );
+  }
+}
 
 /**
  * Offer the first message of a new conversation to the org of its folder.
@@ -13,7 +29,8 @@ import type { RoutedMessage, RouteMessageRequest } from "./types";
  * @returns Where the message went, or `null` when the conversation is to
  * start as an ordinary one: the server has no director, the folder is not in
  * a git repository, or it is outside the repository of the org the server
- * already has.
+ * already has. An org that has the folder and does not take the message
+ * says why, and the conversation still starts as an ordinary one.
  */
 export async function routeToOrg(
   text: string,
@@ -27,8 +44,14 @@ export async function routeToOrg(
       auto: true,
       conversation,
     });
-  } catch {
+  } catch (error) {
     // Starting a conversation never depends on the director.
+    if (
+      error instanceof DirectorError &&
+      REFUSALS.includes(error.status ?? 0)
+    ) {
+      tellOfRefusal(error);
+    }
     return null;
   }
 }

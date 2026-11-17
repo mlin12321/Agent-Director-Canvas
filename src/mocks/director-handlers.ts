@@ -46,6 +46,7 @@ const TEAM_AGENTS: AgentRef[] = [
     status: "working",
     kind: "openhands",
     acp_server: null,
+    reason: null,
     hand_over: null,
   },
   {
@@ -54,6 +55,7 @@ const TEAM_AGENTS: AgentRef[] = [
     status: "idle",
     kind: "openhands",
     acp_server: null,
+    reason: null,
     hand_over: null,
   },
 ];
@@ -67,6 +69,7 @@ const DIVISION_LEADS: AgentRef[] = [
     status: "idle",
     kind: "openhands",
     acp_server: null,
+    reason: null,
     hand_over: null,
   },
   {
@@ -75,6 +78,7 @@ const DIVISION_LEADS: AgentRef[] = [
     status: "idle",
     kind: "openhands",
     acp_server: null,
+    reason: null,
     hand_over: null,
   },
 ];
@@ -508,6 +512,7 @@ function sessionsNow(): Session[] {
         above_id: aboveId,
         request: session.request,
         opened_at: session.opened_at,
+        branch: "main",
         status: first.status,
         review: first.review?.state ?? null,
         conversation_id: null,

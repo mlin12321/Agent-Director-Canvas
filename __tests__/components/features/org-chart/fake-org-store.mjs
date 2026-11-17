@@ -249,6 +249,7 @@ export class OrgStore {
     this.#sessions.set(input.id, {
       request: "",
       opened_at: "",
+      branch: "main",
       ...structuredClone(input),
       above_id: aboveId,
     });

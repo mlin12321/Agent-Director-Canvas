@@ -284,6 +284,14 @@ export function AgentInspectorDrawer({
                     {candidate.status}
                   </span>
                 </button>
+                {candidate.agent.reason && !candidate.handOver ? (
+                  <p
+                    role="status"
+                    className="px-2 pt-1 text-xs text-feedback-warning"
+                  >
+                    {candidate.agent.reason}
+                  </p>
+                ) : null}
               </li>
             );
           })}

@@ -88,6 +88,7 @@ const REFUNDS: SessionTeam = placeAt(
         status: "idle",
         kind: "openhands",
         acp_server: null,
+        reason: null,
         hand_over: null,
       },
     ],
@@ -113,6 +114,7 @@ const SESSION: Session = {
   above_id: ROOT.id,
   request: "Add refunds.",
   opened_at: "2026-11-01T10:00:00+00:00",
+  branch: "main",
   status: "working",
   review: null,
   conversation_id: "c2",
@@ -125,6 +127,7 @@ const ic = (conversationId: string | null, status = "idle") => ({
   status,
   kind: "openhands" as const,
   acp_server: null,
+  reason: null,
   hand_over: null,
 });
 

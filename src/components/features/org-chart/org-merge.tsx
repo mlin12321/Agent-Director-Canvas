@@ -1,7 +1,7 @@
 import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { DirectorClient } from "#/api/director/director-client";
+import { DirectorClient, refusalOf } from "#/api/director/director-client";
 import type { OrgConflict, Side } from "#/api/director/types";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
@@ -120,7 +120,7 @@ export function MergeConflicts() {
         <span className="flex flex-wrap items-center gap-2">
           {settle.isError ? (
             <span role="alert" className="text-xs text-feedback-error">
-              {t(I18nKey.ORG_CHART$MERGE_ERROR)}
+              {refusalOf(settle.error) ?? t(I18nKey.ORG_CHART$MERGE_ERROR)}
             </span>
           ) : null}
           <button

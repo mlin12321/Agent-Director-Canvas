@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { DirectorClient, DirectorError } from "#/api/director/director-client";
+import { DirectorClient, refusalOf } from "#/api/director/director-client";
 import type { OrgSync as OrgSyncResult } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
 
@@ -48,8 +48,6 @@ export function OrgSync({
   const result =
     sync.data?.result === "conflicts" && !merging ? undefined : sync.data;
   const keptLocal = result?.memory?.kept_local ?? [];
-  const refused =
-    sync.error instanceof DirectorError && sync.error.status === 409;
 
   return (
     <div className="flex items-center gap-2">
@@ -82,11 +80,7 @@ export function OrgSync({
       </div>
       {sync.isError ? (
         <span role="alert" className="text-xs text-feedback-error">
-          {t(
-            refused
-              ? I18nKey.ORG_CHART$SYNC_REFUSED
-              : I18nKey.ORG_CHART$SYNC_ERROR,
-          )}
+          {refusalOf(sync.error) ?? t(I18nKey.ORG_CHART$SYNC_ERROR)}
         </span>
       ) : null}
       {result && !sync.isError ? (

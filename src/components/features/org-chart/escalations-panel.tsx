@@ -2,7 +2,7 @@ import React from "react";
 import { useMutation } from "@tanstack/react-query";
 import { CircleHelp, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { DirectorClient } from "#/api/director/director-client";
+import { DirectorClient, refusalOf } from "#/api/director/director-client";
 import type { OpenEscalation } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { orgNodePath, teamOfPlace } from "#/constants/org-chart";
@@ -111,7 +111,8 @@ function EscalationCard({ item }: { item: OpenEscalation }) {
         />
         {answer.isError ? (
           <p role="alert" className="text-xs text-feedback-error">
-            {t(I18nKey.ORG_CHART$ESCALATION_ANSWER_FAILED)}
+            {refusalOf(answer.error) ??
+              t(I18nKey.ORG_CHART$ESCALATION_ANSWER_FAILED)}
           </p>
         ) : null}
         <button

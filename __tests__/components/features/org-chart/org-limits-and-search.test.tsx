@@ -156,7 +156,10 @@ describe("OrgSettings", () => {
     settingsHandlers();
     server.use(
       http.patch("*/api/director/settings", () =>
-        HttpResponse.json({ detail: "no" }, { status: 422 }),
+        HttpResponse.json(
+          { detail: "The org already has more teams" },
+          { status: 422 },
+        ),
       ),
     );
     const user = userEvent.setup();
@@ -168,7 +171,7 @@ describe("OrgSettings", () => {
     );
 
     expect(await within(modal).findByRole("alert")).toHaveTextContent(
-      "ORG_CHART$SETTINGS_SAVE_ERROR",
+      "The org already has more teams",
     );
   });
 
@@ -183,6 +186,7 @@ describe("OrgSettings", () => {
               name: "default",
               agent_kind: "openhands",
               acp_server: null,
+              reason: null,
               hand_over: null,
             },
             { id: "2", name: "codex", agent_kind: "acp" },
@@ -331,6 +335,7 @@ describe("TeamCard", () => {
     status: "idle",
     kind: "openhands",
     acp_server: null,
+    reason: null,
     hand_over: null,
   };
 
@@ -376,6 +381,7 @@ describe("TeamCard", () => {
               status: "working",
               kind: "acp",
               acp_server: "codex",
+              reason: null,
               hand_over: null,
             },
             {
@@ -384,6 +390,7 @@ describe("TeamCard", () => {
               status: "idle",
               kind: "acp",
               acp_server: null,
+              reason: null,
               hand_over: null,
             },
           ],
@@ -398,6 +405,31 @@ describe("TeamCard", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("codex")).toBeInTheDocument();
+  });
+
+  it("says in the details why an agent failed", () => {
+    const agents = [
+      {
+        ...IC,
+        conversation_id: "c1",
+        status: "blocked",
+        reason: "LLMAuthenticationError: the key was refused",
+      },
+    ];
+    renderWithProviders(
+      atTeam(
+        { agents },
+        <AgentInspectorDrawer
+          node={NODE}
+          enforcement="checks"
+          onClose={() => {}}
+        />,
+      ),
+    );
+
+    expect(
+      screen.getByText("LLMAuthenticationError: the key was refused"),
+    ).toHaveAttribute("role", "status");
   });
 
   it("says in the details how the team is held where a session's IC ran, over what the server says of the org", () => {
