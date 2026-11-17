@@ -155,20 +155,10 @@ describe("a team whose agent was paused while working", () => {
     title: "API",
     boundary: { path: "services/api", writable: ["**"], readonly: [] },
     isolation: "shared",
-    worktree_path: "/repo",
-    branch: "main",
-    agents: [],
-    status: "idle",
     headline: "Serves the checkout API",
     spec_summary: "",
-    escalations: [],
-    pending_split: null,
-    review: null,
-    waiting_to_start: false,
     old_specs: [],
     child_ids: [],
-    descendant_counts: { idle: 0, working: 0, done: 0, blocked: 0 },
-    escalation_count: 0,
   };
 
   // The agents are a session's: nobody works at a team itself.

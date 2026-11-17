@@ -85,22 +85,16 @@ const IC = {
 };
 
 // A team of the org: nobody works at it itself.
-const NODE = {
+const NODE: OrgNode = {
   id: "shop",
   parent_id: "root",
   title: "Shop",
   boundary: { path: "shop", writable: [], readonly: [] },
   isolation: "shared",
-  worktree_path: ".",
-  branch: "agents/shop",
-  agents: [],
-  status: "idle",
   spec_summary: "",
-  escalations: [],
-  escalation_count: 0,
-  pending_split: null,
+  old_specs: [],
   child_ids: [],
-} as unknown as OrgNode;
+};
 
 const POD = [IC, { ...IC, role: "manager" as const }];
 

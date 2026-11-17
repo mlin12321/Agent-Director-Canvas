@@ -41,20 +41,9 @@ function team(
     title,
     boundary: { path, writable: ["**"], readonly: [] },
     isolation: "shared",
-    worktree_path: "/work",
-    branch: "",
-    // Nobody works at a team itself.
-    agents: [],
-    status: "idle",
     spec_summary: "",
-    escalations: [],
-    pending_split: null,
-    review: null,
-    waiting_to_start: false,
     old_specs: [],
     child_ids: [],
-    descendant_counts: { idle: 0, working: 0, done: 0, blocked: 0 },
-    escalation_count: 0,
     ...rest,
   };
 }
@@ -84,18 +73,19 @@ const API = team("services.api", "API", "services/api");
 const NODES = new Map([ROOT, API].map((node) => [node.id, node]));
 
 // What the session has at the API team. It is no node of the tree.
-const REFUNDS: SessionTeam = {
-  ...team("services.api@s1a2b3c", "API", "services/api", {
-    isolation: "worktree",
+const REFUNDS: SessionTeam = placeAt(
+  { ...API, isolation: "worktree" },
+  "s1a2b3c",
+  {
+    worktree_path: "/work",
+    branch: "",
     agents: [
       { role: "ic", conversation_id: "c2", status: "idle", kind: "openhands" },
     ],
-  }),
-  session: "s1a2b3c",
-  team_id: API.id,
-};
+  },
+);
 
-const REVIEW = {
+const REVIEW: Review = {
   state: "pending",
   round: 1,
   summary: "",
@@ -103,7 +93,8 @@ const REVIEW = {
   automated_ran: false,
   automated: [],
   findings: [],
-} as unknown as Review;
+  at: "2026-11-01T11:00:00+00:00",
+};
 
 const SESSION: Session = {
   id: "s1a2b3c",
@@ -617,7 +608,7 @@ describe("conversations of agents in the chat window", () => {
     const places: Record<string, ConversationPlace> = {
       top: place("top", [
         link("api", "below", "API"),
-        link("c2", "session", "API", "Refunds"),
+        link("c2", "below", "API", "Refunds"),
       ]),
       api: place("api", [
         link("top", "above", "Shop"),
@@ -644,7 +635,7 @@ describe("conversations of agents in the chat window", () => {
 
     const links = await screen.findByTestId("conversation-links");
     expect(links).toHaveTextContent(
-      "ORG_CHART$LINK_BELOWAPI ORG_CHART$ROLE_ICORG_CHART$LINK_SESSIONAPI ORG_CHART$ROLE_IC · Refunds",
+      "ORG_CHART$LINK_BELOWAPI ORG_CHART$ROLE_ICAPI ORG_CHART$ROLE_IC · Refunds",
     );
     await user.click(
       within(links).getByRole("button", { name: "API ORG_CHART$ROLE_IC" }),

@@ -1,34 +1,19 @@
 /**
  * Test double for the Agent Server's director org tree. It derives
- * `child_ids`, `descendant_counts` and `escalation_count` and emits the same events, scoped the
- * same way, as `openhands.agent_server.director.org_store` in the SDK, so UI
- * tests can drive realistic event sequences without a server.
+ * `child_ids` and emits the same events, scoped the same way, as
+ * `openhands.agent_server.director.org_store` in the SDK, so UI tests can
+ * drive realistic event sequences without a server.
  *
  * The tree is the org's structure: nobody works at a team itself. Work is
  * what a session has at a team (`openSession`, `place`), and the page is
  * told of it with the sessions.
  *
- * @import { AgentRef, StatusCounts, NodeStatus, NodeId, OpenEscalation, OrgEvent, OrgNode, Session, SessionTeam } from "../../../../src/api/director/types.ts"
+ * @import { AgentRef, NodeId, OpenEscalation, OrgEvent, OrgNode, Session, SessionTeam } from "../../../../src/api/director/types.ts"
  */
 
-/** @type {readonly NodeStatus[]} */
-export const NODE_STATUSES = Object.freeze([
-  "idle",
-  "working",
-  "done",
-  "blocked",
-]);
-
-/** @returns {StatusCounts} */
-export function emptyStatusCounts() {
-  return /** @type {StatusCounts} */ (
-    Object.fromEntries(NODE_STATUSES.map((status) => [status, 0]))
-  );
-}
-
 /**
- * What a caller supplies; the store fills in the derived fields.
- * @typedef {Omit<OrgNode, "child_ids" | "descendant_counts" | "escalation_count">} OrgNodeInput
+ * What a caller supplies; the store fills in the derived field.
+ * @typedef {Omit<OrgNode, "child_ids">} OrgNodeInput
  * @typedef {(event: OrgEvent) => void} OrgListener
  * @typedef {Pick<Session, "id" | "title" | "team_id"> & Partial<Pick<Session, "request" | "opened_at">>} SessionInput
  * @typedef {Partial<Omit<SessionTeam, "id" | "parent_id" | "child_ids" | "session" | "team_id" | "review_only">>} Work
@@ -40,11 +25,6 @@ export class OrgStoreError extends Error {
     super(message);
     this.name = "OrgStoreError";
   }
-}
-
-/** @param {StatusCounts} a @param {StatusCounts} b */
-function sameCounts(a, b) {
-  return NODE_STATUSES.every((status) => a[status] === b[status]);
 }
 
 /** The id of what a session has at a team. */
@@ -70,12 +50,6 @@ const REVIEWER = {
   status: "idle",
   kind: "openhands",
 };
-
-/** @param {Pick<OrgNode, "escalations">} node */
-function waitingOnHuman(node) {
-  return node.escalations.filter((escalation) => escalation.held_by === null)
-    .length;
-}
 
 export class OrgStore {
   /** @type {Map<NodeId, OrgNode>} */
@@ -180,15 +154,6 @@ export class OrgStore {
     const node = {
       ...structuredClone(input),
       child_ids: existing ? existing.child_ids : [],
-      descendant_counts: existing
-        ? existing.descendant_counts
-        : emptyStatusCounts(),
-      escalation_count:
-        waitingOnHuman(input) +
-        this.children(input.id).reduce(
-          (sum, child) => sum + child.escalation_count,
-          0,
-        ),
     };
     this.#nodes.set(node.id, node);
 
@@ -205,10 +170,8 @@ export class OrgStore {
     }
 
     this.#emit({ type: "node_upsert", node }, node.id, node.parent_id);
-    // A new child changes its parent's `child_ids`, so the parent is always
-    // re-announced on insert; above that, only changed rollups are.
-    this.#refreshAncestors(node.parent_id, !existing);
-    this.#announceEscalations();
+    // A new child changes its parent's `child_ids`.
+    if (!existing) this.#announce(node.parent_id);
     return node;
   }
 
@@ -268,7 +231,7 @@ export class OrgStore {
       )
       .forEach((place) => this.#places.delete(place.id));
 
-    this.#refreshAncestors(node.parent_id, true);
+    this.#announce(node.parent_id);
     if (this.#places.size !== placesBefore) this.#announceSessions();
     this.#announceEscalations();
     return true;
@@ -340,7 +303,6 @@ export class OrgStore {
       session: sessionId,
       team_id: teamId,
     };
-    place.escalation_count = waitingOnHuman(place);
     this.#places.set(place.id, place);
     this.#announceSessions();
     this.#announceEscalations();
@@ -408,20 +370,20 @@ export class OrgStore {
     return {
       ...structuredClone(team),
       child_ids: [],
+      worktree_path: ".",
+      branch: `agents/${team.id}`,
       agents: [],
       status: "idle",
       escalations: [],
       pending_split: null,
       review: null,
       waiting_to_start: false,
-      descendant_counts: emptyStatusCounts(),
-      escalation_count: 0,
     };
   }
 
   /**
-   * Every escalation at or below `focusId` that waits on the human: critical
-   * issues first, then the longest waiting.
+   * Every escalation that waits on the human: critical issues first, then
+   * the longest waiting. Only a session's place raises one.
    *
    * @param {NodeId} focusId
    * @returns {OpenEscalation[]}
@@ -429,27 +391,6 @@ export class OrgStore {
   escalations(focusId) {
     /** @type {OpenEscalation[]} */
     const found = [];
-    const focus = this.#nodes.get(focusId);
-    const stack = focus ? [focus] : [];
-    while (stack.length > 0) {
-      const node = /** @type {OrgNode} */ (stack.pop());
-      const path = [...this.ancestors(node.id), node].map(({ id, title }) => ({
-        id,
-        title,
-      }));
-      node.escalations
-        .filter((escalation) => escalation.held_by === null)
-        .forEach((escalation) => {
-          found.push({
-            node_id: node.id,
-            session_id: "",
-            session: "",
-            escalation,
-            path,
-          });
-        });
-      stack.push(...this.children(node.id).reverse());
-    }
     // A session is under no node: what its teams wait on the human for is
     // told with the whole org's.
     if (focusId === this.#rootId) {
@@ -579,54 +520,11 @@ export class OrgStore {
     return this.ancestors(focusId).some((ancestor) => ancestor.id === id);
   }
 
-  /** @param {OrgNode} node */
-  #rollup(node) {
-    const counts = emptyStatusCounts();
-    let escalationCount = waitingOnHuman(node);
-    this.children(node.id).forEach((child) => {
-      counts[child.status] += 1;
-      NODE_STATUSES.forEach((status) => {
-        counts[status] += child.descendant_counts[status];
-      });
-      escalationCount += child.escalation_count;
-    });
-    return { counts, escalationCount };
-  }
-
-  /**
-   * Recompute rollups from `startId` up to the root, announcing every node
-   * whose rollup changed.
-   *
-   * @param {NodeId | null} startId
-   * @param {boolean} alwaysAnnounceFirst
-   */
-  #refreshAncestors(startId, alwaysAnnounceFirst) {
-    let currentId = startId;
-    let first = true;
-    while (currentId !== null) {
-      const current = this.#nodes.get(currentId);
-      if (!current) return;
-      const { counts, escalationCount } = this.#rollup(current);
-      const changed =
-        !sameCounts(counts, current.descendant_counts) ||
-        escalationCount !== current.escalation_count;
-      const announced = changed
-        ? {
-            ...current,
-            descendant_counts: counts,
-            escalation_count: escalationCount,
-          }
-        : current;
-      if (changed) this.#nodes.set(announced.id, announced);
-      if (changed || (first && alwaysAnnounceFirst)) {
-        this.#emit(
-          { type: "node_upsert", node: announced },
-          announced.id,
-          announced.parent_id,
-        );
-      }
-      first = false;
-      currentId = current.parent_id;
+  /** Announce a team again. @param {NodeId | null} id */
+  #announce(id) {
+    const node = id === null ? undefined : this.#nodes.get(id);
+    if (node) {
+      this.#emit({ type: "node_upsert", node }, node.id, node.parent_id);
     }
   }
 

@@ -73,15 +73,7 @@ function team(id: string, parentId: string | null, path: string): OrgNodeInput {
     title: `${id} team`,
     boundary: { path, writable: [`${path}/**`], readonly: ["src/types/**"] },
     isolation: parentId === "auth" ? "shared" : "worktree",
-    worktree_path: ".",
-    branch: `agents/${id}`,
-    agents: [],
-    status: "idle",
     spec_summary: `Spec for ${id}`,
-    escalations: [],
-    pending_split: null,
-    review: null,
-    waiting_to_start: false,
     old_specs: [],
   };
 }
@@ -353,6 +345,9 @@ async function showWholeOrg(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "ORG_CHART$VIEW_FULL" }));
 }
 
+// More than the controls above the chart, which take the focus first.
+const TAB_PRESSES = 40;
+
 function badge(id: string) {
   return (
     within(card(id)).queryByRole("img", { name: "ORG_CHART$ESCALATION_COUNT" })
@@ -495,7 +490,7 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("oauth");
 
-      for (let presses = 0; presses < 16; presses += 1) {
+      for (let presses = 0; presses < TAB_PRESSES; presses += 1) {
         if (document.activeElement === teamLink("oauth")) break;
         await user.tab();
       }
@@ -540,7 +535,7 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId={null} />);
       await findCard("billing");
 
-      for (let presses = 0; presses < 16; presses += 1) {
+      for (let presses = 0; presses < TAB_PRESSES; presses += 1) {
         if (document.activeElement === teamLink("billing")) break;
         await user.tab();
       }
@@ -788,7 +783,6 @@ describe("OrgChartView", () => {
             repo_path: "/work/shop",
             directory: "",
             is_git_repository: true,
-            fixture: false,
             boundary_enforcement: "sandbox",
             paused: null,
             merging: false,
@@ -1214,7 +1208,7 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId={null} />);
       await findCard("search");
 
-      for (let presses = 0; presses < 16; presses += 1) {
+      for (let presses = 0; presses < TAB_PRESSES; presses += 1) {
         if (document.activeElement === teamLink("search")) break;
         await user.tab();
       }
@@ -1235,7 +1229,6 @@ describe("OrgChartView", () => {
       repo_path: "/work/shop",
       directory: "",
       is_git_repository: true,
-      fixture: false,
       boundary_enforcement: "sandbox",
       paused: null,
     };
@@ -1301,7 +1294,6 @@ describe("OrgChartView", () => {
             repo_path: "/work/shop",
             directory: "",
             is_git_repository: true,
-            fixture: false,
             boundary_enforcement: "sandbox",
             paused: null,
           } satisfies OrgSummary),
@@ -1333,7 +1325,6 @@ describe("OrgChartView", () => {
               repo_path: "/work/shop",
               directory: "",
               is_git_repository: true,
-              fixture: false,
               boundary_enforcement: enforcement,
               paused: null,
             } satisfies OrgSummary),
@@ -1990,7 +1981,6 @@ describe("OrgChartView", () => {
             repo_path: "/work/shop",
             directory: "",
             is_git_repository: true,
-            fixture: false,
             boundary_enforcement: "checks",
             paused: null,
           } satisfies OrgSummary),
@@ -2003,8 +1993,6 @@ describe("OrgChartView", () => {
       result: "up_to_date",
       merge: null,
       memory: null,
-      branches: [],
-      put_aside: [],
     };
 
     function sharing() {
@@ -2027,14 +2015,6 @@ describe("OrgChartView", () => {
               kept_local: ["services/auth/spec.md"],
               pushed: false,
             },
-            branches: [
-              {
-                node_id: "apps.web",
-                title: "Web",
-                branch: "web",
-                result: "diverged",
-              },
-            ],
           } satisfies OrgSync);
         }),
       );
@@ -2049,7 +2029,6 @@ describe("OrgChartView", () => {
 
       const outcome = await screen.findByText(/ORG_CHART\$SYNC_PULLED/);
       expect(outcome).toHaveTextContent("ORG_CHART$SYNC_KEPT_LOCAL");
-      expect(outcome).toHaveTextContent("ORG_CHART$SYNC_DIVERGED");
       expect(asked).toEqual([{ remote: "origin" }]);
     });
 
@@ -2100,16 +2079,6 @@ describe("OrgChartView", () => {
         "role",
         "alert",
       );
-    });
-
-    it("is not offered for the sample org", async () => {
-      renderWithProviders(<OrgChartView nodeId="root" />);
-      await findCard("root");
-      await screen.findByText(/ORG_CHART\$TALK_HINT/);
-
-      expect(
-        screen.queryByRole("group", { name: "ORG_CHART$SYNC_LABEL" }),
-      ).toBeNull();
     });
   });
 });

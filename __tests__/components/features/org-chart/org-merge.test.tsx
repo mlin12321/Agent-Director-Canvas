@@ -44,8 +44,6 @@ const DONE: SyncResult = {
   result: "merged",
   merge: null,
   memory: null,
-  branches: [],
-  put_aside: [],
 };
 
 /** A director with a merge that waits; records how it was settled. */
@@ -213,7 +211,6 @@ describe("StartOrgNotice", () => {
             repo_path: "/work/shop",
             directory: "",
             is_git_repository: true,
-            fixture: false,
             boundary_enforcement: "checks",
             paused: null,
           } satisfies OrgSummary

@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
-import type { ChangedFile, OrgNode } from "#/api/director/types";
+import type { ChangedFile, SessionTeam } from "#/api/director/types";
 import { TeamChanges } from "#/components/features/org-chart/team-changes";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
@@ -29,9 +29,12 @@ vi.mock("@monaco-editor/react", () => ({
     ),
 }));
 
-const NODE: OrgNode = {
-  id: "services.api",
-  parent_id: "root",
+// What a session has at the API team: the changes are those of its checkout.
+const NODE: SessionTeam = {
+  id: "services.api@s1a2b3c",
+  session: "s1a2b3c",
+  team_id: "services.api",
+  parent_id: "root@s1a2b3c",
   title: "API",
   boundary: { path: "services/api", writable: ["**"], readonly: [] },
   isolation: "worktree",
@@ -48,8 +51,6 @@ const NODE: OrgNode = {
   waiting_to_start: false,
   old_specs: [],
   child_ids: [],
-  descendant_counts: { idle: 0, working: 0, done: 0, blocked: 0 },
-  escalation_count: 0,
 };
 
 const file = (path: string, given: Partial<ChangedFile> = {}): ChangedFile => ({

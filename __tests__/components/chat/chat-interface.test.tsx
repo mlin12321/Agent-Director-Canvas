@@ -924,15 +924,15 @@ describe("ChatInterface - Pending message queue", () => {
     const messages = screen.getAllByTestId("user-message");
     expect(messages[0]).toHaveTextContent("first");
     expect(messages[1]).toHaveTextContent("second");
+    // Each is sent once the director was asked whose it is: wait for both,
+    // so that neither arrives in the next test.
+    await waitFor(() => expect(mockSend).toHaveBeenCalledTimes(2));
   });
 
   /** An org with one session, whose first IC runs as ``topConversation``. */
   function director(topConversation: string, wentTo: string) {
     const sent: unknown[] = [];
     server.use(
-      http.get("*/api/director/org", () =>
-        HttpResponse.json({ root_id: "root", fixture: false }),
-      ),
       http.get("*/api/director/org/sessions", () =>
         HttpResponse.json([
           { id: "s1a2b3c", team_id: "root", conversation_id: topConversation },
