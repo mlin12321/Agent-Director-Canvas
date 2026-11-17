@@ -82,6 +82,7 @@ const IC = {
   status: "idle",
   kind: "openhands" as const,
   acp_server: null,
+  hand_over: null,
 };
 
 // A team of the org: nobody works at it itself.

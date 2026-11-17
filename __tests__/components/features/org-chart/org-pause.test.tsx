@@ -170,6 +170,7 @@ describe("a team whose agent was paused while working", () => {
       status: "paused",
       kind: "openhands",
       acp_server: null,
+      hand_over: null,
     },
     {
       role: "manager",
@@ -177,6 +178,7 @@ describe("a team whose agent was paused while working", () => {
       status: "idle",
       kind: "openhands",
       acp_server: null,
+      hand_over: null,
     },
   ];
 

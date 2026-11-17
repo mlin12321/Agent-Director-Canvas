@@ -56,6 +56,7 @@ const TEAM_AGENTS: AgentRef[] = [
     status: "working",
     kind: "openhands",
     acp_server: null,
+    hand_over: null,
   },
   {
     role: "manager",
@@ -63,6 +64,7 @@ const TEAM_AGENTS: AgentRef[] = [
     status: "idle",
     kind: "openhands",
     acp_server: null,
+    hand_over: null,
   },
 ];
 

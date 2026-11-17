@@ -36,6 +36,7 @@ function team(status: NodeStatus, ic: AgentRef["status"]): SessionTeam {
         status: ic,
         kind: "openhands",
         acp_server: null,
+        hand_over: null,
       },
       {
         role: "manager",
@@ -43,6 +44,7 @@ function team(status: NodeStatus, ic: AgentRef["status"]): SessionTeam {
         status: ic,
         kind: "openhands",
         acp_server: null,
+        hand_over: null,
       },
     ],
     status,

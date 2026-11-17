@@ -88,6 +88,7 @@ const REFUNDS: SessionTeam = placeAt(
         status: "idle",
         kind: "openhands",
         acp_server: null,
+        hand_over: null,
       },
     ],
   },
@@ -124,6 +125,7 @@ const ic = (conversationId: string | null, status = "idle") => ({
   status,
   kind: "openhands" as const,
   acp_server: null,
+  hand_over: null,
 });
 
 // The session opened at the top team has a place at the API team too, and

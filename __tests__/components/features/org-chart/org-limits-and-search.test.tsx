@@ -183,6 +183,7 @@ describe("OrgSettings", () => {
               name: "default",
               agent_kind: "openhands",
               acp_server: null,
+              hand_over: null,
             },
             { id: "2", name: "codex", agent_kind: "acp" },
           ],
@@ -330,6 +331,7 @@ describe("NodeCard", () => {
     status: "idle",
     kind: "openhands",
     acp_server: null,
+    hand_over: null,
   };
 
   /** The team beside a session that has `work` at it. */
@@ -374,6 +376,7 @@ describe("NodeCard", () => {
               status: "working",
               kind: "acp",
               acp_server: "codex",
+              hand_over: null,
             },
             {
               role: "manager",
@@ -381,6 +384,7 @@ describe("NodeCard", () => {
               status: "idle",
               kind: "acp",
               acp_server: null,
+              hand_over: null,
             },
           ],
         },

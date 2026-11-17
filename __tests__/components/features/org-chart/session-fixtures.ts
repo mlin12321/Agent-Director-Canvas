@@ -17,6 +17,7 @@ const DIVISION_LEAD_IC: AgentRef = {
   status: "idle",
   kind: "openhands",
   acp_server: null,
+  hand_over: null,
 };
 
 /** What a session has at a team: the team's title and boundary, and `work`. */
