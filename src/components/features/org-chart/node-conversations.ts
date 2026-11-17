@@ -46,6 +46,14 @@ export function placesAt(
   );
 }
 
+/** The places at a team where sessions work: not their Division Leads'. */
+export function workPlacesAt(
+  nodeId: string,
+  sessions: readonly Session[],
+): SessionTeam[] {
+  return placesAt(nodeId, sessions).filter((place) => !place.division_lead);
+}
+
 /**
  * Every conversation at a team: those of the agents each session has
  * there, an IC's hand-over, and the IC that reviews a session from there.
@@ -58,44 +66,40 @@ export function conversationsAt(
 ): NodeConversation[] {
   const found: NodeConversation[] = [];
   sessions.forEach((session) => {
-    session.teams
-      .filter((team) => team.team_id === node.id)
-      .forEach((place) => {
-        const divisionLead = Boolean(place.division_lead);
-        place.agents.forEach((agent) => {
-          const shared = {
-            role: agent.role,
-            agent,
-            session: session.title,
-            place,
-            divisionLead,
-          };
+    placesAt(node.id, [session]).forEach((place) => {
+      const divisionLead = Boolean(place.division_lead);
+      place.agents.forEach((agent) => {
+        const shared = {
+          role: agent.role,
+          agent,
+          session: session.title,
+          place,
+          divisionLead,
+        };
+        found.push({
+          ...shared,
+          key: `${place.id}:${agent.role}`,
+          conversationId: agent.conversation_id,
+          status: agent.status,
+          handOver: false,
+          lost: false,
+          mine:
+            !divisionLead && session.team_id === node.id && agent.role === "ic",
+        });
+        if (agent.hand_over) {
+          const lost = agent.hand_over.status === "lost";
           found.push({
             ...shared,
-            key: `${place.id}:${agent.role}`,
-            conversationId: agent.conversation_id,
-            status: agent.status,
-            handOver: false,
-            lost: false,
-            mine:
-              !divisionLead &&
-              session.team_id === node.id &&
-              agent.role === "ic",
+            key: `${place.id}:${agent.role}:hand-over`,
+            conversationId: lost ? null : agent.hand_over.conversation_id,
+            status: agent.hand_over.status,
+            handOver: true,
+            lost,
+            mine: false,
           });
-          if (agent.hand_over) {
-            const lost = agent.hand_over.status === "lost";
-            found.push({
-              ...shared,
-              key: `${place.id}:${agent.role}:hand-over`,
-              conversationId: lost ? null : agent.hand_over.conversation_id,
-              status: agent.hand_over.status,
-              handOver: true,
-              lost,
-              mine: false,
-            });
-          }
-        });
+        }
       });
+    });
   });
   return found;
 }
@@ -124,9 +128,7 @@ export function teamWork(
   node: OrgNode,
   sessions: readonly Session[],
 ): TeamWork {
-  const places = placesAt(node.id, sessions).filter(
-    (place) => !place.division_lead,
-  );
+  const places = workPlacesAt(node.id, sessions);
   const started = places.filter((place) => place.agents.length > 0);
   const latest = started[started.length - 1];
   return {

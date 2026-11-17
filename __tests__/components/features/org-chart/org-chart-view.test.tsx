@@ -49,7 +49,7 @@ vi.mock("#/components/features/org-chart/agent-conversation", () => ({
   ),
 }));
 
-const POD: AgentRef[] = [
+const TEAM_AGENTS: AgentRef[] = [
   { role: "ic", conversation_id: null, status: "working", kind: "openhands" },
   {
     role: "manager",
@@ -89,7 +89,7 @@ function put(
 ) {
   store.upsert(team(id, parentId, path));
   return store.place(SESSION, id, {
-    agents: POD,
+    agents: TEAM_AGENTS,
     status,
     escalations,
     ...work,

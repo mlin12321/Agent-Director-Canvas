@@ -96,12 +96,14 @@ const NODE: OrgNode = {
   child_ids: [],
 };
 
-const POD = [IC, { ...IC, role: "manager" as const }];
+const TEAM_AGENTS = [IC, { ...IC, role: "manager" as const }];
 
 /** The team beside a session that has `work` at it. */
 function atTeam(work: Partial<SessionTeam>, children: React.ReactNode) {
   return (
-    <OrgSessionsContext.Provider value={atWork(NODE, { agents: POD, ...work })}>
+    <OrgSessionsContext.Provider
+      value={atWork(NODE, { agents: TEAM_AGENTS, ...work })}
+    >
       {children}
     </OrgSessionsContext.Provider>
   );

@@ -1,3 +1,4 @@
+import { teamOfPlace } from "#/constants/org-chart";
 import { useSessionActivities } from "#/hooks/use-session-activities";
 import { useSessionActivityStore } from "#/stores/session-activity-store";
 import { ChatProgressContext } from "#/context/chat-progress-context";
@@ -579,7 +580,7 @@ export function ChatInterface({
       if (routed && routed.conversation_id !== conversationId) {
         markPendingMessageRouted(pendingId, {
           // The team's page, whichever session's team took it.
-          nodeId: routed.node_id.split("@")[0],
+          nodeId: teamOfPlace(routed.node_id),
           team: routed.team || routed.node_id,
           reason: routed.reason,
         });

@@ -42,8 +42,8 @@ export function placeAt(
   };
 }
 
-/** The place a session's work is reviewed from; its IC only reviews. */
-export function reviewPlaceAt(
+/** A session's Division Lead place; its IC only reviews. */
+export function leadPlaceAt(
   team: OrgNode,
   sessionId: string,
   work: Partial<SessionTeam> = {},

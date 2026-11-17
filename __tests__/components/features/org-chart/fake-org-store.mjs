@@ -36,7 +36,7 @@ export function placeId(
 }
 
 /** The id of the place a session's work is reviewed from. */
-export function reviewPlaceId(
+export function divisionLeadId(
   /** @type {NodeId} */ teamId,
   /** @type {string} */ sessionId,
 ) {
@@ -70,15 +70,6 @@ export class OrgStore {
 
   get rootId() {
     return this.#rootId;
-  }
-
-  get size() {
-    return this.#nodes.size;
-  }
-
-  /** @param {NodeId} id @returns {OrgNode | undefined} */
-  get(id) {
-    return this.#nodes.get(id);
   }
 
   /** @param {NodeId} id @returns {OrgNode[]} */
@@ -243,10 +234,10 @@ export class OrgStore {
    * its IC only reviews.
    *
    * @param {SessionInput} input
-   * @param {AgentRef[]} [reviewer] The agents of the review place.
+   * @param {AgentRef[]} [leads] The agents of its Division Lead place.
    * @returns {Session}
    */
-  openSession(input, reviewer = [DIVISION_LEAD_IC]) {
+  openSession(input, leads = [DIVISION_LEAD_IC]) {
     const team = this.#nodes.get(input.team_id);
     if (!team) {
       throw new OrgStoreError(`Team ${input.team_id} does not exist`);
@@ -261,12 +252,12 @@ export class OrgStore {
       ...structuredClone(input),
       above_id: aboveId,
     });
-    const id = reviewPlaceId(aboveId, input.id);
+    const id = divisionLeadId(aboveId, input.id);
     this.#places.set(id, {
       ...this.#reference(/** @type {OrgNode} */ (this.#nodes.get(aboveId))),
       id,
       parent_id: null,
-      agents: structuredClone(reviewer),
+      agents: structuredClone(leads),
       session: input.id,
       team_id: aboveId,
       division_lead: true,
@@ -298,7 +289,7 @@ export class OrgStore {
       id: placeId(teamId, sessionId),
       parent_id:
         teamId === session.team_id
-          ? reviewPlaceId(session.above_id, sessionId)
+          ? divisionLeadId(session.above_id, sessionId)
           : placeId(/** @type {NodeId} */ (team.parent_id), sessionId),
       session: sessionId,
       team_id: teamId,
@@ -307,22 +298,6 @@ export class OrgStore {
     this.#announceSessions();
     this.#announceEscalations();
     return place;
-  }
-
-  /**
-   * Close a session, with everything it has at its teams.
-   *
-   * @param {string} sessionId
-   * @returns {boolean} Whether it was open.
-   */
-  closeSession(sessionId) {
-    if (!this.#sessions.delete(sessionId)) return false;
-    [...this.#places.values()]
-      .filter((place) => place.session === sessionId)
-      .forEach((place) => this.#places.delete(place.id));
-    this.#announceSessions();
-    this.#announceEscalations();
-    return true;
   }
 
   /**

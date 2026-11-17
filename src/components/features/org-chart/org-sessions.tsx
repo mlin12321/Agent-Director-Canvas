@@ -12,7 +12,7 @@ import type {
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { orgNodePath } from "#/constants/org-chart";
 import { I18nKey } from "#/i18n/declaration";
-import { teamWork, type TeamWork } from "./node-conversations";
+import { teamWork, workPlacesAt, type TeamWork } from "./node-conversations";
 import { StatusBadge } from "./status-badge";
 
 /**
@@ -37,17 +37,11 @@ export function useSessionsAt(nodeId: NodeId): number {
  */
 export function useSessionStatusesAt(nodeId: NodeId): NodeStatus[] {
   const sessions = React.useContext(OrgSessionsContext);
-  return sessions.flatMap((session) =>
-    session.teams
-      .filter(
-        (team) =>
-          team.team_id === nodeId &&
-          !team.division_lead &&
-          team.status !== "idle" &&
-          team.review?.state !== "accepted",
-      )
-      .map((team) => team.status),
-  );
+  return workPlacesAt(nodeId, sessions)
+    .filter(
+      (team) => team.status !== "idle" && team.review?.state !== "accepted",
+    )
+    .map((team) => team.status);
 }
 
 /** What the sessions have going on at a team. */

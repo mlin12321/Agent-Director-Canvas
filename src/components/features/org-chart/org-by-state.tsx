@@ -18,19 +18,18 @@ export type TeamState =
   | "blocked"
   | "done";
 
-export const TEAM_STATES: ReadonlyArray<{ state: TeamState; label: I18nKey }> =
-  [
-    { state: "not_started", label: I18nKey.ORG_CHART$TEAM_NOT_STARTED },
-    { state: "idle", label: I18nKey.ORG_CHART$STATE_IDLE },
-    { state: "working", label: I18nKey.ORG_CHART$STATE_WORKING },
-    { state: "in_review", label: I18nKey.ORG_CHART$STATE_IN_REVIEW },
-    {
-      state: "changes_requested",
-      label: I18nKey.ORG_CHART$STATE_CHANGES_REQUESTED,
-    },
-    { state: "blocked", label: I18nKey.ORG_CHART$STATE_BLOCKED },
-    { state: "done", label: I18nKey.ORG_CHART$STATE_DONE },
-  ];
+const TEAM_STATES: ReadonlyArray<{ state: TeamState; label: I18nKey }> = [
+  { state: "not_started", label: I18nKey.ORG_CHART$TEAM_NOT_STARTED },
+  { state: "idle", label: I18nKey.ORG_CHART$STATUS_IDLE },
+  { state: "working", label: I18nKey.ORG_CHART$STATUS_WORKING },
+  { state: "in_review", label: I18nKey.ORG_CHART$STATE_IN_REVIEW },
+  {
+    state: "changes_requested",
+    label: I18nKey.ORG_CHART$REVIEW_CHANGES_REQUESTED,
+  },
+  { state: "blocked", label: I18nKey.ORG_CHART$STATUS_BLOCKED },
+  { state: "done", label: I18nKey.ORG_CHART$STATUS_DONE },
+];
 
 /**
  * The column a team belongs in. The org works a team's status out itself:

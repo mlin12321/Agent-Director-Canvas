@@ -199,7 +199,7 @@ async function cloudFallsBackToDefault(
 }
 
 /** Fail before creating a conversation whose subscription LLM isn't connected. */
-export async function assertLaunchLlmReady(llmProfile: string): Promise<void> {
+async function assertLaunchLlmReady(llmProfile: string): Promise<void> {
   let config: unknown;
   try {
     ({ config } = await ProfilesService.getProfile(llmProfile));

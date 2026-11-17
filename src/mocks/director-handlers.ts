@@ -2,6 +2,9 @@ import { http, HttpResponse } from "msw";
 import {
   DIRECTOR_BASE_PATH,
   type AgentRef,
+  type DirectorSettingsState,
+  type OrgHistory,
+  type Recovery,
   type InheritedSpec,
   type NodeMemory,
   type NodeOwnership,
@@ -36,7 +39,7 @@ const FULL_QUERY_PARAM = "full";
 const BASE = `*${DIRECTOR_BASE_PATH}`;
 const ROOT_ID = "root";
 
-const POD: AgentRef[] = [
+const TEAM_AGENTS: AgentRef[] = [
   { role: "ic", conversation_id: null, status: "working", kind: "openhands" },
   { role: "manager", conversation_id: null, status: "idle", kind: "openhands" },
 ];
@@ -425,7 +428,7 @@ function sessionsNow(): Session[] {
           ...team,
           worktree_path: `.worktrees/${session.id}`,
           branch: `director/session/${session.id}`,
-          agents: POD,
+          agents: TEAM_AGENTS,
           pending_split: null,
           waiting_to_start: false,
           ...work,
@@ -658,6 +661,38 @@ export const DIRECTOR_HANDLERS = [
     mockSessions = mockSessions.filter((session) => session.id !== sessionId);
     announceSessions();
     return HttpResponse.json({}, { status: 202 });
+  }),
+
+  // What the page reads beside the tree, so that every part of it has
+  // something to show.
+  http.get(`${BASE}/settings`, () => {
+    const body: DirectorSettingsState = {
+      max_teams: 120,
+      max_depth: 5,
+      allowed_profiles: [],
+      resume_on_start: false,
+      stall_check_minutes: 30,
+      manager_check_accepted_reviews: 5,
+      manager_check_ic_setbacks: 3,
+      route_requests: true,
+      session_worktrees: true,
+      teams: tree.size,
+      depth: 3,
+      max_concurrent_runs: null,
+    };
+    return HttpResponse.json(body);
+  }),
+
+  http.get(`${BASE}/org/sessions`, () => HttpResponse.json(sessionsNow())),
+
+  http.get(`${BASE}/org/history`, () => {
+    const body: OrgHistory = { events: [], earlier: false };
+    return HttpResponse.json(body);
+  }),
+
+  http.get(`${BASE}/org/recovery`, () => {
+    const body: Recovery = { paused: null, items: [], messages_held: 0 };
+    return HttpResponse.json(body);
   }),
 
   http.get(`${BASE}/org/tree-stream`, ({ request }) => {
