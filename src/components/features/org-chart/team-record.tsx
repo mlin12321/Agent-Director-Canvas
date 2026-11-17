@@ -167,6 +167,11 @@ export function TeamRecord({ node }: TeamRecordProps) {
                 <span className="whitespace-pre-wrap break-words">
                   {t(DECISION_KEYS[event.kind], { teams: event.detail ?? "" })}
                 </span>
+                {event.unaccepted ? (
+                  <span className="text-feedback-warning">
+                    {t(I18nKey.ORG_CHART$EVENT_UNACCEPTED)}
+                  </span>
+                ) : null}
                 <time dateTime={event.at} className="text-muted">
                   {new Date(event.at).toLocaleString()}
                 </time>

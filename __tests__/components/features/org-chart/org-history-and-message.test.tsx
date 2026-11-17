@@ -48,8 +48,10 @@ describe("OrgHistoryPanel", () => {
   it("lists what happened, newest first, and reads further back on request", async () => {
     const asked: (string | null)[] = [];
     const latest = [
+      // Of a session whose work is not accepted yet: it is not the org's.
       happened("2026-11-01T12:00:00+00:00", "sent_back", {
         detail: "round 1, 2 to change",
+        unaccepted: true,
       }),
       happened("2026-11-01T11:00:00+00:00", "declined", {
         team_id: "",
@@ -105,6 +107,8 @@ describe("OrgHistoryPanel", () => {
       expect.stringContaining("APIORG_CHART$HISTORY_ASKED (Add refunds)"),
       expect.stringContaining("WebORG_CHART$HISTORY_PRUNED"),
     ]);
+    expect(lines[0]).toHaveTextContent("ORG_CHART$EVENT_UNACCEPTED");
+    expect(lines[1]).not.toHaveTextContent("ORG_CHART$EVENT_UNACCEPTED");
     expect(
       within(panel).getAllByRole("link", { name: "API" })[0],
     ).toHaveAttribute("href", "/org/services.api");
