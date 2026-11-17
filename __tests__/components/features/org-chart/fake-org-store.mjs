@@ -16,7 +16,7 @@
  * @typedef {Omit<OrgNode, "child_ids">} OrgNodeInput
  * @typedef {(event: OrgEvent) => void} OrgListener
  * @typedef {Pick<Session, "id" | "title" | "team_id"> & Partial<Pick<Session, "request" | "opened_at">>} SessionInput
- * @typedef {Partial<Omit<SessionTeam, "id" | "parent_id" | "child_ids" | "session" | "team_id" | "review_only">>} Work
+ * @typedef {Partial<Omit<SessionTeam, "id" | "parent_id" | "child_ids" | "session" | "team_id" | "division_lead">>} Work
  * @typedef {{ event: OrgEvent, id: NodeId, parent_id: NodeId | null }} Emission
  */
 
@@ -40,11 +40,11 @@ export function reviewPlaceId(
   /** @type {NodeId} */ teamId,
   /** @type {string} */ sessionId,
 ) {
-  return `${teamId}@${sessionId}@review`;
+  return `${teamId}@${sessionId}@lead`;
 }
 
 /** @type {AgentRef} */
-const REVIEWER = {
+const DIVISION_LEAD_IC = {
   role: "ic",
   conversation_id: null,
   status: "idle",
@@ -246,7 +246,7 @@ export class OrgStore {
    * @param {AgentRef[]} [reviewer] The agents of the review place.
    * @returns {Session}
    */
-  openSession(input, reviewer = [REVIEWER]) {
+  openSession(input, reviewer = [DIVISION_LEAD_IC]) {
     const team = this.#nodes.get(input.team_id);
     if (!team) {
       throw new OrgStoreError(`Team ${input.team_id} does not exist`);
@@ -269,7 +269,7 @@ export class OrgStore {
       agents: structuredClone(reviewer),
       session: input.id,
       team_id: aboveId,
-      review_only: true,
+      division_lead: true,
     });
     this.#announceSessions();
     return /** @type {Session} */ (
@@ -342,8 +342,8 @@ export class OrgStore {
             .map((below) => below.id),
         }));
       const teams = [
-        ...places.filter((place) => !place.review_only),
-        ...places.filter((place) => place.review_only),
+        ...places.filter((place) => !place.division_lead),
+        ...places.filter((place) => place.division_lead),
       ];
       const opened = this.#places.get(placeId(session.team_id, session.id));
       return {

@@ -11,7 +11,7 @@ import type {
  * build the sessions a test puts beside its teams.
  */
 
-const REVIEWER: AgentRef = {
+const DIVISION_LEAD_IC: AgentRef = {
   role: "ic",
   conversation_id: null,
   status: "idle",
@@ -49,11 +49,11 @@ export function reviewPlaceAt(
   work: Partial<SessionTeam> = {},
 ): SessionTeam {
   return placeAt(team, sessionId, {
-    id: `${team.id}@${sessionId}@review`,
+    id: `${team.id}@${sessionId}@lead`,
     parent_id: null,
-    agents: [REVIEWER],
+    agents: [DIVISION_LEAD_IC],
     status: "idle",
-    review_only: true,
+    division_lead: true,
     ...work,
   });
 }

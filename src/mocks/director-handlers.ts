@@ -41,9 +41,11 @@ const POD: AgentRef[] = [
   { role: "manager", conversation_id: null, status: "idle", kind: "openhands" },
 ];
 
-/** The IC that reviews a session's work, which does nothing else there. */
-const REVIEWER: AgentRef[] = [
+/** The two agents that take a session's work in: the IC reviews it, the
+ * Manager settles its teams and contracts. */
+const DIVISION_LEADS: AgentRef[] = [
   { role: "ic", conversation_id: null, status: "idle", kind: "openhands" },
+  { role: "manager", conversation_id: null, status: "idle", kind: "openhands" },
 ];
 
 const DOMAINS = ["platform", "payments", "identity", "search"];
@@ -412,7 +414,7 @@ function sessionsNow(): Session[] {
     const opened = tree.get(session.team_id);
     if (!opened) return [];
     const aboveId = opened.parent_id ?? opened.id;
-    const reviewId = `${placeId(aboveId, session.id)}@review`;
+    const leadId = `${placeId(aboveId, session.id)}@lead`;
     const here = new Set(session.work.map((work) => work.team_id));
     const places = session.work.flatMap((work): SessionTeam[] => {
       const team = tree.get(work.team_id);
@@ -430,7 +432,7 @@ function sessionsNow(): Session[] {
           id: placeId(team.id, session.id),
           parent_id:
             team.id === session.team_id
-              ? reviewId
+              ? leadId
               : placeId(team.parent_id ?? "", session.id),
           child_ids: team.child_ids
             .filter((id) => here.has(id))
@@ -447,12 +449,12 @@ function sessionsNow(): Session[] {
     if (!above || !first) return [];
     const reviewPlace: SessionTeam = {
       ...above,
-      id: reviewId,
+      id: leadId,
       parent_id: null,
       child_ids: [first.id],
       worktree_path: ".",
       branch: "main",
-      agents: REVIEWER,
+      agents: DIVISION_LEADS,
       status: "idle",
       escalations: [],
       pending_split: null,
@@ -460,7 +462,7 @@ function sessionsNow(): Session[] {
       waiting_to_start: false,
       session: session.id,
       team_id: aboveId,
-      review_only: true,
+      division_lead: true,
       merge: session.waits ?? null,
     };
     return [

@@ -42,7 +42,7 @@ export function useSessionStatusesAt(nodeId: NodeId): NodeStatus[] {
       .filter(
         (team) =>
           team.team_id === nodeId &&
-          !team.review_only &&
+          !team.division_lead &&
           team.status !== "idle" &&
           team.review?.state !== "accepted",
       )
@@ -122,7 +122,7 @@ function SessionRow({
   });
   const above = nodes.get(session.above_id);
   const started = session.teams.filter(
-    (team) => team.agents.length > 0 && !team.review_only,
+    (team) => team.agents.length > 0 && !team.division_lead,
   );
 
   return (

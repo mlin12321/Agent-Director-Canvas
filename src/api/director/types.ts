@@ -421,7 +421,7 @@ export interface SessionTeam extends OrgNode {
    * Whether this is the place the session's work is reviewed from: the team
    * above the one the session was opened at, whose IC only reviews here.
    */
-  review_only?: boolean;
+  division_lead?: boolean;
   /**
    * On the place a session is reviewed from: how the work the session
    * submitted becomes the org's, with what waits to be settled first.

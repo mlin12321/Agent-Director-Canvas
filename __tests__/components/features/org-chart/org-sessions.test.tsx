@@ -298,7 +298,7 @@ describe("AgentInspectorDrawer", () => {
     expect(release).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("shows what waits of a session's work for each of its two reviewers, with what was decided, and lists its Manager", () => {
+  it("shows what waits of a session's work for each of its two Division Leads, with what was decided, and lists both", () => {
     memoryHandlers();
     const { unmount } = drawer(ROOT, [
       {
@@ -370,8 +370,8 @@ describe("AgentInspectorDrawer", () => {
         .getAllByRole("button")
         .map((row) => row.textContent),
     ).toEqual([
-      "ORG_CHART$REVIEWER · Refundsidle",
-      "ORG_CHART$ROLE_MANAGER · Refundsidle",
+      "ORG_CHART$DIVISION_LEAD_IC · Refundsidle",
+      "ORG_CHART$DIVISION_LEAD_MANAGER · Refundsidle",
     ]);
     unmount();
 
@@ -445,8 +445,8 @@ describe("AgentInspectorDrawer", () => {
     ).getAllByRole("button");
     expect(rows.map((row) => row.textContent)).toEqual([
       "ORG_CHART$ROLE_IC · Releaseidle",
-      "ORG_CHART$REVIEWER · Releaseidle",
-      "ORG_CHART$REVIEWER · Refundsidle",
+      "ORG_CHART$DIVISION_LEAD_IC · Releaseidle",
+      "ORG_CHART$DIVISION_LEAD_IC · Refundsidle",
     ]);
     const [top, , reviewer] = rows;
     // The session opened at the top team is the human's; a reviewer is not.
@@ -536,7 +536,7 @@ describe("AgentInspectorDrawer", () => {
     drawer(ROOT, [REFUNDS_REVIEWED]);
     expect(
       within(screen.getByTestId("org-node-conversations")).getByRole("button"),
-    ).toHaveTextContent("ORG_CHART$REVIEWER · Refunds");
+    ).toHaveTextContent("ORG_CHART$DIVISION_LEAD_IC · Refunds");
     expect(screen.queryByTestId("org-team-changes-tab")).toBeNull();
   });
 });
