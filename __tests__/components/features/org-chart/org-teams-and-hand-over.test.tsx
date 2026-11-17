@@ -221,6 +221,7 @@ function detailsWithIc(ic: Record<string, unknown>) {
             role: "ic",
             kind: "openhands",
             acp_server: null,
+            reason: null,
             hand_over: null,
             ...ic,
           },

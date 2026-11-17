@@ -2,7 +2,7 @@ import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Info, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { DirectorClient } from "#/api/director/director-client";
+import { DirectorClient, refusalOf } from "#/api/director/director-client";
 import type { DirectorSettingsState } from "#/api/director/types";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
@@ -287,7 +287,8 @@ function SettingsForm({
           ) : null}
           {save.isError ? (
             <p role="alert" className="text-sm text-danger">
-              {t(I18nKey.ORG_CHART$SETTINGS_SAVE_ERROR)}
+              {refusalOf(save.error) ??
+                t(I18nKey.ORG_CHART$SETTINGS_SAVE_ERROR)}
             </p>
           ) : null}
           <div className="flex flex-wrap justify-end gap-2">

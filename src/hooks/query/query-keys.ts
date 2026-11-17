@@ -139,6 +139,7 @@ export const DIRECTOR_QUERY_KEYS = {
   recovery: (backendId: string) => ["director", "recovery", backendId] as const,
   merge: (backendId: string) => ["director", "merge", backendId] as const,
   history: (backendId: string) => ["director", "history", backendId] as const,
+  sessions: (backendId: string) => ["director", "sessions", backendId] as const,
   conversationPlace: (backendId: string, conversationId: string | null) =>
     ["director", "conversation-place", backendId, conversationId] as const,
 } as const;

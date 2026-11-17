@@ -56,6 +56,7 @@ const TEAM_AGENTS: AgentRef[] = [
     status: "working",
     kind: "openhands",
     acp_server: null,
+    reason: null,
     hand_over: null,
   },
   {
@@ -64,6 +65,7 @@ const TEAM_AGENTS: AgentRef[] = [
     status: "idle",
     kind: "openhands",
     acp_server: null,
+    reason: null,
     hand_over: null,
   },
 ];
@@ -947,6 +949,10 @@ describe("OrgChartView", () => {
       expect(
         await screen.findByText("ORG_CHART$UNAVAILABLE_TITLE"),
       ).toBeInTheDocument();
+      // What to check: a server that is not the fork's has no director.
+      expect(
+        screen.getByText("ORG_CHART$UNAVAILABLE_HINT"),
+      ).toBeInTheDocument();
       expect(await findCard("root", 4000)).toBeInTheDocument();
       expect(failures).toBe(1);
     });
@@ -1106,7 +1112,10 @@ describe("OrgChartView", () => {
               answer,
             });
             if (status !== 200) {
-              return HttpResponse.json({ detail: "no" }, { status });
+              return HttpResponse.json(
+                { detail: "It is still with team billing" },
+                { status },
+              );
             }
             return HttpResponse.json(
               put("billing", "root", "working", "services/billing"),
@@ -1165,8 +1174,9 @@ describe("OrgChartView", () => {
         }),
       );
 
+      // What the director refused with, in its own words.
       expect(await within(escalations()).findByRole("alert")).toHaveTextContent(
-        "ORG_CHART$ESCALATION_ANSWER_FAILED",
+        "It is still with team billing",
       );
       expect(box).toHaveValue("Refund both charges.");
       expect(
@@ -2004,6 +2014,46 @@ describe("OrgChartView", () => {
       return screen.findByRole("group", { name: "ORG_CHART$SYNC_LABEL" });
     }
 
+    it("says when the org could not be read, and asks again", async () => {
+      let down = true;
+      server.use(
+        http.get("*/api/director/org", () =>
+          down
+            ? HttpResponse.json({ detail: "down" }, { status: 502 })
+            : HttpResponse.json({
+                root_id: "root",
+                node_count: 5,
+                repo_path: "/work/shop",
+                directory: "",
+                is_git_repository: true,
+                boundary_enforcement: "checks",
+                paused: null,
+              } satisfies OrgSummary),
+        ),
+      );
+      const user = userEvent.setup();
+      renderWithProviders(<OrgChartView nodeId="root" />);
+
+      const alert = await screen.findByText("ORG_CHART$ORG_LOAD_FAILED", {
+        exact: false,
+      });
+      expect(alert).toHaveAttribute("role", "alert");
+      // Without the org the page has none of its controls.
+      expect(
+        screen.queryByRole("group", { name: "ORG_CHART$SYNC_LABEL" }),
+      ).toBeNull();
+
+      down = false;
+      await user.click(
+        within(alert).getByRole("button", {
+          name: "CHAT_INTERFACE$MESSAGE_RETRY",
+        }),
+      );
+
+      expect(await sharing()).toBeInTheDocument();
+      expect(screen.queryByText("ORG_CHART$ORG_LOAD_FAILED")).toBeNull();
+    });
+
     it("pulls from origin and says what came of it", async () => {
       liveOrg();
       const asked: unknown[] = [];
@@ -2042,7 +2092,10 @@ describe("OrgChartView", () => {
       server.use(
         http.post("*/api/director/org/push", () =>
           fail
-            ? HttpResponse.json({ detail: fail }, { status: fail })
+            ? HttpResponse.json(
+                { detail: "The remote is ahead" },
+                { status: fail },
+              )
             : HttpResponse.json({ ...SYNCED, result: "pushed" }),
         ),
         http.post("*/api/director/org/pull", () => HttpResponse.json(SYNCED)),
@@ -2079,7 +2132,7 @@ describe("OrgChartView", () => {
       // The remote has what is not here, or a merge waits.
       fail = 409;
       await user.click(push);
-      expect(await screen.findByText("ORG_CHART$SYNC_REFUSED")).toHaveAttribute(
+      expect(await screen.findByText("The remote is ahead")).toHaveAttribute(
         "role",
         "alert",
       );

@@ -17,6 +17,7 @@ const DIVISION_LEAD_IC: AgentRef = {
   status: "idle",
   kind: "openhands",
   acp_server: null,
+  reason: null,
   hand_over: null,
 };
 
@@ -79,6 +80,7 @@ export function sessionOf(
     above_id: opened.parent_id?.split("@")[0] ?? opened.team_id,
     request: "",
     opened_at: "2026-11-01T10:00:00+00:00",
+    branch: "main",
     status: opened.status,
     review: opened.review?.state ?? null,
     conversation_id:

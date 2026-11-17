@@ -23,6 +23,20 @@ export class DirectorError extends Error {
 }
 
 /**
+ * What the director said when it refused a call, in its own words; `null`
+ * for a failure that is not a refusal (the server could not be reached, or
+ * failed itself).
+ */
+export function refusalOf(error: unknown): string | null {
+  return error instanceof DirectorError &&
+    error.status !== null &&
+    error.status >= 400 &&
+    error.status < 500
+    ? error.message
+    : null;
+}
+
+/**
  * The SDK's typed director client, for the backend that is active now. The
  * director API is served by a local Agent Server; Cloud has none.
  */

@@ -1,4 +1,5 @@
-import { DirectorClient } from "./director-client";
+import { DirectorClient, refusalOf } from "./director-client";
+import { tellOfRefusal } from "./route-to-org";
 import type { RoutedMessage } from "./types";
 
 /**
@@ -19,15 +20,23 @@ export async function routeFromChat(
   conversationId: string,
   text: string,
 ): Promise<RoutedMessage | null> {
+  let sessionId: string;
   try {
     const sessions = await DirectorClient.listSessions();
     const session = sessions.find(
       (open) => open.conversation_id === conversationId,
     );
     if (!session) return null;
-    return await DirectorClient.routeMessage({ text, session_id: session.id });
+    sessionId = session.id;
   } catch {
     // Sending a message never depends on the director.
+    return null;
+  }
+  try {
+    return await DirectorClient.routeMessage({ text, session_id: sessionId });
+  } catch (error) {
+    // The session's own director did not take it: said, and sent as written.
+    if (refusalOf(error) !== null) tellOfRefusal(error);
     return null;
   }
 }

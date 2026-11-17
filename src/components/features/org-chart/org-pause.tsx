@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pause, Play } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { DirectorClient } from "#/api/director/director-client";
+import { DirectorClient, refusalOf } from "#/api/director/director-client";
 import type {
   OrgSummary,
   PauseReason,
@@ -53,7 +53,7 @@ export function PauseButton() {
     <>
       {pause.isError ? (
         <span role="alert" className="text-xs text-feedback-error">
-          {t(I18nKey.ORG_CHART$PAUSE_ERROR)}
+          {refusalOf(pause.error) ?? t(I18nKey.ORG_CHART$PAUSE_ERROR)}
         </span>
       ) : null}
       <button
@@ -154,7 +154,7 @@ export function PausedBanner({ paused }: { paused: PauseReason | null }) {
         <span className="flex items-center gap-2">
           {resume.isError ? (
             <span role="alert" className="text-xs text-feedback-error">
-              {t(I18nKey.ORG_CHART$PAUSE_ERROR)}
+              {refusalOf(resume.error) ?? t(I18nKey.ORG_CHART$PAUSE_ERROR)}
             </span>
           ) : null}
           <button

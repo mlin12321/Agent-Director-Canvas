@@ -23,6 +23,7 @@ import {
 } from "#/hooks/use-pinned-home-route";
 import { SidebarCollapsedIconSlot } from "./sidebar-collapsed-icon-slot";
 import { SidebarNavLink } from "./sidebar-nav-link";
+import { useWaitingOnHuman } from "#/hooks/use-waiting-on-human";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { StyledTooltip } from "#/components/shared/buttons/styled-tooltip";
@@ -115,6 +116,8 @@ export function SidebarRailBody({
   };
 
   const isCloudBackend = activeBackend.kind === "cloud";
+  // What waits on the human in the org shows wherever they are.
+  const waitingOnHuman = useWaitingOnHuman(!isCloudBackend);
   // `org` is consumed by the cloud settings loader so the page opens on the
   // org that is active here instead of the cloud's last-used org.
   const cloudSettingsOrgQuery = activeOrgId
@@ -256,10 +259,24 @@ export function SidebarRailBody({
         {isCloudBackend ? null : (
           <SidebarNavLink
             to={ORG_CHART_PATH}
-            label={t(I18nKey.ORG_CHART$NAV)}
+            label={
+              waitingOnHuman > 0
+                ? t(I18nKey.ORG_CHART$NAV_WAITING, { count: waitingOnHuman })
+                : t(I18nKey.ORG_CHART$NAV)
+            }
             testId="sidebar-org-chart-link"
             collapsed={collapsed}
-            icon={<Network width={ICON_SIZE} height={ICON_SIZE} />}
+            icon={
+              <span className="relative inline-flex">
+                <Network width={ICON_SIZE} height={ICON_SIZE} />
+                {waitingOnHuman > 0 ? (
+                  <span
+                    data-testid="sidebar-org-waiting"
+                    className="absolute -right-1 -top-1 size-2 rounded-full bg-feedback-warning"
+                  />
+                ) : null}
+              </span>
+            }
           />
         )}
         {/* The interface manifest owns this entry's label, so an absent

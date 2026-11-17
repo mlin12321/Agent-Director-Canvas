@@ -142,7 +142,7 @@ describe("MergeConflicts", () => {
   });
 
   it("abandons the merge, and says when it could not be finished", async () => {
-    const asked = mergeHandlers(409);
+    const asked = mergeHandlers(502);
     const user = userEvent.setup();
     renderWithProviders(<MergeConflicts />);
 

@@ -72,6 +72,8 @@ function ancestorsOf(node: OrgNode, nodes: ReadonlyMap<NodeId, OrgNode>) {
 const CHART_MARGIN = 48;
 /** How much the whole org is enlarged before the reader zooms. */
 const FULL_SCALE = 1.25;
+// How long before the org is asked for again after it could not be read.
+const ORG_RETRY_MS = 500;
 
 /**
  * Whatever chart is drawn sits in the middle of its frame, both ways, with
@@ -127,7 +129,8 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
   const org = useQuery({
     queryKey: DIRECTOR_QUERY_KEYS.org(backend.id),
     queryFn: () => DirectorClient.getOrg(),
-    retry: false,
+    retry: 2,
+    retryDelay: ORG_RETRY_MS,
     meta: { disableToast: true },
   });
   // A server that comes back may have left its org paused.
@@ -238,6 +241,9 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
         <p className="max-w-md text-sm text-muted">
           {t(I18nKey.ORG_CHART$UNAVAILABLE_BODY)}
         </p>
+        <p className="max-w-md text-sm text-muted">
+          {t(I18nKey.ORG_CHART$UNAVAILABLE_HINT)}
+        </p>
       </Notice>
     ) : (
       <Notice title={t(I18nKey.ORG_CHART$LOADING)} />
@@ -270,6 +276,19 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
               {stale ? (
                 <span role="status" className="text-xs text-feedback-warning">
                   {t(I18nKey.ORG_CHART$RECONNECTING)}
+                </span>
+              ) : null}
+              {org.isError ? (
+                // Without it the page has no controls: say so, and ask again.
+                <span role="alert" className="text-xs text-feedback-error">
+                  {t(I18nKey.ORG_CHART$ORG_LOAD_FAILED)}{" "}
+                  <button
+                    type="button"
+                    onClick={() => refetchOrg()}
+                    className="underline hover:text-contrast"
+                  >
+                    {t(I18nKey.CHAT_INTERFACE$MESSAGE_RETRY)}
+                  </button>
                 </span>
               ) : null}
               <TeamSearch />

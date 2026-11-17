@@ -50,6 +50,7 @@ const NODE: SessionTeam = {
       status: "idle",
       kind: "openhands",
       acp_server: null,
+      reason: null,
       hand_over: null,
     },
   ],

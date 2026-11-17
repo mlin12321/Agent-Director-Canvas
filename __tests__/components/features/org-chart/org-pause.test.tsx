@@ -81,9 +81,7 @@ describe("PauseButton", () => {
 
     await user.click(screen.getByRole("button", { name: "ORG_CHART$PAUSE" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "ORG_CHART$PAUSE_ERROR",
-    );
+    expect(await screen.findByRole("alert")).toHaveTextContent("no org");
   });
 });
 
@@ -170,6 +168,7 @@ describe("a team whose agent was paused while working", () => {
       status: "paused",
       kind: "openhands",
       acp_server: null,
+      reason: null,
       hand_over: null,
     },
     {
@@ -178,6 +177,7 @@ describe("a team whose agent was paused while working", () => {
       status: "idle",
       kind: "openhands",
       acp_server: null,
+      reason: null,
       hand_over: null,
     },
   ];

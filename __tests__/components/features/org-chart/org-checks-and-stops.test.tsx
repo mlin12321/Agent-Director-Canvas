@@ -82,6 +82,7 @@ const IC = {
   status: "idle",
   kind: "openhands" as const,
   acp_server: null,
+  reason: null,
   hand_over: null,
 };
 
