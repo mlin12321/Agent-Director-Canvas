@@ -2,7 +2,7 @@ import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { DirectorClient, DirectorError } from "#/api/director/director-client";
-import type { ChangedFile, OrgNode } from "#/api/director/types";
+import type { ChangedFile, SessionTeam } from "#/api/director/types";
 import type { GitChangeStatus } from "#/api/open-hands.types";
 import { FileDiffView } from "#/components/features/diff-viewer/file-diff-view";
 import { useActiveBackend } from "#/contexts/active-backend-context";
@@ -19,12 +19,11 @@ const STATUS: Record<ChangedFile["kind"], GitChangeStatus> = {
 };
 
 /** The files a team changed since its base commit, asked again as it works. */
-export function useTeamChanges(node: OrgNode, enabled = true) {
+function useTeamChanges(node: SessionTeam) {
   const { backend } = useActiveBackend();
   return useQuery({
     queryKey: DIRECTOR_QUERY_KEYS.changes(backend.id, node.id),
     queryFn: () => DirectorClient.getNodeChanges(node.id),
-    enabled,
     refetchInterval: REFRESH_MS,
     retry: false,
     meta: { disableToast: true },
@@ -37,7 +36,7 @@ function ChangedFileRow({
   isExpanded,
   onToggle,
 }: {
-  node: OrgNode;
+  node: SessionTeam;
   file: ChangedFile;
   isExpanded: boolean;
   onToggle: () => void;
@@ -115,7 +114,7 @@ function ChangedFileRow({
  * What a team changed in its folder against where its work started, one
  * file open at a time, with the new side editable by hand.
  */
-export function TeamChanges({ node }: { node: OrgNode }) {
+export function TeamChanges({ node }: { node: SessionTeam }) {
   const { t } = useTranslation("openhands");
   const changes = useTeamChanges(node);
   const [expandedPath, setExpandedPath] = React.useState<string | null>(null);

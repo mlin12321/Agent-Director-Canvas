@@ -3,7 +3,6 @@ import {
   DIRECTOR_BASE_PATH,
   type AgentRef,
   type InheritedSpec,
-  type StatusCounts,
   type NodeMemory,
   type NodeOwnership,
   type NodeStatus,
@@ -18,7 +17,6 @@ import {
   type Report,
   type OrgSummary,
   type Review,
-  type RoutedMessage,
   type RouteMessageRequest,
   type TeamMatch,
   type Thread,
@@ -88,19 +86,6 @@ const IDEMPOTENCY_COLLISION: Escalation = {
     },
   ],
 };
-
-function waitingOnHuman(escalations: Escalation[]) {
-  return escalations.filter((escalation) => escalation.held_by === null).length;
-}
-
-function zeroCounts(): StatusCounts {
-  return {
-    idle: 0,
-    working: 0,
-    done: 0,
-    blocked: 0,
-  };
-}
 
 // A spec the team that had the directory before left; it is shown as old.
 const MOCK_SPECS: Record<NodeId, InheritedSpec[]> = {
@@ -209,25 +194,14 @@ function referenceTeam(
   id: NodeId,
   parentId: NodeId | null,
   childIds: NodeId[],
-  given: Pick<OrgNode, "title" | "boundary" | "isolation" | "spec_summary"> &
-    Partial<Pick<OrgNode, "worktree_path" | "branch">>,
+  given: Pick<OrgNode, "title" | "boundary" | "isolation" | "spec_summary">,
 ): OrgNode {
   return {
     id,
     parent_id: parentId,
     child_ids: childIds,
-    worktree_path: ".",
-    branch: "main",
     ...given,
-    agents: [],
-    status: "idle",
-    escalations: [],
-    pending_split: null,
-    review: null,
-    waiting_to_start: false,
     old_specs: [],
-    descendant_counts: zeroCounts(),
-    escalation_count: 0,
   };
 }
 
@@ -254,8 +228,6 @@ function buildMockTree() {
           title: `${domain} domain`,
           boundary: { path, writable: [`${path}/*.md`], readonly: [] },
           isolation: "worktree",
-          worktree_path: `.worktrees/${domain}`,
-          branch: `agents/${domain}`,
           spec_summary: `Interface contracts between the ${domain} services.`,
         },
       ),
@@ -272,8 +244,6 @@ function buildMockTree() {
             readonly: [`${path}/contracts/**`],
           },
           isolation: "shared",
-          worktree_path: `.worktrees/${domain}`,
-          branch: `agents/${domain}`,
           spec_summary: `Implements ${module} for ${domain}.`,
         }),
       );
@@ -437,7 +407,11 @@ function sessionsNow(): Session[] {
       return [
         {
           ...team,
+          worktree_path: `.worktrees/${session.id}`,
+          branch: `director/session/${session.id}`,
           agents: POD,
+          pending_split: null,
+          waiting_to_start: false,
           ...work,
           id: placeId(team.id, session.id),
           parent_id:
@@ -449,7 +423,6 @@ function sessionsNow(): Session[] {
             .map((id) => placeId(id, session.id)),
           escalations,
           review: work.review ?? null,
-          escalation_count: waitingOnHuman(escalations),
           session: session.id,
           team_id: team.id,
         },
@@ -463,7 +436,14 @@ function sessionsNow(): Session[] {
       id: reviewId,
       parent_id: null,
       child_ids: [first.id],
+      worktree_path: ".",
+      branch: "main",
       agents: REVIEWER,
+      status: "idle",
+      escalations: [],
+      pending_split: null,
+      review: null,
+      waiting_to_start: false,
       session: session.id,
       team_id: aboveId,
       review_only: true,
@@ -553,15 +533,6 @@ function announceSessions() {
   });
 }
 
-/** The team that owns the nearest folder at or above `path`. */
-function nearestTeam(path: string): OrgNode {
-  const teams = [...tree.values()];
-  for (let folder = path; ; folder = folder.replace(/\/?[^/]*$/, "")) {
-    const team = teams.find((node) => node.boundary.path === folder);
-    if (team) return team;
-  }
-}
-
 function frame(event: OrgEvent) {
   return new TextEncoder().encode(
     `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`,
@@ -580,7 +551,6 @@ export const DIRECTOR_HANDLERS = [
       repo_path: "/workspace/project",
       directory: "",
       is_git_repository: true,
-      fixture: true,
       boundary_enforcement: "sandbox",
       paused: null,
     };
@@ -613,18 +583,12 @@ export const DIRECTOR_HANDLERS = [
         { status: 422 },
       );
     }
-    const body: RoutedMessage = {
-      node_id:
-        mockSessions.find((session) => session.id === payload.session_id)
-          ?.team_id ?? nearestTeam(payload.path ?? "").id,
-      // The mock org's agents have no conversations.
-      conversation_id: "",
-      started_org: false,
-      team: "",
-      chosen_by: "path",
-      reason: "",
-    };
-    return HttpResponse.json(body);
+    // The mock org's agents have no conversations to take a message, so
+    // it is not routed and the page starts an ordinary conversation.
+    return HttpResponse.json(
+      { detail: "The mock org takes no messages" },
+      { status: 409 },
+    );
   }),
 
   http.post(
@@ -735,7 +699,7 @@ export const DIRECTOR_HANDLERS = [
         title: report.title,
         path: report.boundary.path,
         isolation: report.isolation,
-        branch: report.branch,
+        branch: "",
       })),
       files: [
         { path: `${kept}README.md`, owner: null },

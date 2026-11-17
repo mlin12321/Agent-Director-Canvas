@@ -8,11 +8,9 @@ import {
 
 interface StatusBadgeProps {
   status: NodeStatus;
-  /** Shown before the label, e.g. how many teams are in this state. */
-  count?: number;
 }
 
-export function StatusBadge({ status, count }: StatusBadgeProps) {
+export function StatusBadge({ status }: StatusBadgeProps) {
   const { t } = useTranslation("openhands");
   return (
     <span
@@ -23,9 +21,6 @@ export function StatusBadge({ status, count }: StatusBadgeProps) {
         aria-hidden="true"
         className={cn("size-2 rounded-full", STATUS_DOT_CLASSES[status])}
       />
-      {count === undefined ? null : (
-        <span className="font-medium text-contrast">{count}</span>
-      )}
       {t(STATUS_LABEL_KEYS[status])}
     </span>
   );

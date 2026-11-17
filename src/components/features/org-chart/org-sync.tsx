@@ -48,9 +48,6 @@ export function OrgSync({
   const result =
     sync.data?.result === "conflicts" && !merging ? undefined : sync.data;
   const keptLocal = result?.memory?.kept_local ?? [];
-  const diverged = (result?.branches ?? []).filter(
-    (branch) => branch.result === "diverged",
-  );
   const refused =
     sync.error instanceof DirectorError && sync.error.status === 409;
 
@@ -100,14 +97,6 @@ export function OrgSync({
               {" "}
               {t(I18nKey.ORG_CHART$SYNC_KEPT_LOCAL, {
                 paths: keptLocal.join(", "),
-              })}
-            </span>
-          ) : null}
-          {diverged.length > 0 ? (
-            <span className="text-feedback-warning">
-              {" "}
-              {t(I18nKey.ORG_CHART$SYNC_DIVERGED, {
-                teams: diverged.map((branch) => branch.title).join(", "),
               })}
             </span>
           ) : null}

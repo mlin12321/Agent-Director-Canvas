@@ -2,11 +2,11 @@ import { useMutation } from "@tanstack/react-query";
 import { RotateCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DirectorClient, DirectorError } from "#/api/director/director-client";
-import type { OrgNode, SessionTeam } from "#/api/director/types";
+import type { SessionTeam } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
 
 /** Whether a team's agents are missing here while its work is not done. */
-export function isLost(node: OrgNode) {
+export function isLost(node: SessionTeam) {
   return (
     node.status !== "done" &&
     node.agents.some((agent) => agent.role === "ic" && agent.status === "lost")

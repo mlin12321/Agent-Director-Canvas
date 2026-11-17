@@ -43955,24 +43955,6 @@
     "ca": "Subequips",
     "id": "Subtim"
   },
-  "ORG_CHART$LINK_SESSION": {
-    "en": "Sessions",
-    "zh-CN": "会话",
-    "zh-TW": "工作階段",
-    "de": "Sitzungen",
-    "ko-KR": "세션",
-    "no": "Økter",
-    "it": "Sessioni",
-    "pt": "Sessões",
-    "es": "Sesiones",
-    "ar": "الجلسات",
-    "fr": "Sessions",
-    "tr": "Oturumlar",
-    "ja": "セッション",
-    "uk": "Сесії",
-    "ca": "Sessions",
-    "id": "Sesi"
-  },
   "ORG_CHART$SUB_CHAT_PATH": {
     "en": "Path of conversations",
     "zh-CN": "对话路径",
@@ -46187,24 +46169,6 @@
     "ca": "Acceptat per l'equip superior",
     "id": "Diterima oleh tim di atasnya"
   },
-  "ORG_CHART$REVIEW_UNREVIEWED": {
-    "en": "Done; no team above to review it",
-    "zh-CN": "已完成；没有上级团队评审",
-    "zh-TW": "已完成；沒有上層團隊審查",
-    "de": "Fertig; kein Team darüber, das es prüft",
-    "ko-KR": "완료됨; 리뷰할 상위 팀 없음",
-    "no": "Ferdig; ingen team over til å gjennomgå det",
-    "it": "Completato; nessun team superiore lo revisiona",
-    "pt": "Concluído; nenhuma equipa acima para rever",
-    "es": "Terminado; ningún equipo superior lo revisa",
-    "ar": "اكتمل؛ لا يوجد فريق أعلى لمراجعته",
-    "fr": "Terminé ; aucune équipe au-dessus pour le relire",
-    "tr": "Tamamlandı; inceleyecek üst ekip yok",
-    "ja": "完了。レビューする上位チームはありません",
-    "uk": "Готово; немає команди вище для рев'ю",
-    "ca": "Fet; cap equip superior el revisa",
-    "id": "Selesai; tidak ada tim di atas untuk meninjaunya"
-  },
   "ORG_CHART$REVIEW_ROUND": {
     "en": "round {{round}}",
     "zh-CN": "第 {{round}} 轮",
@@ -46474,24 +46438,6 @@
     "uk": "Відхилено: спершу виконайте pull або завершіть злиття, що очікує.",
     "ca": "Rebutjat: fes pull primer o acaba la fusió pendent.",
     "id": "Ditolak: tarik dulu, atau selesaikan penggabungan yang menunggu."
-  },
-  "ORG_CHART$SYNC_DIVERGED": {
-    "en": "Other commits for {{teams}} are kept beside their branches; their ICs are told to merge them.",
-    "zh-CN": "{{teams}} 的其他提交已保留在其分支旁;已告知其 IC 进行合并。",
-    "zh-TW": "{{teams}} 的其他提交已保留在其分支旁;已告知其 IC 進行合併。",
-    "de": "Weitere Commits für {{teams}} liegen neben ihren Branches; ihre ICs wurden gebeten, sie zu mergen.",
-    "ko-KR": "{{teams}}의 다른 커밋은 브랜치 옆에 보관되며, 해당 IC에게 병합하라고 알렸습니다.",
-    "no": "Andre commits for {{teams}} er lagt ved siden av grenene; IC-ene er bedt om å flette dem.",
-    "it": "Altri commit per {{teams}} sono conservati accanto ai loro branch; ai loro IC è stato chiesto di unirli.",
-    "pt": "Outros commits de {{teams}} ficam ao lado dos seus ramos; os seus ICs foram avisados para os fundir.",
-    "es": "Otros commits de {{teams}} se guardan junto a sus ramas; se ha pedido a sus IC que los fusionen.",
-    "ar": "حُفظت إيداعات أخرى لـ {{teams}} بجانب فروعها؛ وطُلب من الـ IC دمجها.",
-    "fr": "D'autres commits pour {{teams}} sont conservés à côté de leurs branches ; leurs IC sont invités à les fusionner.",
-    "tr": "{{teams}} için diğer commit'ler dallarının yanında tutuluyor; IC'lerine bunları birleştirmeleri söylendi.",
-    "ja": "{{teams}} の他のコミットはブランチの横に保持され、IC にマージするよう伝えました。",
-    "uk": "Інші коміти для {{teams}} збережено поруч із їхніми гілками; їхнім IC сказано злити їх.",
-    "ca": "Altres commits de {{teams}} es conserven al costat de les seves branques; s'ha demanat als seus IC que els fusionin.",
-    "id": "Commit lain untuk {{teams}} disimpan di samping cabangnya; IC mereka diminta menggabungkannya."
   },
   "ORG_CHART$MERGE_TITLE": {
     "en": "A pull from {{remote}} waits for your choices",

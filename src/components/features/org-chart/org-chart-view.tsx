@@ -273,26 +273,22 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
                 </span>
               ) : null}
               <TeamSearch />
-              {org.data && !org.data.fixture ? (
+              {org.data ? (
                 <HistoryButton
                   open={showsHistory}
                   onToggle={() => setShowsHistory((shown) => !shown)}
                 />
               ) : null}
-              {org.data && !org.data.fixture ? (
+              {org.data ? (
                 <SessionsButton
                   open={showsSessions}
                   onToggle={() => setShowsSessions((shown) => !shown)}
                 />
               ) : null}
-              {org.data && !org.data.fixture ? (
-                <OrgSync merging={org.data.merging} />
-              ) : null}
+              {org.data ? <OrgSync merging={org.data.merging} /> : null}
               <ChartToolbar />
-              {org.data && !org.data.fixture && org.data.paused === null ? (
-                <PauseButton />
-              ) : null}
-              {org.data && !org.data.fixture ? <OrgSettings /> : null}
+              {org.data?.paused === null ? <PauseButton /> : null}
+              {org.data ? <OrgSettings /> : null}
             </div>
           </div>
           {org.data ? <PausedBanner paused={org.data.paused} /> : null}
@@ -338,9 +334,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
             )}
           </section>
           <OwnershipMap node={current} ownership={ownership} />
-          {org.data && !org.data.fixture ? (
-            <MessageToTeam key={current.id} node={current} />
-          ) : null}
+          {org.data ? <MessageToTeam key={current.id} node={current} /> : null}
           {org.data ? (
             <p className="text-xs text-muted">
               {t(I18nKey.ORG_CHART$TALK_HINT, { path: org.data.repo_path })}{" "}
