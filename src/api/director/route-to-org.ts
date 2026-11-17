@@ -21,8 +21,6 @@ export async function routeToOrg(
   conversation: NonNullable<RouteMessageRequest["conversation"]>,
 ): Promise<RoutedMessage | null> {
   try {
-    // A sample tree has no agents to take a message.
-    if ((await DirectorClient.getOrg()).fixture) return null;
     return await DirectorClient.routeMessage({
       text,
       path: folder,

@@ -1,9 +1,14 @@
 import type {
   AgentRef,
   AgentRole,
+  Escalation,
+  NodeStatus,
   OrgNode,
+  Review,
   Session,
   SessionTeam,
+  SplitProposal,
+  Stopped,
 } from "#/api/director/types";
 
 /** One conversation that goes on at a team. */
@@ -95,40 +100,47 @@ export function conversationsAt(
 const BY_URGENCY = ["blocked", "working", "done", "idle"] as const;
 
 /**
- * A team with what goes on at it: the agents of every session at work
- * there, the most pressing of their states, and what they wait for. A team
- * of the org has none of that itself.
+ * What goes on at a team: the agents of every session at work there, the
+ * most pressing of their states, and what they wait for. A team of the org
+ * has none of that itself.
  */
-export function teamAtWork(
+export interface TeamWork {
+  agents: AgentRef[];
+  status: NodeStatus;
+  /** What the session that started there last says it delivers. */
+  headline: string;
+  review: Review | null;
+  stopped: Stopped | null;
+  pending_split: SplitProposal | null;
+  waiting_to_start: boolean;
+  /** The escalations raised there that wait on the human. */
+  waiting: Escalation[];
+}
+
+export function teamWork(
   node: OrgNode,
   sessions: readonly Session[],
-): OrgNode {
+): TeamWork {
   const places = placesAt(node.id, sessions).filter(
     (place) => !place.review_only,
   );
-  if (places.length === 0) return node;
   const started = places.filter((place) => place.agents.length > 0);
   const latest = started[started.length - 1];
   return {
-    ...node,
     agents: started.flatMap((place) => place.agents),
     status:
       BY_URGENCY.find((status) =>
         started.some((place) => place.status === status),
       ) ?? "idle",
-    headline: latest?.headline ?? node.headline,
+    headline: latest?.headline ?? node.headline ?? "",
     review: latest?.review ?? null,
-    stopped: places.find((place) => place.stopped)?.stopped,
+    stopped: places.find((place) => place.stopped)?.stopped ?? null,
     pending_split:
       places.find((place) => place.pending_split)?.pending_split ?? null,
     waiting_to_start: places.some((place) => place.waiting_to_start),
-    escalations: places.flatMap((place) => place.escalations),
-    escalation_count: places.reduce(
-      (count, place) =>
-        count +
-        place.escalations.filter((escalation) => escalation.held_by === null)
-          .length,
-      0,
+    // What a team above still holds is that team's to settle.
+    waiting: places.flatMap((place) =>
+      place.escalations.filter((escalation) => escalation.held_by === null),
     ),
   };
 }

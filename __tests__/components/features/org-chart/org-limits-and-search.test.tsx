@@ -313,18 +313,11 @@ describe("NodeCard", () => {
     title: "Auth team",
     boundary: { path: "services/auth", writable: [], readonly: [] },
     isolation: "worktree",
-    worktree_path: ".",
-    branch: "agents/auth",
-    // Nobody works at a team itself.
-    agents: [],
-    status: "idle",
     spec_summary: "",
     headline: "Token refresh",
-    escalations: [],
-    escalation_count: 0,
-    pending_split: null,
+    old_specs: [],
     child_ids: [],
-  } as unknown as OrgNode;
+  };
   const IC: SessionTeam["agents"][number] = {
     role: "ic",
     conversation_id: null,

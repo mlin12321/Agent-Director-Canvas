@@ -52,7 +52,7 @@ export function StartOrgNotice({ org }: { org: OrgSummary }) {
         {t(I18nKey.ORG_CHART$START_SUBMIT)}
       </NavigationLink>
       {/* A clone has no org until it takes in the one its remote has. */}
-      {org.fixture ? null : <OrgSync canPush={false} />}
+      <OrgSync canPush={false} />
     </>
   );
 }

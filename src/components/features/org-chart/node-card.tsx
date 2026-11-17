@@ -12,7 +12,7 @@ import { NodeHoverCard } from "./node-hover-card";
 import {
   useSessionsAt,
   useSessionStatusesAt,
-  useTeamAtWork,
+  useTeamWork,
 } from "./org-sessions";
 import { StatusDots } from "./status-badge";
 
@@ -70,7 +70,7 @@ export const NodeCard = React.memo(function NodeCard({
 
   // Nobody works at a team itself: what the card says of its work is what
   // the sessions have going on there.
-  const work = useTeamAtWork(node);
+  const work = useTeamWork(node);
   // A team whose IC already works says what it delivers, even while its
   // Manager still waits to start.
   const waiting = work.waiting_to_start && work.status !== "working";
@@ -125,16 +125,16 @@ export const NodeCard = React.memo(function NodeCard({
             <GitMerge width={11} height={11} aria-hidden="true" />
           </span>
         ) : null}
-        {work.escalation_count > 0 ? (
+        {work.waiting.length > 0 ? (
           <span
             role="img"
             aria-label={t(I18nKey.ORG_CHART$ESCALATION_COUNT, {
-              count: work.escalation_count,
+              count: work.waiting.length,
             })}
             className="flex shrink-0 items-center gap-0.5 text-[11px] font-medium text-feedback-error"
           >
             <TriangleAlert width={11} height={11} aria-hidden="true" />
-            {work.escalation_count}
+            {work.waiting.length}
           </span>
         ) : null}
       </span>

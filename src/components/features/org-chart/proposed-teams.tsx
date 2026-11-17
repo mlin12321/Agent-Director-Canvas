@@ -1,22 +1,24 @@
 import { useTranslation } from "react-i18next";
-import type { NodeId, OrgNode, SplitProposal } from "#/api/director/types";
+import type { NodeId, SessionTeam, SplitProposal } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
 import { SPLIT_LABEL_KEYS } from "./org-chart-presentation";
 
 interface ProposedTeamsProps {
   proposal: SplitProposal;
-  /** The teams known to the page, to name the ones kept and replaced. */
-  nodes?: ReadonlyMap<NodeId, OrgNode>;
+  /** What the session has at its teams, to name the ones kept and replaced. */
+  places?: readonly SessionTeam[];
 }
 
 /**
  * The sub-teams a team's IC proposed and its Manager has not carried out
  * yet, with what becomes of the sub-teams the team has now.
  */
-export function ProposedTeams({ proposal, nodes }: ProposedTeamsProps) {
+export function ProposedTeams({ proposal, places }: ProposedTeamsProps) {
   const { t } = useTranslation("openhands");
   const titles = (ids: NodeId[] | undefined) =>
-    (ids ?? []).map((id) => nodes?.get(id)?.title ?? id).join(", ");
+    (ids ?? [])
+      .map((id) => places?.find((place) => place.id === id)?.title ?? id)
+      .join(", ");
   const keeps = titles(proposal.keeps);
   const replaces = titles(proposal.replaces);
   const label = t(SPLIT_LABEL_KEYS[proposal.status]);

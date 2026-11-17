@@ -15,18 +15,12 @@ import { ROLE_LABEL_KEYS } from "./org-chart-presentation";
 
 const REFRESH_MS = 15_000;
 
-const RELATIONS: ConversationRelation[] = [
-  "above",
-  "beside",
-  "below",
-  "session",
-];
+const RELATIONS: ConversationRelation[] = ["above", "beside", "below"];
 
 const RELATION_LABEL_KEYS: Record<ConversationRelation, I18nKey> = {
   above: I18nKey.ORG_CHART$LINK_ABOVE,
   beside: I18nKey.ORG_CHART$LINK_BESIDE,
   below: I18nKey.ORG_CHART$LINK_BELOW,
-  session: I18nKey.ORG_CHART$LINK_SESSION,
 };
 
 /** Where a conversation is in the org; nothing for one that is no agent's. */

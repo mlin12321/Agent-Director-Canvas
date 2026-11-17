@@ -19,19 +19,9 @@ const API: OrgNode = {
   title: "API",
   boundary: { path: "services/api", writable: ["**"], readonly: [] },
   isolation: "worktree",
-  worktree_path: "/work/api",
-  branch: "agents/api",
-  agents: [],
-  status: "idle",
   spec_summary: "",
-  escalations: [],
-  pending_split: null,
-  review: null,
-  waiting_to_start: false,
   old_specs: [],
   child_ids: [],
-  descendant_counts: { idle: 0, working: 0, done: 0, blocked: 0 },
-  escalation_count: 0,
 };
 
 /** What the session has at the team, whose agents are as `ic` says. */

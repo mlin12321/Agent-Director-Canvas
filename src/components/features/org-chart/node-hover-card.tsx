@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { OrgNode } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
-import { useTeamAtWork } from "./org-sessions";
+import { useTeamWork } from "./org-sessions";
 import { StatusBadge } from "./status-badge";
 import { useReviewLabel } from "./review-summary";
 import {
@@ -35,38 +35,35 @@ interface NodeHoverCardProps {
  * What a team is doing and what it owns. Shown only while its card is
  * hovered or focused, so the chart itself stays a plain picture of the org.
  */
-export function NodeHoverCard({ node: team }: NodeHoverCardProps) {
+export function NodeHoverCard({ node }: NodeHoverCardProps) {
   const { t } = useTranslation("openhands");
   // Nobody works at a team itself: its work is what the sessions do there.
-  const node = useTeamAtWork(team);
+  const work = useTeamWork(node);
   const { boundary } = node;
   const reviewLabel = useReviewLabel();
-  // What a team above still holds is that team's to settle, not the human's.
-  const waiting = node.escalations.filter(
-    (escalation) => escalation.held_by === null,
-  );
+  const { waiting } = work;
 
   return (
     <div className="flex w-80 max-w-full flex-col gap-2 break-normal p-1 text-left text-xs">
       <p className="text-sm font-medium text-contrast">{node.title}</p>
-      {node.headline ? (
-        <p className="text-text-secondary">{node.headline}</p>
+      {work.headline ? (
+        <p className="text-text-secondary">{work.headline}</p>
       ) : null}
-      {node.spec_summary && node.spec_summary !== node.headline ? (
+      {node.spec_summary && node.spec_summary !== work.headline ? (
         <p className="text-muted">{node.spec_summary}</p>
       ) : null}
       <dl className="flex flex-col gap-1">
         <Row label={t(I18nKey.ORG_CHART$STATUS)}>
-          <StatusBadge status={node.status} />
-          {node.stopped ? (
+          <StatusBadge status={work.status} />
+          {work.stopped ? (
             <span className="ml-1.5 rounded-sm border border-border px-1 text-2xs text-feedback-warning">
               {t(I18nKey.ORG_CHART$STOPPED)}
             </span>
           ) : null}
         </Row>
-        {node.review ? (
+        {work.review ? (
           <Row label={t(I18nKey.ORG_CHART$REVIEW)}>
-            {reviewLabel(node.review)}
+            {reviewLabel(work.review)}
           </Row>
         ) : null}
         <Row label={t(I18nKey.ORG_CHART$BOUNDARY)}>
@@ -88,14 +85,14 @@ export function NodeHoverCard({ node: team }: NodeHoverCardProps) {
             <code className="break-all">{boundary.readonly.join(", ")}</code>
           </Row>
         ) : null}
-        {node.agents.length === 0 ? (
+        {work.agents.length === 0 ? (
           <Row label={t(I18nKey.ORG_CHART$AGENTS)}>
             {t(I18nKey.ORG_CHART$TEAM_NOT_STARTED)}
           </Row>
         ) : null}
-        {node.agents.length > 0 ? (
+        {work.agents.length > 0 ? (
           <Row label={t(I18nKey.ORG_CHART$AGENTS)}>
-            {node.agents
+            {work.agents
               .map((agent) => {
                 // An external agent is named; an OpenHands one is the rule.
                 const external =
@@ -106,7 +103,7 @@ export function NodeHoverCard({ node: team }: NodeHoverCardProps) {
               })
               // A Manager starts when something is first written to it.
               .concat(
-                node.agents.some((agent) => agent.role === "manager")
+                work.agents.some((agent) => agent.role === "manager")
                   ? []
                   : [t(I18nKey.ORG_CHART$MANAGER_NOT_STARTED)],
               )
@@ -119,21 +116,21 @@ export function NodeHoverCard({ node: team }: NodeHoverCardProps) {
           </Row>
         ) : null}
       </dl>
-      {node.stopped ? (
+      {work.stopped ? (
         <p className="border-t border-border pt-2 text-text-secondary">
           {t(I18nKey.ORG_CHART$STOPPED_REASON, {
-            reason: node.stopped.reason,
+            reason: work.stopped.reason,
           })}
         </p>
       ) : null}
-      {node.pending_split ? (
+      {work.pending_split ? (
         // A split the team's Manager has not approved, or is carrying out.
         <div className="flex flex-col gap-0.5 border-t border-border pt-2">
           <span className="text-contrast">
-            {t(SPLIT_LABEL_KEYS[node.pending_split.status])}
+            {t(SPLIT_LABEL_KEYS[work.pending_split.status])}
           </span>
           <span className="text-muted">
-            {node.pending_split.children.map((child) => child.title).join(", ")}
+            {work.pending_split.children.map((child) => child.title).join(", ")}
           </span>
         </div>
       ) : null}

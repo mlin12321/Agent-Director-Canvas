@@ -105,8 +105,6 @@ export interface Escalation {
   asked_at: string | null;
 }
 
-export type StatusCounts = Record<NodeStatus, number>;
-
 export type SplitStatus = "proposed" | "approved";
 
 /** A sub-team an IC proposes to hand part of its boundary to. */
@@ -144,12 +142,8 @@ export interface SplitProposal {
   proposed_at: string;
 }
 
-/**
- * `pending`: the IC of the team above has the work to review. `unreviewed`:
- * the root team's, which has nobody above.
- */
-export type ReviewState =
-  "pending" | "changes_requested" | "accepted" | "unreviewed";
+/** `pending`: the IC of the team above has the work to review. */
+export type ReviewState = "pending" | "changes_requested" | "accepted";
 
 /** One thing a review found wrong in a team's work. */
 export interface ReviewFinding {
@@ -202,34 +196,12 @@ export interface OrgNode {
   title: string;
   boundary: Boundary;
   isolation: IsolationMode;
-  worktree_path: string;
-  branch: string;
-  agents: AgentRef[];
-  status: NodeStatus;
   /**
    * One line on what the team is delivering, written by a model from the
    * team's task and its latest report. Empty on a server that writes none.
    */
   headline?: string;
   spec_summary: string;
-  /** Open escalations this node raised, wherever above they are held. */
-  escalations: Escalation[];
-  /** A split of this node's boundary that is not carried out yet. */
-  pending_split: SplitProposal | null;
-  /**
-   * The review of what the team last reported as done.
-   */
-  review: Review | null;
-  /**
-   * An agent of the team could not be started yet because the server runs
-   * as many conversations as it may.
-   */
-  waiting_to_start: boolean;
-  /**
-   * Set while the IC of the team above has stopped the team: its agents and
-   * those of every team below it are at rest and nothing is sent to them.
-   */
-  stopped?: Stopped | null;
   /**
    * Specs that teams before this one left in its directory. They are old
    * until the team's IC writes its own spec.
@@ -240,15 +212,6 @@ export interface OrgNode {
    * they were derived from the team above.
    */
   agent_profile?: string | null;
-  /** How this team is held to its boundary; `null` until its IC ran. */
-  boundary_enforcement?: TeamEnforcement | null;
-  /**
-   * Status of every node below this one, so a parent can summarize its whole
-   * subtree without the client loading it.
-   */
-  descendant_counts: StatusCounts;
-  /** Escalations from this node or below that wait on the human. */
-  escalation_count: number;
 }
 
 /**
@@ -336,8 +299,6 @@ export interface OrgSummary {
   directory: string;
   /** An org can only be started in a git repository. */
   is_git_repository: boolean;
-  /** The tree is a fixed sample; its agents are not running. */
-  fixture: boolean;
   boundary_enforcement: BoundaryEnforcement;
   /**
    * Why the org's agents are held and its steps and messages wait; `null`
@@ -432,6 +393,28 @@ export interface SessionTeam extends OrgNode {
   session: string;
   /** The team of the org. */
   team_id: NodeId;
+  worktree_path: string;
+  branch: string;
+  agents: AgentRef[];
+  status: NodeStatus;
+  /** Open escalations this place raised, wherever above they are held. */
+  escalations: Escalation[];
+  /** A split of this team's boundary that is not carried out yet. */
+  pending_split: SplitProposal | null;
+  /** The review of what the team last reported as done. */
+  review: Review | null;
+  /**
+   * An agent of the team could not be started yet because the server runs
+   * as many conversations as it may.
+   */
+  waiting_to_start: boolean;
+  /**
+   * Set while the IC of the team above has stopped the team: its agents and
+   * those of every team below it are at rest and nothing is sent to them.
+   */
+  stopped?: Stopped | null;
+  /** How this team is held to its boundary; `null` until its IC ran. */
+  boundary_enforcement?: TeamEnforcement | null;
   /**
    * Whether this is the place the session's work is reviewed from: the team
    * above the one the session was opened at, whose IC only reviews here.
@@ -490,10 +473,9 @@ export interface Session {
 /**
  * Where an agent is from a conversation: `above` an agent of the team that
  * reviews its team's work, `beside` the other agent of its own team,
- * `below` the IC of a team directly below, `session` the IC of a session
- * whose work its team reviews.
+ * `below` the IC of a team directly below.
  */
-export type ConversationRelation = "above" | "beside" | "below" | "session";
+export type ConversationRelation = "above" | "beside" | "below";
 
 /** An agent's conversation, as it is reached from another one. */
 export interface ConversationLink {
@@ -851,14 +833,6 @@ export interface OrgMerge {
   conflicts: OrgConflict[];
 }
 
-/** What a pull or a push did with the branch of one team's work. */
-export interface BranchSync {
-  node_id: NodeId;
-  title: string;
-  branch: string;
-  result: "created" | "fast_forwarded" | "diverged" | "pushed";
-}
-
 /** What a pull or a push of the org did. */
 export interface OrgSync {
   remote: string;
@@ -866,9 +840,6 @@ export interface OrgSync {
   /** The merge waiting for choices, when `result` is `conflicts`. */
   merge: OrgMerge | null;
   memory: MemorySync | null;
-  branches: BranchSync[];
-  /** Unfinished work dropped because its team was changed. */
-  put_aside: RecoveryItem[];
 }
 
 export type OrgEvent =

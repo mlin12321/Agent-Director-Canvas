@@ -120,21 +120,9 @@ export interface OrgTreeView {
  *
  * Following another node keeps the previous one on screen until the server
  * answers, so moving through the chart does not flash a loading state.
- *
- * @returns The view, and `reconnect` to connect again at once when the
- *   caller knows the tree has just changed on the server (an org was
- *   started) and waiting out the retry delay would only stall the page.
  */
-export function useOrgTree(
-  nodeId: NodeId | null,
-  full = false,
-): OrgTreeView & { reconnect: () => void } {
+export function useOrgTree(nodeId: NodeId | null, full = false): OrgTreeView {
   const [state, dispatch] = React.useReducer(reduce, INITIAL_STATE);
-  const [connection, setConnection] = React.useState(0);
-  const reconnect = React.useCallback(
-    () => setConnection((current) => current + 1),
-    [],
-  );
 
   React.useEffect(() => {
     dispatch({ kind: "subscribe" });
@@ -146,7 +134,7 @@ export function useOrgTree(
       },
       full,
     );
-  }, [nodeId, full, connection]);
+  }, [nodeId, full]);
 
-  return React.useMemo(() => ({ ...state, reconnect }), [state, reconnect]);
+  return state;
 }

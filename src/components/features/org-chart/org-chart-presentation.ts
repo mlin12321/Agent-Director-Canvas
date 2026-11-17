@@ -74,5 +74,4 @@ export const REVIEW_LABEL_KEYS: Record<ReviewState, I18nKey> = {
   pending: I18nKey.ORG_CHART$REVIEW_PENDING,
   changes_requested: I18nKey.ORG_CHART$REVIEW_CHANGES_REQUESTED,
   accepted: I18nKey.ORG_CHART$REVIEW_ACCEPTED,
-  unreviewed: I18nKey.ORG_CHART$REVIEW_UNREVIEWED,
 };

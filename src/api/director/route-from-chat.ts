@@ -20,8 +20,6 @@ export async function routeFromChat(
   text: string,
 ): Promise<RoutedMessage | null> {
   try {
-    const org = await DirectorClient.getOrg();
-    if (org.fixture) return null;
     const sessions = await DirectorClient.listSessions();
     const session = sessions.find(
       (open) => open.conversation_id === conversationId,

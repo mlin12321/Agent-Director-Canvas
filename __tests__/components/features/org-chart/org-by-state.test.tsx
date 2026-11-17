@@ -1,6 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { NodeStatus, OrgNode, ReviewState } from "#/api/director/types";
+import type { TeamWork } from "#/components/features/org-chart/node-conversations";
 import {
   OrgByState,
   teamStateOf,
@@ -9,70 +10,80 @@ import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions
 import { renderWithProviders } from "test-utils";
 import { placeAt, sessionOf } from "./session-fixtures";
 
-/**
- * A team with what goes on at it. Nobody works at a team itself: on the
- * board the work is a session's, and the team is given without it.
- */
-function team(
-  id: string,
-  status: NodeStatus,
-  given: { review?: ReviewState; waiting?: boolean } = {},
-): OrgNode {
+interface Given {
+  review?: ReviewState;
+  waiting?: boolean;
+  /** False for a team no session has agents at. */
+  started?: boolean;
+}
+
+/** What goes on at a team: the work of the sessions there. */
+function work(status: NodeStatus, given: Given = {}): TeamWork {
   return {
+    agents:
+      given.started === false
+        ? []
+        : [
+            {
+              role: "ic",
+              conversation_id: null,
+              status: "idle",
+              kind: "openhands",
+            },
+          ],
+    status,
+    headline: "",
+    review: given.review
+      ? {
+          state: given.review,
+          round: 1,
+          summary: "",
+          description: "",
+          automated_ran: true,
+          automated: [],
+          findings: [],
+          at: "2026-11-13T00:00:00Z",
+        }
+      : null,
+    stopped: null,
+    pending_split: null,
+    waiting_to_start: given.waiting ?? false,
+    waiting: [],
+  };
+}
+
+/**
+ * A team beside what goes on at it. Nobody works at a team itself: on the
+ * board the work is a session's.
+ */
+function team(id: string, status: NodeStatus, given: Given = {}) {
+  const node: OrgNode = {
     id,
     parent_id: id === "root" ? null : "root",
     title: `${id} team`,
     boundary: { path: id, writable: ["**"], readonly: [] },
     isolation: "shared",
-    worktree_path: ".",
-    branch: "main",
-    agents: [
-      { role: "ic", conversation_id: null, status: "idle", kind: "openhands" },
-    ],
-    status,
     spec_summary: "",
-    escalations: [],
-    pending_split: null,
-    review: given.review
-      ? {
-          state: given.review,
-          round: 1,
-          description: "",
-          self_reviewed: true,
-          findings: [],
-          feedback: "",
-          requested_at: "2026-11-13T00:00:00Z",
-        }
-      : null,
-    waiting_to_start: given.waiting ?? false,
     old_specs: [],
     child_ids: [],
-    descendant_counts: { idle: 0, working: 0, done: 0, blocked: 0 },
-    escalation_count: 0,
-  } as OrgNode;
+  };
+  return { node, work: work(status, given) };
 }
 
-function board(teams: OrgNode[], currentId = teams[0].id) {
-  const reference = teams.map((node): OrgNode => ({
-    ...node,
-    agents: [],
-    status: "idle",
-    review: null,
-    waiting_to_start: false,
-  }));
+function board(teams: ReturnType<typeof team>[], currentId = teams[0].node.id) {
   // One session, opened at the first team, has the work of every team
   // that was given a task.
   const session = sessionOf(
     "s1",
     "Work",
-    teams.flatMap((node, index) =>
-      node.agents.length > 0
+    teams.flatMap(({ node, work: at }) =>
+      at.agents.length > 0
         ? [
-            placeAt(reference[index], "s1", {
-              agents: node.agents,
-              status: node.status,
-              review: node.review,
-              waiting_to_start: node.waiting_to_start,
+            placeAt(node, "s1", {
+              agents: at.agents,
+              status: at.status,
+              review: at.review,
+              waiting_to_start: at.waiting_to_start,
             }),
           ]
         : [],
@@ -81,7 +92,7 @@ function board(teams: OrgNode[], currentId = teams[0].id) {
   return (
     <OrgSessionsContext.Provider value={[session]}>
       <OrgByState
-        nodes={new Map(reference.map((node) => [node.id, node]))}
+        nodes={new Map(teams.map(({ node }) => [node.id, node]))}
         currentId={currentId}
         collidingIds={new Set()}
         onOpenDetails={() => {}}
@@ -98,26 +109,22 @@ function column(state: string) {
 
 describe("teamStateOf", () => {
   it.each([
-    [team("a", "idle"), "idle"],
-    [team("a", "idle", { waiting: true }), "idle"],
-    [team("a", "working"), "working"],
-    [team("a", "working", { review: "pending" }), "in_review"],
-    [team("a", "done", { review: "pending" }), "in_review"],
-    [team("a", "done", { review: "unreviewed" }), "in_review"],
-    [
-      team("a", "working", { review: "changes_requested" }),
-      "changes_requested",
-    ],
-    [team("a", "idle", { review: "changes_requested" }), "changes_requested"],
-    [team("a", "blocked", { review: "changes_requested" }), "blocked"],
-    [team("a", "blocked", { review: "pending" }), "blocked"],
-    [team("a", "done", { review: "accepted" }), "done"],
-    [team("a", "done"), "done"],
-    [team("a", "working", { review: "accepted" }), "working"],
-    [{ ...team("a", "idle"), agents: [] }, "not_started"],
-    [{ ...team("a", "blocked"), agents: [] }, "blocked"],
-  ])("puts %# in its column", (node, expected) => {
-    expect(teamStateOf(node)).toBe(expected);
+    [work("idle"), "idle"],
+    [work("idle", { waiting: true }), "idle"],
+    [work("working"), "working"],
+    [work("working", { review: "pending" }), "in_review"],
+    [work("done", { review: "pending" }), "in_review"],
+    [work("working", { review: "changes_requested" }), "changes_requested"],
+    [work("idle", { review: "changes_requested" }), "changes_requested"],
+    [work("blocked", { review: "changes_requested" }), "blocked"],
+    [work("blocked", { review: "pending" }), "blocked"],
+    [work("done", { review: "accepted" }), "done"],
+    [work("done"), "done"],
+    [work("working", { review: "accepted" }), "working"],
+    [work("idle", { started: false }), "not_started"],
+    [work("blocked", { started: false }), "blocked"],
+  ])("puts %# in its column", (at, expected) => {
+    expect(teamStateOf(at)).toBe(expected);
   });
 });
 
@@ -154,7 +161,7 @@ describe("OrgByState", () => {
     renderWithProviders(
       board([
         team("root", "working"),
-        { ...team("api", "idle"), agents: [] },
+        team("api", "idle", { started: false }),
         team("web", "idle"),
       ]),
     );

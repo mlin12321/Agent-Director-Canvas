@@ -111,7 +111,6 @@ export function AgentInspectorDrawer({
 
   // How a team is held is known once an IC ran there, which is a session's.
   const held =
-    node.boundary_enforcement ??
     places.find((place) => place.boundary_enforcement)?.boundary_enforcement ??
     enforcement;
 
@@ -176,7 +175,13 @@ export function AgentInspectorDrawer({
               ) : null}
               <StartAgain node={place} />
               {place.pending_split ? (
-                <ProposedTeams proposal={place.pending_split} nodes={nodes} />
+                <ProposedTeams
+                  proposal={place.pending_split}
+                  places={
+                    sessions.find((session) => session.id === place.session)
+                      ?.teams
+                  }
+                />
               ) : null}
               {place.review ? <ReviewSummary review={place.review} /> : null}
             </section>
