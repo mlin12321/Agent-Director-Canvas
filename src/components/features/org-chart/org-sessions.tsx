@@ -100,6 +100,42 @@ export function SessionsButton({
   );
 }
 
+function tokensOf(session: Session): number {
+  return session.usage.input_tokens + session.usage.output_tokens;
+}
+
+/** A count as it is read at a glance: 12,340 is "12K". */
+function compact(count: number, language: string): string {
+  return new Intl.NumberFormat(language, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(count);
+}
+
+function dollars(cost: number): string {
+  return "$" + cost.toFixed(2);
+}
+
+/** What a session's agents have used, of what it may use where it is limited. */
+function SessionUse({ session }: { session: Session }) {
+  const { t, i18n } = useTranslation("openhands");
+  const used = tokensOf(session);
+  if (used === 0 && session.token_allowance === 0) return null;
+  return (
+    <span data-testid={"org-session-use-" + session.id}>
+      {session.token_allowance > 0
+        ? t(I18nKey.ORG_CHART$SESSION_USE_OF, {
+            used: compact(used, i18n.language),
+            limit: compact(session.token_allowance, i18n.language),
+          })
+        : t(I18nKey.ORG_CHART$SESSIONS_USE, {
+            used: compact(used, i18n.language),
+          })}
+      {session.usage.cost > 0 ? " · " + dollars(session.usage.cost) : null}
+    </span>
+  );
+}
+
 function SessionRow({
   session,
   nodes,
@@ -146,6 +182,7 @@ function SessionRow({
         <span>
           {t(I18nKey.ORG_CHART$SESSION_TEAMS, { count: started.length })}
         </span>
+        <SessionUse session={session} />
         <span>
           {t(I18nKey.ORG_CHART$SESSION_REVIEWED_BY, {
             team: above?.title ?? session.above_id,
@@ -211,7 +248,14 @@ export function OrgSessionsPanel({
   sessions: readonly Session[];
   nodes: ReadonlyMap<NodeId, OrgNode>;
 }) {
-  const { t } = useTranslation("openhands");
+  const { t, i18n } = useTranslation("openhands");
+  const total = sessions.reduce(
+    (sum, session) => ({
+      tokens: sum.tokens + tokensOf(session),
+      cost: sum.cost + session.usage.cost,
+    }),
+    { tokens: 0, cost: 0 },
+  );
 
   return (
     <section
@@ -219,8 +263,19 @@ export function OrgSessionsPanel({
       aria-label={t(I18nKey.ORG_CHART$SESSIONS_OPEN)}
       className="flex max-h-64 flex-col gap-2 overflow-y-auto rounded-xl border border-border p-3"
     >
-      <h3 className="text-xs font-medium text-contrast">
+      <h3 className="flex flex-wrap items-baseline gap-x-3 text-xs font-medium text-contrast">
         {t(I18nKey.ORG_CHART$SESSIONS_OPEN)}
+        {total.tokens > 0 ? (
+          <span
+            data-testid="org-sessions-use"
+            className="font-normal text-text-secondary"
+          >
+            {t(I18nKey.ORG_CHART$SESSIONS_USE, {
+              used: compact(total.tokens, i18n.language),
+            })}
+            {total.cost > 0 ? ` · ${dollars(total.cost)}` : null}
+          </span>
+        ) : null}
       </h3>
       {sessions.length === 0 ? (
         <p className="text-xs text-muted">
