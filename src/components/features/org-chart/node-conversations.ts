@@ -25,10 +25,6 @@ export interface NodeConversation {
   place: SessionTeam;
   /** The IC that only reviews the session's work from here. */
   divisionLead: boolean;
-  /** The IC's second conversation, in which it hands work over. */
-  handOver: boolean;
-  /** A hand-over that could not be started. */
-  lost: boolean;
   /** The human started it at this team. */
   mine: boolean;
 }
@@ -81,23 +77,9 @@ export function conversationsAt(
           key: `${place.id}:${agent.role}`,
           conversationId: agent.conversation_id,
           status: agent.status,
-          handOver: false,
-          lost: false,
           mine:
             !divisionLead && session.team_id === node.id && agent.role === "ic",
         });
-        if (agent.hand_over) {
-          const lost = agent.hand_over.status === "lost";
-          found.push({
-            ...shared,
-            key: `${place.id}:${agent.role}:hand-over`,
-            conversationId: lost ? null : agent.hand_over.conversation_id,
-            status: agent.hand_over.status,
-            handOver: true,
-            lost,
-            mine: false,
-          });
-        }
       });
     });
   });

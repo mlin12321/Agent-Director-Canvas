@@ -46,16 +46,6 @@ function EventWords({ event }: { event: HistoryEvent }) {
       return t(I18nKey.ORG_CHART$TEAM_RECORD_WOKEN, { reason: detail });
     case "needed":
       return null;
-    case "asked_team":
-      return t(I18nKey.ORG_CHART$HISTORY_ASKED_TEAM, {
-        other: event.other ?? "",
-        what: detail,
-      });
-    case "answered":
-      return t(I18nKey.ORG_CHART$HISTORY_ANSWERED, {
-        other: event.other ?? "",
-        how: detail,
-      });
     case "session_opened":
     case "session_closed":
       return (

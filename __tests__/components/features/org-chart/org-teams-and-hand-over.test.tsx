@@ -37,11 +37,11 @@ const STATE: DirectorSettingsState = {
   max_concurrent_runs: null,
   allowed_profiles: [],
   resume_on_start: false,
+  report_compaction_chars: 24000,
   stall_check_minutes: 120,
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
-  session_worktrees: true,
 };
 
 function settingsHandlers(state: DirectorSettingsState) {
@@ -95,6 +95,7 @@ const NOT_STARTED: OrgNode = {
   headline: "Sells the goods",
   spec_summary: "",
   old_specs: [],
+  agent_profile: null,
   child_ids: [],
 };
 
@@ -215,7 +216,7 @@ function detailsWithIc(ic: Record<string, unknown>) {
   return renderWithProviders(
     <OrgSessionsContext.Provider
       value={atWork(NOT_STARTED, {
-        agents: [{ role: "ic", kind: "openhands", ...ic }],
+        agents: [{ role: "ic", kind: "openhands", acp_server: null, ...ic }],
       } as never)}
     >
       <AgentInspectorDrawer node={NOT_STARTED} onClose={() => {}} />
@@ -223,67 +224,8 @@ function detailsWithIc(ic: Record<string, unknown>) {
   );
 }
 
-describe("an IC in hand-over mode", () => {
-  it("stays one agent, with its two conversations in the list", async () => {
-    memoryHandlers();
-    const user = userEvent.setup();
-    detailsWithIc({
-      conversation_id: "main-1",
-      status: "idle",
-      hand_over: { conversation_id: "side-1", status: "working" },
-    });
-
-    const list = screen.getByTestId("org-node-conversations");
-    const [main, mode] = within(list).getAllByRole("button");
-    expect(within(list).getAllByRole("button")).toHaveLength(2);
-    expect(main).toHaveTextContent("ORG_CHART$ROLE_IC");
-    expect(mode).toHaveTextContent(
-      "ORG_CHART$ROLE_IC · Work · ORG_CHART$HAND_OVER_MODE",
-    );
-    expect(mode).toHaveTextContent("working");
-    // Nothing is open until a conversation is chosen.
-    expect(main).toHaveAttribute("aria-pressed", "false");
-    expect(screen.queryByTestId("conversation-view")).toBeNull();
-    expect(screen.queryByText("ORG_CHART$HAND_OVER_MODE_HELP")).toBeNull();
-
-    await user.click(mode);
-    expect(mode).toHaveAttribute("aria-pressed", "true");
-    expect(
-      screen.getByText("ORG_CHART$HAND_OVER_MODE_HELP"),
-    ).toBeInTheDocument();
-    expect(await screen.findByTestId("conversation-view")).toHaveTextContent(
-      "side-1",
-    );
-
-    // Choosing another flips to it; choosing the open one puts it away.
-    await user.click(main);
-    expect(mode).toHaveAttribute("aria-pressed", "false");
-    expect(await screen.findByTestId("conversation-view")).toHaveTextContent(
-      "main-1",
-    );
-    await user.click(main);
-    expect(screen.queryByTestId("conversation-view")).toBeNull();
-  });
-
-  it("says so when the hand-over could not be started, and opens nothing", () => {
-    memoryHandlers();
-    detailsWithIc({
-      conversation_id: null,
-      status: "idle",
-      hand_over: { conversation_id: "side-1", status: "lost" },
-    });
-
-    const mode = screen.getByRole("button", {
-      name: /ORG_CHART\$HAND_OVER_MODE/,
-    });
-    expect(mode).toBeDisabled();
-    expect(mode).toHaveTextContent("lost");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "ORG_CHART$HAND_OVER_LOST",
-    );
-  });
-
-  it("lists one conversation for an IC that has no hand-over", () => {
+describe("the conversations of a team's IC", () => {
+  it("is one: it hands over where it works", () => {
     memoryHandlers();
     detailsWithIc({ conversation_id: null, status: "idle" });
 

@@ -89,7 +89,6 @@ export function AgentInspectorDrawer({
       (candidate) => candidate.key === openKey && candidate.conversationId,
     ) ?? null;
   const conversationId = open?.conversationId ?? null;
-  const lost = conversations.some((candidate) => candidate.lost);
   // Nobody works at a team itself: what is being done here is what each
   // session has at it.
   const places = workPlacesAt(node.id, sessions);
@@ -265,11 +264,8 @@ export function AgentInspectorDrawer({
                         )
                       : t(ROLE_LABEL_KEYS[candidate.role])}
                     {` · ${candidate.session}`}
-                    {candidate.handOver
-                      ? ` · ${t(I18nKey.ORG_CHART$HAND_OVER_MODE)}`
-                      : null}
                   </span>
-                  {candidate.agent.kind === "acp" && !candidate.handOver ? (
+                  {candidate.agent.kind === "acp" ? (
                     <span className="rounded-sm border border-border px-1 text-2xs text-text-secondary">
                       {externalAgentName(candidate.agent) ??
                         t(I18nKey.ORG_CHART$EXTERNAL_AGENT)}
@@ -294,11 +290,6 @@ export function AgentInspectorDrawer({
             </li>
           ) : null}
         </ul>
-        {lost ? (
-          <p role="status" className="text-xs text-feedback-warning">
-            {t(I18nKey.ORG_CHART$HAND_OVER_LOST)}
-          </p>
-        ) : null}
         {!open && !(showsChanges && changed) ? (
           <p className="p-3 text-center text-sm text-muted">
             {t(nothingOpenKey)}
@@ -316,11 +307,9 @@ export function AgentInspectorDrawer({
       {!(showsChanges && changed) && open && conversationId ? (
         <>
           <p className="border-b border-border px-3 py-1.5 text-xs text-muted">
-            {open.handOver
-              ? t(I18nKey.ORG_CHART$HAND_OVER_MODE_HELP)
-              : t(I18nKey.ORG_CHART$MESSAGE_AGENT_HINT, {
-                  role: t(ROLE_LABEL_KEYS[open.role]),
-                })}
+            {t(I18nKey.ORG_CHART$MESSAGE_AGENT_HINT, {
+              role: t(ROLE_LABEL_KEYS[open.role]),
+            })}
           </p>
           <div className="min-h-0 flex-1">
             <React.Suspense fallback={null}>
