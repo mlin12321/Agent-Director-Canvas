@@ -12,7 +12,7 @@ import {
   type Session,
   type SessionTeam,
   type OrgEvent,
-  type OrgChange,
+  type Merge,
   type OrgNode,
   type Report,
   type OrgSummary,
@@ -260,7 +260,7 @@ interface MockSession {
   request: string;
   opened_at: string;
   /** Sub-teams of it that wait for the Manager of the team above. */
-  waits?: OrgChange;
+  waits?: Merge;
   /** What it has at each team, the one it was opened at first. */
   work: Array<
     { team_id: NodeId; status: NodeStatus; headline: string } & Partial<
@@ -330,19 +330,26 @@ function buildMockSessions(): MockSession[] {
       request: "Let users sign in with a passkey.",
       opened_at: "2026-11-10T08:30:00Z",
       waits: {
-        teams: [
+        seq: 2,
+        code_landed: true,
+        items: [
           {
-            team_id: "identity.worker",
+            kind: "team",
+            key: "identity.worker",
+            gate: "manager",
             title: "identity/worker",
             session: "identity/passkeys, under identity",
             org: "identity/worker, under identity.api",
+            take: null,
           },
-        ],
-        contracts: [
           {
-            path: "identity",
+            kind: "contracts",
+            key: "identity",
+            gate: "manager",
             session: "Passkeys are verified by the worker.",
             org: "Sign-in tokens are issued by the API.",
+            take: "text",
+            text: "Sign-in tokens are issued by the API; passkeys are verified by the worker.",
           },
         ],
       },
@@ -454,7 +461,7 @@ function sessionsNow(): Session[] {
       session: session.id,
       team_id: aboveId,
       review_only: true,
-      org_change: session.waits ?? null,
+      merge: session.waits ?? null,
     };
     return [
       {

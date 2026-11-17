@@ -161,6 +161,8 @@ export interface ReviewFinding {
  */
 export interface Review {
   state: ReviewState;
+  /** Its place in the order work was submitted in; 0 when it has none. */
+  seq?: number;
   /** 1 the first time; one more each time the work comes back. */
   round: number;
   /** What the team said it delivered. */
@@ -421,48 +423,82 @@ export interface SessionTeam extends OrgNode {
    */
   review_only?: boolean;
   /**
-   * On the place a session is reviewed from: the sub-teams of the session
-   * that wait for this place's Manager, because the org made something else
-   * of them while the session worked. The session's code is merged all the
-   * same.
+   * On the place a session is reviewed from: how the work the session
+   * submitted becomes the org's, with what waits to be settled first.
    */
-  org_change?: OrgChange | null;
-}
-
-/** A team a session and the org each made something else of. */
-export interface OrgChangeTeam {
-  team_id: NodeId;
-  title: string;
-  /** What the session made of it, in words. */
-  session: string;
-  /** What the org has there now, in words. */
-  org: string;
-  /**
-   * The team of the org it would be put under, when the team the session
-   * has above it is not in the org any more.
-   */
-  moved_to?: NodeId | null;
-}
-
-/** Contracts of one directory that a session and the org each changed. */
-export interface OrgChangeContracts {
-  /** The directory whose sub-teams they bind. */
-  path: string;
-  /** The contracts as the session has them. */
-  session: string;
-  /** The contracts as the org has them now. */
-  org: string;
-  /** The waiting team they come with, when they hold only if it is taken. */
-  with_team?: NodeId | null;
+  merge?: Merge | null;
 }
 
 /**
- * What a session changed of its teams that waits to be settled before it
- * is the org's.
+ * What a session and the org each made something else of. `code`: a file
+ * both changed. `spec`, `contracts`: the text of one directory. `team`: a
+ * sub-team.
  */
-export interface OrgChange {
-  teams: OrgChangeTeam[];
-  contracts?: OrgChangeContracts[];
+export type MergeKind = "code" | "spec" | "contracts" | "team";
+
+/** Who settles it: the IC that reviews the work, or its Manager. */
+export type MergeGate = "ic" | "manager";
+
+/** One thing a session and the org each made something else of. */
+export interface MergeItem {
+  kind: MergeKind;
+  /**
+   * What it is about: a file for `code`, a directory for `spec` and
+   * `contracts`, a team's id for `team`.
+   */
+  key: string;
+  gate: MergeGate;
+  /** What a team is called. */
+  title?: string;
+  /** What the session has: a text, or a team in words. */
+  session?: string;
+  /** What the org has there now. */
+  org?: string;
+  /**
+   * What was decided: the org's stays, the session's holds, or a text
+   * written from both does. `null` while nobody has decided.
+   */
+  take?: "org" | "session" | "text" | null;
+  /** What holds when `take` is `text`. */
+  text?: string;
+  /**
+   * The team of the org a team would be put under, when the team the
+   * session has above it is not in the org any more.
+   */
+  moved_to?: NodeId | null;
+  /**
+   * The waiting team contracts come with: they are the session's only if
+   * that team becomes the org's.
+   */
+  with_team?: NodeId | null;
+  /** The team of the org its Manager decided to put a team under. */
+  under?: NodeId | null;
+  /** What its Manager decided to call a team. */
+  named?: string | null;
+}
+
+/**
+ * How the work a session submitted becomes the org's. Its code and specs
+ * go in when the reviewing IC accepts; its teams and contracts when it is
+ * their turn and the review Manager has settled what waits of them.
+ */
+export interface Merge {
+  /** Its place in the order: work submitted earlier goes in first. */
+  seq: number;
+  items?: MergeItem[];
+  /** Whether the code of its accepted work is in the repository. */
+  code_landed?: boolean;
+  /**
+   * Whether its teams and contracts wait for those of a session that
+   * submitted earlier. What waits of them is not known yet.
+   */
+  org_queued?: boolean;
+  /** When its Manager was last asked; "" when it was not. */
+  asked_at?: string;
+  /** Whether its Manager was asked again for not answering. */
+  reminded?: boolean;
+  /** What the Manager said in settling. */
+  note?: string;
 }
 
 /**
@@ -679,6 +715,13 @@ export type TeamEventKind =
 
 /** Something that became of a team directly below a team. */
 export interface TeamEvent {
+  /** What it is added to a record by, once. */
+  id?: string;
+  /**
+   * Whether it is of a session whose work is not accepted yet: it is the
+   * session's own and not in the org's record.
+   */
+  unaccepted?: boolean;
   at: string;
   kind: TeamEventKind;
   /**

@@ -173,6 +173,11 @@ export function OrgHistoryPanel({
               <span>
                 <EventWords event={event} />
               </span>
+              {event.unaccepted ? (
+                <span className="text-feedback-warning">
+                  {t(I18nKey.ORG_CHART$EVENT_UNACCEPTED)}
+                </span>
+              ) : null}
             </li>
           );
         })}

@@ -298,18 +298,8 @@ describe("AgentInspectorDrawer", () => {
     expect(release).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("shows the sub-teams of a session that wait for the Manager of the team above, and lists that Manager", () => {
+  it("shows what waits of a session's work for each of its two reviewers, with what was decided, and lists its Manager", () => {
     memoryHandlers();
-    const waits = {
-      teams: [
-        {
-          team_id: "services.api.jobs",
-          title: "Jobs",
-          session: "services/api/jobs, under services.api",
-          org: "services/api/workers, under services.api",
-        },
-      ],
-    };
     const { unmount } = drawer(ROOT, [
       {
         ...SESSION,
@@ -320,16 +310,61 @@ describe("AgentInspectorDrawer", () => {
               ic("review-s1"),
               { ...ic("settle-s1"), role: "manager" as const },
             ],
-            org_change: waits,
+            merge: {
+              seq: 3,
+              items: [
+                { kind: "code", key: "services/api/routes.ts", gate: "ic" },
+                {
+                  kind: "spec",
+                  key: "services/api",
+                  gate: "ic",
+                  session: "# Refunds",
+                  org: "# Orders",
+                },
+                {
+                  kind: "team",
+                  key: "services.api.jobs",
+                  gate: "manager",
+                  title: "Jobs",
+                  session: "services/api/jobs, under services.api",
+                  org: "services/api/workers, under services.api",
+                  take: "session",
+                  under: ROOT.id,
+                  named: "Refund jobs",
+                },
+                {
+                  kind: "contracts",
+                  key: "services",
+                  gate: "manager",
+                  session: "Refunds go through Jobs.",
+                  org: "Orders go through Jobs.",
+                  take: null,
+                },
+              ],
+            },
           }),
         ],
       },
     ]);
 
-    const block = screen.getByTestId(`org-change-${SESSION.id}`);
+    const block = screen.getByTestId(`merge-${SESSION.id}`);
     expect(block).toHaveTextContent("Refunds");
-    expect(block).toHaveTextContent("ORG_CHART$TEAMS_WAIT");
-    expect(within(block).getByRole("listitem")).toHaveTextContent("Jobs");
+    expect(block).toHaveTextContent("ORG_CHART$MERGE_FOR_IC");
+    expect(block).toHaveTextContent("ORG_CHART$MERGE_FOR_MANAGER");
+    // Its code is not in yet, and nothing earlier is in its way.
+    expect(block).not.toHaveTextContent("ORG_CHART$MERGE_CODE_IN");
+    expect(block).not.toHaveTextContent("ORG_CHART$MERGE_QUEUED");
+    const [file, spec, team, contracts] =
+      within(block).getAllByRole("listitem");
+    expect(file).toHaveTextContent("ORG_CHART$MERGE_FILE");
+    expect(file).not.toHaveTextContent("ORG_CHART$MERGE_UNDECIDED");
+    expect(spec).toHaveTextContent("ORG_CHART$MERGE_SPEC");
+    expect(team).toHaveTextContent("Jobs");
+    expect(team).toHaveTextContent("ORG_CHART$MERGE_TAKE_SESSION");
+    expect(team).toHaveTextContent("ORG_CHART$MERGE_PLACED");
+    expect(team).toHaveTextContent("ORG_CHART$MERGE_NAMED");
+    expect(contracts).toHaveTextContent("ORG_CHART$MERGE_CONTRACTS");
+    expect(contracts).toHaveTextContent("ORG_CHART$MERGE_UNDECIDED");
     expect(
       within(screen.getByTestId("org-node-conversations"))
         .getAllByRole("button")
@@ -340,12 +375,12 @@ describe("AgentInspectorDrawer", () => {
     ]);
     unmount();
 
-    // Nothing waits when the session's teams are settled.
+    // Nothing is shown when nothing of the session's work is on its way.
     drawer(ROOT, [REFUNDS_REVIEWED]);
-    expect(screen.queryByTestId(`org-change-${SESSION.id}`)).toBeNull();
+    expect(screen.queryByTestId(`merge-${SESSION.id}`)).toBeNull();
   });
 
-  it("shows where a team would go whose team above is gone, and the contracts that wait", () => {
+  it("shows where a team would go whose team above is gone, and that the code is in while the rest waits", () => {
     memoryHandlers();
     drawer(ROOT, [
       {
@@ -353,37 +388,35 @@ describe("AgentInspectorDrawer", () => {
         teams: [
           REFUNDS,
           reviewPlaceAt(ROOT, SESSION.id, {
-            org_change: {
-              teams: [
+            merge: {
+              seq: 1,
+              code_landed: true,
+              items: [
                 {
-                  team_id: "services.api.jobs",
+                  kind: "team",
+                  key: "services.api.jobs",
+                  gate: "manager",
                   title: "Jobs",
                   session: "services/api/jobs, under services.api",
                   org: "no such team",
                   moved_to: ROOT.id,
                 },
               ],
-              contracts: [
-                {
-                  path: "services",
-                  session: "Refunds go through Jobs.",
-                  org: "Orders go through Jobs.",
-                },
-              ],
             },
           }),
         ],
       },
     ]);
 
-    const block = screen.getByTestId(`org-change-${SESSION.id}`);
-    const [team, contracts] = within(block).getAllByRole("listitem");
+    const block = screen.getByTestId(`merge-${SESSION.id}`);
+    expect(block).toHaveTextContent("ORG_CHART$MERGE_CODE_IN");
+    const team = within(block).getByRole("listitem");
     expect(team).toHaveTextContent("Jobs");
-    expect(team).toHaveTextContent("ORG_CHART$TEAMS_WAIT_MOVED");
-    expect(contracts).toHaveTextContent("ORG_CHART$CONTRACTS_WAIT");
+    expect(team).toHaveTextContent("ORG_CHART$MERGE_MOVED");
+    expect(team).toHaveTextContent("ORG_CHART$MERGE_UNDECIDED");
   });
 
-  it("shows contracts that wait when no team does", () => {
+  it("says when a session's teams and contracts wait behind an earlier session", () => {
     memoryHandlers();
     drawer(ROOT, [
       {
@@ -391,20 +424,15 @@ describe("AgentInspectorDrawer", () => {
         teams: [
           REFUNDS,
           reviewPlaceAt(ROOT, SESSION.id, {
-            org_change: {
-              teams: [],
-              contracts: [{ path: "", session: "A", org: "B" }],
-            },
+            merge: { seq: 2, code_landed: true, org_queued: true },
           }),
         ],
       },
     ]);
 
-    const block = screen.getByTestId(`org-change-${SESSION.id}`);
-    expect(block).not.toHaveTextContent(/ORG_CHART\$TEAMS_WAIT(?!_)/);
-    expect(within(block).getByRole("listitem")).toHaveTextContent(
-      "ORG_CHART$CONTRACTS_WAIT",
-    );
+    const block = screen.getByTestId(`merge-${SESSION.id}`);
+    expect(block).toHaveTextContent("ORG_CHART$MERGE_QUEUED");
+    expect(within(block).queryByRole("listitem")).toBeNull();
   });
 
   it("names the IC that reviews a session from a team as its reviewer, which the human did not start", async () => {
