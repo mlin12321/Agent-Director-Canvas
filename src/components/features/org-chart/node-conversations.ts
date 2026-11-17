@@ -24,7 +24,7 @@ export interface NodeConversation {
   /** What the session has at this team. */
   place: SessionTeam;
   /** The IC that only reviews the session's work from here. */
-  review: boolean;
+  divisionLead: boolean;
   /** The IC's second conversation, in which it hands work over. */
   handOver: boolean;
   /** A hand-over that could not be started. */
@@ -61,14 +61,14 @@ export function conversationsAt(
     session.teams
       .filter((team) => team.team_id === node.id)
       .forEach((place) => {
-        const review = Boolean(place.review_only);
+        const divisionLead = Boolean(place.division_lead);
         place.agents.forEach((agent) => {
           const shared = {
             role: agent.role,
             agent,
             session: session.title,
             place,
-            review,
+            divisionLead,
           };
           found.push({
             ...shared,
@@ -77,7 +77,10 @@ export function conversationsAt(
             status: agent.status,
             handOver: false,
             lost: false,
-            mine: !review && session.team_id === node.id && agent.role === "ic",
+            mine:
+              !divisionLead &&
+              session.team_id === node.id &&
+              agent.role === "ic",
           });
           if (agent.hand_over) {
             const lost = agent.hand_over.status === "lost";
@@ -122,7 +125,7 @@ export function teamWork(
   sessions: readonly Session[],
 ): TeamWork {
   const places = placesAt(node.id, sessions).filter(
-    (place) => !place.review_only,
+    (place) => !place.division_lead,
   );
   const started = places.filter((place) => place.agents.length > 0);
   const latest = started[started.length - 1];

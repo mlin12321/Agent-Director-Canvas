@@ -93,13 +93,13 @@ export function AgentInspectorDrawer({
   // Nobody works at a team itself: what is being done here is what each
   // session has at it.
   const places = placesAt(node.id, sessions).filter(
-    (place) => !place.review_only,
+    (place) => !place.division_lead,
   );
   const titles = new Map(
     sessions.map((session) => [session.id, session.title]),
   );
   // The changes are those of the session whose conversation is open.
-  const changed = open && !open.review ? open.place : (places[0] ?? null);
+  const changed = open && !open.divisionLead ? open.place : (places[0] ?? null);
   const noneToOpen =
     conversations.length === 0
       ? I18nKey.ORG_CHART$TEAM_NOT_STARTED_HELP
@@ -189,7 +189,7 @@ export function AgentInspectorDrawer({
           ) : null,
         )}
         {placesAt(node.id, sessions).map((place) =>
-          place.review_only && place.merge ? (
+          place.division_lead && place.merge ? (
             <MergeWaits
               key={place.id}
               session={place.session}
@@ -259,8 +259,12 @@ export function AgentInspectorDrawer({
                   )}
                 >
                   <span className="min-w-0 flex-1 truncate">
-                    {candidate.review && candidate.role === "ic"
-                      ? t(I18nKey.ORG_CHART$REVIEWER)
+                    {candidate.divisionLead
+                      ? t(
+                          candidate.role === "ic"
+                            ? I18nKey.ORG_CHART$DIVISION_LEAD_IC
+                            : I18nKey.ORG_CHART$DIVISION_LEAD_MANAGER,
+                        )
                       : t(ROLE_LABEL_KEYS[candidate.role])}
                     {` · ${candidate.session}`}
                     {candidate.handOver
