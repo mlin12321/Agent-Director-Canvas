@@ -1,11 +1,19 @@
 import { useTranslation } from "react-i18next";
-import type { NodeId, OrgNode, Thread } from "#/api/director/types";
-import { useNodeMessages } from "#/hooks/query/use-node-messages";
+import type {
+  NodeId,
+  OrgNode,
+  SessionTeam,
+  Thread,
+} from "#/api/director/types";
+import { teamOfPlace } from "#/constants/org-chart";
+import { useTeamMessages } from "#/hooks/query/use-team-messages";
 import { I18nKey } from "#/i18n/declaration";
 import { ROLE_LABEL_KEYS } from "./org-chart-presentation";
 
 interface TeamMessagesProps {
   node: OrgNode;
+  /** What sessions have at the team: threads are kept per place. */
+  places: SessionTeam[];
   /** The teams known to the page, to name the other side of a thread. */
   nodes?: ReadonlyMap<NodeId, OrgNode>;
 }
@@ -15,18 +23,20 @@ interface TeamMessagesProps {
  * team's own two, its Manager with the ICs directly below, and the Manager
  * above with its IC. Read-only; the agents write these themselves.
  */
-export function TeamMessages({ node, nodes }: TeamMessagesProps) {
+export function TeamMessages({ node, places, nodes }: TeamMessagesProps) {
   const { t } = useTranslation("openhands");
-  const messages = useNodeMessages(node.id);
+  const messages = useTeamMessages(places.map((place) => place.id));
 
   // The team's reports explain it when the team memory cannot be read.
   if (!messages.isSuccess) return null;
 
-  const titleOf = (id: NodeId) => nodes?.get(id)?.title ?? id;
+  // A thread names places; the page knows teams by their own ids.
+  const titleOf = (id: NodeId) => nodes?.get(teamOfPlace(id))?.title ?? id;
+  const here = (id: NodeId) => teamOfPlace(id) === node.id;
   const heading = (thread: Thread) => {
     if (thread.ic_to_ic) {
       // One way: the IC of `manager_node_id` writes to the IC below it.
-      return thread.ic_node_id === node.id
+      return here(thread.ic_node_id)
         ? t(I18nKey.ORG_CHART$MESSAGES_IC_ABOVE, {
             team: titleOf(thread.manager_node_id),
           })
@@ -34,12 +44,12 @@ export function TeamMessages({ node, nodes }: TeamMessagesProps) {
             team: titleOf(thread.ic_node_id),
           });
     }
-    if (thread.manager_node_id !== node.id) {
+    if (!here(thread.manager_node_id)) {
       return t(I18nKey.ORG_CHART$MESSAGES_ABOVE, {
         team: titleOf(thread.manager_node_id),
       });
     }
-    if (thread.ic_node_id !== node.id) {
+    if (!here(thread.ic_node_id)) {
       return t(I18nKey.ORG_CHART$MESSAGES_BELOW, {
         team: titleOf(thread.ic_node_id),
       });

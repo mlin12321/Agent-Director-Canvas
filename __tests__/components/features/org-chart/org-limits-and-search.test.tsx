@@ -9,8 +9,8 @@ import type {
   TeamMatch,
 } from "#/api/director/types";
 import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-inspector-drawer";
-import { NodeCard } from "#/components/features/org-chart/node-card";
-import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
+import { TeamCard } from "#/components/features/org-chart/team-card";
+import { TeamHoverCard } from "#/components/features/org-chart/team-hover-card";
 import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { TeamSearch } from "#/components/features/org-chart/team-search";
@@ -312,7 +312,7 @@ describe("TeamSearch", () => {
   });
 });
 
-describe("NodeCard", () => {
+describe("TeamCard", () => {
   const NODE: OrgNode = {
     id: "auth",
     parent_id: "root",
@@ -347,7 +347,7 @@ describe("NodeCard", () => {
 
   it("says a team waits for a free run slot in place of what it is delivering", () => {
     const authCard = (
-      <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />
+      <TeamCard node={NODE} current={false} onOpenDetails={() => {}} />
     );
     const { rerender } = renderWithProviders(atTeam({}, authCard));
     expect(screen.getByText("Token refresh")).toBeInTheDocument();
@@ -388,7 +388,7 @@ describe("NodeCard", () => {
             },
           ],
         },
-        <NodeHoverCard node={{ ...NODE, agent_profile: "codex" }} />,
+        <TeamHoverCard node={{ ...NODE, agent_profile: "codex" }} />,
       ),
     );
 

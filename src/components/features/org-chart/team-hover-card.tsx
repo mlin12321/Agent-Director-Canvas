@@ -27,7 +27,7 @@ function Row({
   );
 }
 
-interface NodeHoverCardProps {
+interface TeamHoverCardProps {
   node: OrgNode;
 }
 
@@ -35,7 +35,7 @@ interface NodeHoverCardProps {
  * What a team is doing and what it owns. Shown only while its card is
  * hovered or focused, so the chart itself stays a plain picture of the org.
  */
-export function NodeHoverCard({ node }: NodeHoverCardProps) {
+export function TeamHoverCard({ node }: TeamHoverCardProps) {
   const { t } = useTranslation("openhands");
   // Nobody works at a team itself: its work is what the sessions do there.
   const work = useTeamWork(node);

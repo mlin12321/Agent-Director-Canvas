@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { OrgNode } from "#/api/director/types";
 import { MarkdownRenderer } from "#/components/features/markdown/markdown-renderer";
-import { useNodeMemory } from "#/hooks/query/use-node-memory";
+import { useTeamMemory } from "#/hooks/query/use-team-memory";
 import { I18nKey } from "#/i18n/declaration";
 
 function Document({
@@ -40,7 +40,7 @@ interface SpecAndContractsProps {
  */
 export function SpecAndContracts({ node }: SpecAndContractsProps) {
   const { t } = useTranslation("openhands");
-  const memory = useNodeMemory(node.id);
+  const memory = useTeamMemory(node.id);
   if (!memory.data) return null;
   const { specs, contracts = [] } = memory.data;
 

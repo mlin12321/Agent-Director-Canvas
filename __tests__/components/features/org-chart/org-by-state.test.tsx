@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { NodeStatus, OrgNode, ReviewState } from "#/api/director/types";
-import type { TeamWork } from "#/components/features/org-chart/node-conversations";
+import type { TeamWork } from "#/components/features/org-chart/team-places";
 import {
   OrgByState,
   teamStateOf,

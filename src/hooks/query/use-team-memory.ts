@@ -4,12 +4,12 @@ import type { NodeId } from "#/api/director/types";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 
-/** What the ICs and Managers around a team have written to each other. */
-export function useNodeMessages(nodeId: NodeId) {
+/** What a team works to and what its agents reported: spec, contracts, reports. */
+export function useTeamMemory(nodeId: NodeId) {
   const { backend } = useActiveBackend();
   return useQuery({
-    queryKey: DIRECTOR_QUERY_KEYS.messages(backend.id, nodeId),
-    queryFn: () => DirectorClient.getNodeMessages(nodeId),
+    queryKey: DIRECTOR_QUERY_KEYS.memory(backend.id, nodeId),
+    queryFn: () => DirectorClient.getNodeMemory(nodeId),
     retry: false,
   });
 }

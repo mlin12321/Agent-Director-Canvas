@@ -8,7 +8,7 @@ import { orgNodePath } from "#/constants/org-chart";
 import { I18nKey } from "#/i18n/declaration";
 import { useOrgChartStore } from "#/stores/org-chart-store";
 import { cn } from "#/utils/utils";
-import { NodeHoverCard } from "./node-hover-card";
+import { TeamHoverCard } from "./team-hover-card";
 import {
   useSessionsAt,
   useSessionStatusesAt,
@@ -16,7 +16,7 @@ import {
 } from "./org-sessions";
 import { StatusDots } from "./status-badge";
 
-interface NodeCardProps {
+interface TeamCardProps {
   node: OrgNode;
   /** The team the page is on. Its card opens its details. */
   current: boolean;
@@ -37,13 +37,13 @@ const MAIN_CLASS =
  * page is already on opens its details. A card is drawn again only when its
  * own team changed, which keeps an org of hundreds cheap to update.
  */
-export const NodeCard = React.memo(function NodeCard({
+export const TeamCard = React.memo(function TeamCard({
   node,
   current,
   collides = false,
   onOpenDetails,
   centerInScroller = false,
-}: NodeCardProps) {
+}: TeamCardProps) {
   const { t } = useTranslation("openhands");
   const ref = React.useRef<HTMLDivElement>(null);
   // Only the card being kept in the middle follows the zoom.
@@ -173,7 +173,7 @@ export const NodeCard = React.memo(function NodeCard({
       )}
     >
       <Tooltip
-        content={<NodeHoverCard node={node} />}
+        content={<TeamHoverCard node={node} />}
         placement="bottom"
         delay={300}
       >

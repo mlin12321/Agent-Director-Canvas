@@ -2,8 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import type { NodeId, OrgNode } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
-import { NodeCard } from "./node-card";
-import { teamWork, type TeamWork } from "./node-conversations";
+import { TeamCard } from "./team-card";
+import { teamWork, type TeamWork } from "./team-places";
 import { OrgSessionsContext } from "./org-sessions";
 
 /** Where a team stands, as one of the board's columns. */
@@ -104,7 +104,7 @@ export function OrgByState({
             <ul className="flex min-h-0 flex-1 flex-col items-center gap-1.5 overflow-y-auto p-1">
               {teams.map((node) => (
                 <li key={node.id}>
-                  <NodeCard
+                  <TeamCard
                     node={node}
                     current={node.id === currentId}
                     collides={collidingIds.has(node.id)}

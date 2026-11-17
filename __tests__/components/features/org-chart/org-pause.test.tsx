@@ -8,7 +8,7 @@ import type {
   OrgNode,
   Recovery,
 } from "#/api/director/types";
-import { NodeCard } from "#/components/features/org-chart/node-card";
+import { TeamCard } from "#/components/features/org-chart/team-card";
 import {
   PauseButton,
   PausedBanner,
@@ -185,7 +185,7 @@ describe("a team whose agent was paused while working", () => {
   function cardWith(agents: AgentRef[]) {
     return renderWithProviders(
       <OrgSessionsContext.Provider value={atWork(NODE, { agents })}>
-        <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />
+        <TeamCard node={NODE} current={false} onOpenDetails={() => {}} />
       </OrgSessionsContext.Provider>,
     );
   }

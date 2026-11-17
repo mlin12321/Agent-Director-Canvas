@@ -69,7 +69,7 @@ describe("StartAgain", () => {
     const asked: string[] = [];
     server.use(
       http.post(
-        "*/api/director/org/sessions/:session/teams/:nodeId/start_again",
+        "*/api/director/org/sessions/:session/teams/:nodeId/start-again",
         ({ params }) => {
           asked.push(`${params.session} ${params.nodeId}`);
           return HttpResponse.json(team("idle", "idle"));
@@ -91,7 +91,7 @@ describe("StartAgain", () => {
   it("says in the server's words why the team cannot be started", async () => {
     server.use(
       http.post(
-        "*/api/director/org/sessions/:session/teams/:nodeId/start_again",
+        "*/api/director/org/sessions/:session/teams/:nodeId/start-again",
         () =>
           HttpResponse.json(
             { detail: "Team Checkout above it has no IC here." },

@@ -1,6 +1,6 @@
 import type { NodeId, OrgNode } from "#/api/director/types";
 import { cn } from "#/utils/utils";
-import { NodeCard } from "./node-card";
+import { TeamCard } from "./team-card";
 
 interface OrgTreeProps {
   root: OrgNode;
@@ -28,7 +28,7 @@ const MIN_STACKED_REPORTS = 3;
 
 function Card({ node, ...tree }: Omit<BranchProps, "isTop">) {
   return (
-    <NodeCard
+    <TeamCard
       node={node}
       current={node.id === tree.currentId}
       collides={tree.collidingIds.has(node.id)}

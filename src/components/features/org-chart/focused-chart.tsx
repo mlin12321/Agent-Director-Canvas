@@ -5,7 +5,7 @@ import type { NodeId, OrgNode } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { orgNodePath } from "#/constants/org-chart";
 import { I18nKey } from "#/i18n/declaration";
-import { NodeCard } from "./node-card";
+import { TeamCard } from "./team-card";
 
 interface FocusedChartProps {
   current: OrgNode;
@@ -142,7 +142,7 @@ export function FocusedChart({
           />
         </NavigationLink>
       ) : null}
-      <NodeCard
+      <TeamCard
         node={current}
         current
         collides={collidingIds.has(current.id)}
@@ -157,7 +157,7 @@ export function FocusedChart({
           >
             {reports.map((report) => (
               <li key={report.id} className="flex flex-col items-center">
-                <NodeCard
+                <TeamCard
                   node={report}
                   current={false}
                   collides={collidingIds.has(report.id)}

@@ -12,8 +12,8 @@ import type {
   Thread,
 } from "#/api/director/types";
 import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-inspector-drawer";
-import { NodeCard } from "#/components/features/org-chart/node-card";
-import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
+import { TeamCard } from "#/components/features/org-chart/team-card";
+import { TeamHoverCard } from "#/components/features/org-chart/team-hover-card";
 import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { ProposedTeams } from "#/components/features/org-chart/proposed-teams";
@@ -211,7 +211,7 @@ describe("the checks in the settings", () => {
 describe("a stopped team", () => {
   it("is marked on its card only while it is stopped", () => {
     const shopCard = (
-      <NodeCard node={NODE} current={false} onOpenDetails={() => {}} />
+      <TeamCard node={NODE} current={false} onOpenDetails={() => {}} />
     );
     const { rerender } = renderWithProviders(atTeam({}, shopCard));
     expect(screen.queryByRole("img", { name: "ORG_CHART$STOPPED" })).toBeNull();
@@ -227,7 +227,7 @@ describe("a stopped team", () => {
     memoryHandlers();
     const stopped = { status: "blocked" as const, stopped: STOPPED };
     const { unmount } = renderWithProviders(
-      atTeam(stopped, <NodeHoverCard node={NODE} />),
+      atTeam(stopped, <TeamHoverCard node={NODE} />),
     );
 
     expect(screen.getByText("ORG_CHART$STOPPED")).toBeInTheDocument();
@@ -248,7 +248,7 @@ describe("a stopped team", () => {
 describe("a Manager that has not been written to", () => {
   it("is said to be not started in the hover card", () => {
     renderWithProviders(
-      atTeam({ agents: [IC] }, <NodeHoverCard node={NODE} />),
+      atTeam({ agents: [IC] }, <TeamHoverCard node={NODE} />),
     );
 
     expect(
@@ -259,7 +259,7 @@ describe("a Manager that has not been written to", () => {
   });
 
   it("is not mentioned for a team that has its Manager", () => {
-    renderWithProviders(atTeam({}, <NodeHoverCard node={NODE} />));
+    renderWithProviders(atTeam({}, <TeamHoverCard node={NODE} />));
 
     expect(screen.getByText(/ORG_CHART\$ROLE_MANAGER/)).toBeInTheDocument();
     expect(screen.queryByText(/ORG_CHART\$MANAGER_NOT_STARTED/)).toBeNull();
@@ -408,13 +408,14 @@ describe("what one IC wrote to the IC below", () => {
   });
 
   it("is a thread of its own beside the Manager's with the same team", async () => {
+    // Threads are kept per place of a session, and name places.
     memoryHandlers([
-      thread("shop", "shop.web", false),
-      thread("shop", "shop.web", true),
-      thread("root", "shop", true),
+      thread("shop@s1", "shop.web@s1", false),
+      thread("shop@s1", "shop.web@s1", true),
+      thread("root@s1", "shop@s1", true),
     ]);
     renderWithProviders(
-      <AgentInspectorDrawer node={NODE} onClose={() => {}} />,
+      atTeam({}, <AgentInspectorDrawer node={NODE} onClose={() => {}} />),
     );
 
     const messages = await screen.findByRole("region", {

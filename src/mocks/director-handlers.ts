@@ -763,8 +763,18 @@ export const DIRECTOR_HANDLERS = [
 
   http.get(`${BASE}/org/nodes/:nodeId/messages`, ({ params }) => {
     const nodeId = String(params.nodeId);
-    if (!tree.has(nodeId)) return notFound(nodeId);
-    return HttpResponse.json(MOCK_THREADS[nodeId] ?? []);
+    // Threads are kept per place (`<team>@<session>`), as the server does:
+    // nobody works at a team itself, so a team's own id has none.
+    const [teamId, sessionId] = nodeId.split("@");
+    if (!tree.has(teamId)) return notFound(nodeId);
+    if (!sessionId) return HttpResponse.json([]);
+    return HttpResponse.json(
+      (MOCK_THREADS[teamId] ?? []).map((thread) => ({
+        ...thread,
+        manager_node_id: placeId(thread.manager_node_id, sessionId),
+        ic_node_id: placeId(thread.ic_node_id, sessionId),
+      })),
+    );
   }),
 
   http.get(`${BASE}/org/nodes/:nodeId/ownership`, ({ params }) => {

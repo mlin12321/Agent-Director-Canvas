@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { FormerTeam, OrgNode, TeamEvent } from "#/api/director/types";
-import { useNodeMemory } from "#/hooks/query/use-node-memory";
+import { useTeamMemory } from "#/hooks/query/use-team-memory";
 import { I18nKey } from "#/i18n/declaration";
 
 interface TeamRecordProps {
@@ -107,7 +107,7 @@ function counted(team: Counts) {
  */
 export function TeamRecord({ node }: TeamRecordProps) {
   const { t } = useTranslation("openhands");
-  const memory = useNodeMemory(node.id);
+  const memory = useTeamMemory(node.id);
   const history = memory.data?.history ?? [];
   const former = memory.data?.former_teams ?? [];
   if (history.length === 0 && former.length === 0) return null;

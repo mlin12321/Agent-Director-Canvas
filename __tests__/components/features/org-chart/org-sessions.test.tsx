@@ -17,7 +17,7 @@ import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-insp
 import { ConversationLinks } from "#/components/features/org-chart/conversation-links";
 import { EscalationsPanel } from "#/components/features/org-chart/escalations-panel";
 import { MessageToTeam } from "#/components/features/org-chart/message-to-team";
-import { NodeCard } from "#/components/features/org-chart/node-card";
+import { TeamCard } from "#/components/features/org-chart/team-card";
 import { OrgHistoryPanel } from "#/components/features/org-chart/org-history";
 import {
   OrgSessionsContext,
@@ -172,12 +172,12 @@ function opened(session: Session) {
   return { session, conversation_id: "c2", chosen_by: "path", reason: "" };
 }
 
-describe("NodeCard", () => {
+describe("TeamCard", () => {
   it("says how many sessions are open at a team, which are no sub-teams of it", () => {
     renderWithProviders(
       <OrgSessionsContext.Provider value={[SESSION]}>
-        <NodeCard node={ROOT} current={false} onOpenDetails={() => {}} />
-        <NodeCard node={API} current={false} onOpenDetails={() => {}} />
+        <TeamCard node={ROOT} current={false} onOpenDetails={() => {}} />
+        <TeamCard node={API} current={false} onOpenDetails={() => {}} />
       </OrgSessionsContext.Provider>,
     );
 
@@ -213,7 +213,7 @@ describe("NodeCard", () => {
     const dots = (sessions: Session[]) => {
       const { unmount } = renderWithProviders(
         <OrgSessionsContext.Provider value={sessions}>
-          <NodeCard node={API} current={false} onOpenDetails={() => {}} />
+          <TeamCard node={API} current={false} onOpenDetails={() => {}} />
         </OrgSessionsContext.Provider>,
       );
       const found = within(

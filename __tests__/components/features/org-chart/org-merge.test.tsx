@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type {
   OrgMerge,
   OrgSummary,
-  OrgSync as SyncResult,
+  OrgSync as OrgSyncResult,
 } from "#/api/director/types";
 import { MergeConflicts } from "#/components/features/org-chart/org-merge";
 import { OrgSync } from "#/components/features/org-chart/org-sync";
@@ -40,7 +40,7 @@ const MERGE: OrgMerge = {
   ],
 };
 
-const DONE: SyncResult = {
+const DONE: OrgSyncResult = {
   remote: "origin",
   result: "merged",
   head: null,

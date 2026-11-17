@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { DirectorClient } from "#/api/director/director-client";
 import type { OpenEscalation } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
-import { orgNodePath } from "#/constants/org-chart";
+import { orgNodePath, teamOfPlace } from "#/constants/org-chart";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { ESCALATION_LABEL_KEYS } from "./org-chart-presentation";
@@ -81,7 +81,8 @@ function EscalationCard({ item }: { item: OpenEscalation }) {
           {escalation.handoffs.map((handoff) => (
             <span key={handoff.node_id}>
               <span className="text-contrast">
-                {titles.get(handoff.node_id) ?? handoff.node_id}
+                {/* Passed up by a place; the path names its team. */}
+                {titles.get(teamOfPlace(handoff.node_id)) ?? handoff.node_id}
               </span>
               {": "}
               {handoff.reason}

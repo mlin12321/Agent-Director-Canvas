@@ -8,7 +8,7 @@ import type {
   OrgNode,
 } from "#/api/director/types";
 import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-inspector-drawer";
-import { NodeHoverCard } from "#/components/features/org-chart/node-hover-card";
+import { TeamHoverCard } from "#/components/features/org-chart/team-hover-card";
 import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
 import { SpecAndContracts } from "#/components/features/org-chart/spec-and-contracts";
@@ -188,7 +188,7 @@ describe("a team that has not been given a task", () => {
   it("says so in its hover card and its details, with how it starts", () => {
     memoryHandlers();
     const { unmount } = renderWithProviders(
-      <NodeHoverCard node={NOT_STARTED} />,
+      <TeamHoverCard node={NOT_STARTED} />,
     );
 
     expect(screen.getByText("ORG_CHART$TEAM_NOT_STARTED")).toBeInTheDocument();

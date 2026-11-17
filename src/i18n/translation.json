@@ -44946,7 +44946,7 @@
     "id": "Status:"
   },
   "ORG_CHART$BOUNDARY": {
-    "en": "Boundary:",
+    "en": "Folder:",
     "zh-CN": "边界:",
     "zh-TW": "邊界:",
     "de": "Grenze:",
@@ -46926,7 +46926,7 @@
     "id": "Cari tim"
   },
   "ORG_CHART$SEARCH_NONE": {
-    "en": "No team has that in its name or directory.",
+    "en": "No team has that in its name or folder.",
     "zh-CN": "没有名称或目录包含该内容的团队。",
     "zh-TW": "沒有名稱或目錄包含該內容的團隊。",
     "de": "Kein Team hat das im Namen oder Verzeichnis.",
