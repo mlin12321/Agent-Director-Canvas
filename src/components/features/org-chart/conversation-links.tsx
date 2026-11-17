@@ -1,3 +1,4 @@
+import { ORG_REFRESH_MS } from "#/constants/org-chart";
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -13,8 +14,6 @@ import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { I18nKey } from "#/i18n/declaration";
 import { ROLE_LABEL_KEYS } from "./org-chart-presentation";
 
-const REFRESH_MS = 15_000;
-
 const RELATIONS: ConversationRelation[] = ["above", "beside", "below"];
 
 const RELATION_LABEL_KEYS: Record<ConversationRelation, I18nKey> = {
@@ -24,7 +23,7 @@ const RELATION_LABEL_KEYS: Record<ConversationRelation, I18nKey> = {
 };
 
 /** Where a conversation is in the org; nothing for one that is no agent's. */
-export function useConversationPlace(conversationId: string | null) {
+function useConversationPlace(conversationId: string | null) {
   const { backend } = useActiveBackend();
   return useQuery<ConversationPlace | null>({
     queryKey: DIRECTOR_QUERY_KEYS.conversationPlace(backend.id, conversationId),
@@ -33,7 +32,7 @@ export function useConversationPlace(conversationId: string | null) {
     queryFn: () =>
       DirectorClient.getConversationPlace(conversationId!).catch(() => null),
     enabled: Boolean(conversationId),
-    refetchInterval: (query) => (query.state.data ? REFRESH_MS : false),
+    refetchInterval: (query) => (query.state.data ? ORG_REFRESH_MS : false),
     retry: false,
     meta: { disableToast: true },
   });

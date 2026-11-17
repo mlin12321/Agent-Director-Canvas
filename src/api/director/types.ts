@@ -7,7 +7,7 @@
 export type NodeId = string;
 
 /**
- * A pod has an IC and a Manager. A team's IC leads that team, is a report
+ * A team has an IC and a Manager. A team's IC leads that team, is a report
  * of the team above, and does the code work in its boundary that no
  * sub-team has taken on.
  */
@@ -586,7 +586,7 @@ export interface OrgHistory {
 
 /** Where a message to the org went. */
 export interface RoutedMessage {
-  /** The team that received it. */
+  /** The place that received it: what a session has at a team. */
   node_id: NodeId;
   /** The title of that team. */
   team: string;
@@ -858,12 +858,6 @@ export interface NodeOwnership {
   collisions_checked: boolean;
 }
 
-/**
- * A snapshot holds the focused node, its ancestors and its direct reports
- * (or, for a full stream, every node below it), plus every escalation in the
- * tree that waits on the human. Node events are limited to that same set of
- * nodes; an `escalations` event carries the whole new list.
- */
 /** What a pull or a push of the team memory did. */
 export interface MemorySync {
   remote: string;

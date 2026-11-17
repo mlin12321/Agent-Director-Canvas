@@ -1,3 +1,4 @@
+import { ORG_REFRESH_MS, orgNodePath } from "#/constants/org-chart";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { History } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -9,14 +10,12 @@ import type {
   TeamEventKind,
 } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
-import { orgNodePath } from "#/constants/org-chart";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { I18nKey } from "#/i18n/declaration";
 import { SessionMark } from "./org-sessions";
 
 const PAGE = 50;
-const REFRESH_MS = 15_000;
 
 const KIND_KEYS = {
   set_up: I18nKey.ORG_CHART$HISTORY_SET_UP,
@@ -121,7 +120,7 @@ export function OrgHistoryPanel({
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) =>
       last.earlier ? last.events.at(-1)?.at : undefined,
-    refetchInterval: REFRESH_MS,
+    refetchInterval: ORG_REFRESH_MS,
     meta: { disableToast: true },
   });
   const events = history.data?.pages.flatMap((page) => page.events) ?? [];

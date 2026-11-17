@@ -1,3 +1,4 @@
+import { ORG_REFRESH_MS } from "#/constants/org-chart";
 import { useQuery } from "@tanstack/react-query";
 import { DirectorClient } from "#/api/director/director-client";
 import type { OrgNode } from "#/api/director/types";
@@ -5,7 +6,6 @@ import { useActiveBackend } from "#/contexts/active-backend-context";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 
 /** Files change without the org tree saying so; this is how stale a map gets. */
-const REFRESH_MS = 15_000;
 
 /**
  * Which direct report owns each file of a team's boundary, and where the
@@ -21,7 +21,7 @@ export function useNodeOwnership(node: OrgNode | null) {
     ],
     queryFn: () => DirectorClient.getNodeOwnership(node?.id ?? ""),
     enabled: node !== null,
-    refetchInterval: REFRESH_MS,
+    refetchInterval: ORG_REFRESH_MS,
     retry: false,
     meta: { disableToast: true },
   });

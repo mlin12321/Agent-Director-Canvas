@@ -17,7 +17,7 @@ const OUTCOME_KEYS = {
 
 /**
  * Exchanges the org with the repository's `origin`, as git does a branch:
- * the tree of teams, their specs, contracts and rules, and the branches of
+ * the tree of teams, their specs and contracts, and the branches of
  * their work. Nothing travels until one of the two is pressed.
  */
 export function OrgSync({

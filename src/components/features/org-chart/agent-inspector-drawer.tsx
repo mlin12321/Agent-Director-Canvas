@@ -16,7 +16,7 @@ import { TeamReports } from "./team-reports";
 import { ReviewSummary } from "./review-summary";
 import { SpecAndContracts } from "./spec-and-contracts";
 import { isLost, StartAgain } from "./start-again";
-import { conversationsAt, placesAt } from "./node-conversations";
+import { conversationsAt, placesAt, workPlacesAt } from "./node-conversations";
 import { OrgSessionsContext } from "./org-sessions";
 import {
   ENFORCEMENT_LABEL_KEYS,
@@ -92,9 +92,7 @@ export function AgentInspectorDrawer({
   const lost = conversations.some((candidate) => candidate.lost);
   // Nobody works at a team itself: what is being done here is what each
   // session has at it.
-  const places = placesAt(node.id, sessions).filter(
-    (place) => !place.division_lead,
-  );
+  const places = workPlacesAt(node.id, sessions);
   const titles = new Map(
     sessions.map((session) => [session.id, session.title]),
   );

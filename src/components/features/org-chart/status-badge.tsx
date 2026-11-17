@@ -6,6 +6,18 @@ import {
   STATUS_LABEL_KEYS,
 } from "./org-chart-presentation";
 
+// Up to this many dots are drawn one by one; more are counted.
+const DOTS_DRAWN = 3;
+
+function Dot({ status }: { status: NodeStatus }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn("size-2 rounded-full", STATUS_DOT_CLASSES[status])}
+    />
+  );
+}
+
 interface StatusBadgeProps {
   status: NodeStatus;
 }
@@ -17,10 +29,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
       data-status={status}
       className="inline-flex items-center gap-1.5 text-xs text-contrast"
     >
-      <span
-        aria-hidden="true"
-        className={cn("size-2 rounded-full", STATUS_DOT_CLASSES[status])}
-      />
+      <Dot status={status} />
       {t(STATUS_LABEL_KEYS[status])}
     </span>
   );
@@ -31,22 +40,16 @@ const DOT_ORDER: NodeStatus[] = ["blocked", "working", "idle", "done"];
 
 /**
  * The state of every line of work at a team, as dots: the team's own and
- * one for each session that works there. Up to `room` of them are drawn one
- * by one; more than that are counted, one dot and a number for each state.
+ * one for each session that works there. A few are drawn one by one; more
+ * than that are counted, one dot and a number for each state.
  */
-export function StatusDots({
-  statuses,
-  room = 3,
-}: {
-  statuses: readonly NodeStatus[];
-  room?: number;
-}) {
+export function StatusDots({ statuses }: { statuses: readonly NodeStatus[] }) {
   const { t } = useTranslation("openhands");
   const counts = DOT_ORDER.map((status) => ({
     status,
     count: statuses.filter((candidate) => candidate === status).length,
   })).filter(({ count }) => count > 0);
-  const counted = statuses.length > room;
+  const counted = statuses.length > DOTS_DRAWN;
   const label = counts
     .map(({ status, count }) => `${count} ${t(STATUS_LABEL_KEYS[status])}`)
     .join(", ");
@@ -66,13 +69,7 @@ export function StatusDots({
               data-status={status}
               className="flex items-center gap-0.5"
             >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "size-2 rounded-full",
-                  STATUS_DOT_CLASSES[status],
-                )}
-              />
+              <Dot status={status} />
               {count}
             </span>
           ))

@@ -27,7 +27,7 @@ import { SubChatHost } from "#/components/features/org-chart/sub-chat-host";
 import { isAgentOnlyConversation } from "#/utils/conversation-tag-flags";
 import { server } from "#/mocks/node";
 import { renderWithProviders } from "test-utils";
-import { placeAt, reviewPlaceAt, sessionOf } from "./session-fixtures";
+import { placeAt, leadPlaceAt, sessionOf } from "./session-fixtures";
 
 function team(
   id: string,
@@ -122,14 +122,14 @@ const ic = (conversationId: string | null, status = "idle") => ({
 const RELEASE = sessionOf("r9", "Release", [
   placeAt(ROOT, "r9", { agents: [ic("top")], status: "working" }),
   placeAt(API, "r9", { agents: [ic("c1")], status: "working" }),
-  reviewPlaceAt(ROOT, "r9", { agents: [ic("review-r9")] }),
+  leadPlaceAt(ROOT, "r9", { agents: [ic("review-r9")] }),
 ]);
 // Refunds was opened at the API team: the IC of the top team reviews it.
 const REFUNDS_REVIEWED: Session = {
   ...SESSION,
   teams: [
     REFUNDS,
-    reviewPlaceAt(ROOT, SESSION.id, { agents: [ic("review-s1")] }),
+    leadPlaceAt(ROOT, SESSION.id, { agents: [ic("review-s1")] }),
   ],
 };
 
@@ -240,7 +240,7 @@ describe("NodeCard", () => {
     const reviewed: Session = {
       ...at("s3", "done", "pending"),
       team_id: "services.api.db",
-      teams: [reviewPlaceAt(API, "s3", { status: "working" })],
+      teams: [leadPlaceAt(API, "s3", { status: "working" })],
     };
     expect(dots([at("s1", "working"), at("s2", "blocked"), reviewed])).toEqual({
       counted: false,
@@ -305,7 +305,7 @@ describe("AgentInspectorDrawer", () => {
         ...SESSION,
         teams: [
           REFUNDS,
-          reviewPlaceAt(ROOT, SESSION.id, {
+          leadPlaceAt(ROOT, SESSION.id, {
             agents: [
               ic("review-s1"),
               { ...ic("settle-s1"), role: "manager" as const },
@@ -387,7 +387,7 @@ describe("AgentInspectorDrawer", () => {
         ...SESSION,
         teams: [
           REFUNDS,
-          reviewPlaceAt(ROOT, SESSION.id, {
+          leadPlaceAt(ROOT, SESSION.id, {
             merge: {
               seq: 1,
               code_landed: true,
@@ -423,7 +423,7 @@ describe("AgentInspectorDrawer", () => {
         ...SESSION,
         teams: [
           REFUNDS,
-          reviewPlaceAt(ROOT, SESSION.id, {
+          leadPlaceAt(ROOT, SESSION.id, {
             merge: { seq: 2, code_landed: true, org_queued: true },
           }),
         ],
@@ -435,7 +435,7 @@ describe("AgentInspectorDrawer", () => {
     expect(within(block).queryByRole("listitem")).toBeNull();
   });
 
-  it("names the IC that reviews a session from a team as its reviewer, which the human did not start", async () => {
+  it("names the IC that reviews a session from a team as its Division Lead IC, which the human did not start", async () => {
     memoryHandlers();
     const user = userEvent.setup();
     drawer(ROOT, [RELEASE, REFUNDS_REVIEWED]);
@@ -448,12 +448,12 @@ describe("AgentInspectorDrawer", () => {
       "ORG_CHART$DIVISION_LEAD_IC · Releaseidle",
       "ORG_CHART$DIVISION_LEAD_IC · Refundsidle",
     ]);
-    const [top, , reviewer] = rows;
-    // The session opened at the top team is the human's; a reviewer is not.
+    const [top, , lead] = rows;
+    // The session opened at the top team is the human's; a Division Lead is not.
     expect(top).toHaveAttribute("data-mine");
-    expect(reviewer).not.toHaveAttribute("data-mine");
+    expect(lead).not.toHaveAttribute("data-mine");
 
-    await user.click(reviewer);
+    await user.click(lead);
     expect(await screen.findByTestId("agent-conversation")).toHaveTextContent(
       "review-s1",
     );
