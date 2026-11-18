@@ -133,6 +133,13 @@ export const DirectorClient = {
   getNodeChangedFile: (nodeId: NodeId, path: string) =>
     call((client) => client.getNodeChangedFile(nodeId, path)),
 
+  /** The files an accept in the history took, by its two commits. */
+  getAcceptedChanges: (base: string, head: string, path: string) =>
+    call((client) => client.getAcceptedChanges(base, head, path)),
+
+  getAcceptedFile: (base: string, head: string, path: string) =>
+    call((client) => client.getAcceptedFile(base, head, path)),
+
   /** Write one file of a team by hand; its IC is told. */
   editNodeFile: (nodeId: NodeId, path: string, content: string) =>
     call((client) => client.editNodeFile(nodeId, path, content)),
