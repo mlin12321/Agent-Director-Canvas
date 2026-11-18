@@ -63,7 +63,7 @@ export function MessageToTeam({ node }: { node: OrgNode }) {
           rows={2}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          className="min-w-0 flex-1 resize-y rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm text-contrast"
+          className="min-w-0 flex-1 resize-y rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-contrast"
         />
         <button
           type="submit"
@@ -81,7 +81,7 @@ export function MessageToTeam({ node }: { node: OrgNode }) {
         onChange={(event) => setName(event.target.value)}
         aria-label={t(I18nKey.ORG_CHART$SESSION_NAME)}
         placeholder={t(I18nKey.ORG_CHART$SESSION_NAME)}
-        className="w-64 max-w-full rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-contrast"
+        className="w-64 max-w-full rounded-lg border border-border bg-background px-2.5 py-1 text-xs text-contrast"
       />
       <p className="text-xs text-muted">
         {t(I18nKey.ORG_CHART$SESSION_NEW_HELP)}

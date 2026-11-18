@@ -14,10 +14,33 @@ describe("Director palette", () => {
     expect(COLOR_THEMES.director.appearance).toBe("light");
   });
 
-  it.each(["--oh-background", "--oh-surface", "--oh-overlay"] as const)(
+  it.each(["--oh-background", "--oh-overlay"] as const)(
     "paints %s white",
     (surface) => {
       expect(COLOR_THEMES.director.tokens?.[surface]).toBe("#FFFFFF");
+    },
+  );
+
+  it("paints a panel in a gray that stands apart from the page and keeps its text readable", () => {
+    const panel = surfaceColor("director", "--oh-surface");
+    expect(contrast(panel, WHITE)).toBeGreaterThanOrEqual(1.08);
+    expect(
+      contrast(surfaceColor("director", "--oh-foreground"), panel),
+    ).toBeGreaterThanOrEqual(7);
+    expect(
+      contrast(surfaceColor("director", "--oh-link"), panel),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(["--oh-color-tertiary", "--oh-surface-raised"] as const)(
+    "marks %s within a panel with a darker gray",
+    (area) => {
+      expect(
+        contrast(
+          surfaceColor("director", area),
+          surfaceColor("director", "--oh-surface"),
+        ),
+      ).toBeGreaterThanOrEqual(1.08);
     },
   );
 

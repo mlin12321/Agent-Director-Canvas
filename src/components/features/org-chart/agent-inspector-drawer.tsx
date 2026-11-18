@@ -64,7 +64,7 @@ const ROW_PLAIN_CLASS =
   "border-border-subtle bg-tertiary text-text-secondary hover:bg-interactive-hover-low disabled:hover:bg-tertiary";
 // and what the human started here is in the page's main colour.
 const ROW_MINE_CLASS =
-  "border-border bg-surface text-contrast hover:bg-surface-raised";
+  "border-border bg-background text-contrast hover:bg-surface-raised";
 const ROW_OPEN_CLASS = "ring-2 ring-primary";
 
 /**
