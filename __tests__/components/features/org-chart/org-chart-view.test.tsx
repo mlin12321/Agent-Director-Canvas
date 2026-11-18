@@ -204,8 +204,10 @@ function memoryHandlers(reports: Report[] = [], threads: Thread[] = []) {
 // Now and then the first request of a test is not intercepted and goes to
 // the network, where nothing listens. The page then asks again after a
 // second, which is as long as a finder waits by default: wait longer than
-// one retry, so that this costs a second and not the test.
-const FIND_TIMEOUT_MS = 4000;
+// one retry, so that this costs a second and not the test. On CI's runners
+// four seconds were not enough: a different test of this file failed on
+// each of the first three runs.
+const FIND_TIMEOUT_MS = 10_000;
 let defaultFindTimeout: number;
 
 beforeAll(() => {
@@ -1914,13 +1916,7 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("auth");
       await user.click(currentCard());
-      // The drawer asks for the team's memory first; a slow machine takes
-      // longer over it than a find waits by default.
-      return screen.findByRole(
-        "region",
-        { name: "ORG_CHART$SPEC_TITLE" },
-        { timeout: 5000 },
-      );
+      return screen.findByRole("region", { name: "ORG_CHART$SPEC_TITLE" });
     }
 
     it("lets the team's spec and both sets of contracts be read", async () => {
