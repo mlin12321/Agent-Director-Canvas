@@ -84,6 +84,7 @@ const IC = {
   status: "idle",
   kind: "openhands" as const,
   acp_server: null,
+  model: null,
   reason: null,
   hand_over: null,
 };
@@ -120,6 +121,32 @@ const STOPPED = {
   reason: "Two hours on one schema.",
   running: [],
 };
+
+describe("settings that could not be read", () => {
+  it("says so on the button, and reads them when it is pressed", async () => {
+    let fails = true;
+    server.use(
+      http.get("*/api/director/settings", () =>
+        fails
+          ? HttpResponse.json({ detail: "Not now" }, { status: 500 })
+          : HttpResponse.json(STATE),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<OrgSettings />);
+
+    const retry = await screen.findByTestId("org-settings-retry");
+    expect(retry).toHaveAccessibleName("ORG_CHART$SETTINGS_LOAD_FAILED");
+
+    fails = false;
+    await user.click(retry);
+
+    expect(
+      await screen.findByRole("button", { name: "ORG_CHART$SETTINGS" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("org-settings-retry")).toBeNull();
+  });
+});
 
 describe("the checks in the settings", () => {
   it("shows the three checks and saves what is typed, 0 included", async () => {

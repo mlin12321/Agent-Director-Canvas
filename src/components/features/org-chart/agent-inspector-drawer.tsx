@@ -275,6 +275,15 @@ export function AgentInspectorDrawer({
                         t(I18nKey.ORG_CHART$EXTERNAL_AGENT)}
                     </span>
                   ) : null}
+                  {candidate.agent.model && !candidate.handOver ? (
+                    <span
+                      data-testid="org-agent-model"
+                      title={candidate.agent.model}
+                      className="max-w-40 truncate text-2xs text-text-secondary"
+                    >
+                      {candidate.agent.model}
+                    </span>
+                  ) : null}
                   <span
                     className={cn(
                       "shrink-0 text-xs",

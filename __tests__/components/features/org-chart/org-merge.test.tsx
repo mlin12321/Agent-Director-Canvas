@@ -84,6 +84,28 @@ describe("MergeConflicts", () => {
     expect(team).toHaveTextContent("ORG_CHART$MERGE_KEPT");
   });
 
+  it("says that the merge could not be read, and reads it when asked again", async () => {
+    let fails = true;
+    server.use(
+      http.get("*/api/director/org/merge", () =>
+        fails
+          ? HttpResponse.json({ detail: "Not now" }, { status: 500 })
+          : HttpResponse.json(MERGE),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<MergeConflicts />);
+
+    const unread = await screen.findByTestId("org-merge-unread");
+    expect(unread).toHaveTextContent("ORG_CHART$MERGE_LOAD_FAILED");
+
+    fails = false;
+    await user.click(within(unread).getByRole("button"));
+
+    expect(await conflict("team:apps.web")).toBeInTheDocument();
+    expect(screen.queryByTestId("org-merge-unread")).toBeNull();
+  });
+
   it("finishes only once every conflict has a side, with the sides chosen", async () => {
     const asked = mergeHandlers();
     const user = userEvent.setup();

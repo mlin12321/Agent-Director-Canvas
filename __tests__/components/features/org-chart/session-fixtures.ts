@@ -17,6 +17,7 @@ const DIVISION_LEAD_IC: AgentRef = {
   status: "idle",
   kind: "openhands",
   acp_server: null,
+  model: null,
   reason: null,
   hand_over: null,
 };

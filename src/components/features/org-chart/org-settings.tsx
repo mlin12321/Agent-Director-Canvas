@@ -396,6 +396,21 @@ export function OrgSettings() {
     retry: false,
     meta: { disableToast: true },
   });
+  if (settings.isError && !settings.data) {
+    // Without them there is no form to open: say so, and ask again.
+    return (
+      <button
+        type="button"
+        data-testid="org-settings-retry"
+        aria-label={t(I18nKey.ORG_CHART$SETTINGS_LOAD_FAILED)}
+        title={t(I18nKey.ORG_CHART$SETTINGS_LOAD_FAILED)}
+        onClick={() => settings.refetch()}
+        className="flex size-8 items-center justify-center rounded-lg border border-feedback-error text-feedback-error hover:bg-surface-raised"
+      >
+        <Settings width={14} height={14} aria-hidden="true" />
+      </button>
+    );
+  }
   if (!settings.data) return null;
 
   return (
@@ -415,16 +430,7 @@ export function OrgSettings() {
       </button>
       {isOpen ? (
         <SettingsForm
-          key={[
-            settings.data.max_teams,
-            settings.data.max_depth,
-            ...settings.data.allowed_profiles,
-            settings.data.resume_on_start,
-            settings.data.stall_check_minutes,
-            settings.data.manager_check_accepted_reviews,
-            settings.data.manager_check_ic_setbacks,
-            settings.data.route_requests,
-          ].join(":")}
+          key={JSON.stringify(settings.data)}
           state={settings.data}
           onClose={() => setIsOpen(false)}
         />
