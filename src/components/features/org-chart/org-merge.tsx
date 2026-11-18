@@ -80,12 +80,13 @@ export function MergeConflicts() {
   const { t } = useTranslation("openhands");
   const { backend } = useActiveBackend();
   const queryClient = useQueryClient();
-  const merge = useQuery({
+  const read = useQuery({
     queryKey: DIRECTOR_QUERY_KEYS.merge(backend.id),
     queryFn: () => DirectorClient.getMerge(),
     retry: false,
     meta: { disableToast: true },
-  }).data;
+  });
+  const merge = read.data;
   const [choices, setChoices] = React.useState<Record<string, Side>>({});
   const settle = useMutation({
     mutationFn: (finish: boolean) =>
@@ -96,6 +97,25 @@ export function MergeConflicts() {
     meta: { disableToast: true },
   });
 
+  if (read.isError && !merge) {
+    // A merge waits and cannot be shown: say so, and ask again.
+    return (
+      <p
+        role="alert"
+        data-testid="org-merge-unread"
+        className="rounded-lg border border-feedback-error px-3 py-2 text-xs text-feedback-error"
+      >
+        {t(I18nKey.ORG_CHART$MERGE_LOAD_FAILED)}{" "}
+        <button
+          type="button"
+          onClick={() => read.refetch()}
+          className="underline hover:text-contrast"
+        >
+          {t(I18nKey.CHAT_INTERFACE$MESSAGE_RETRY)}
+        </button>
+      </p>
+    );
+  }
   if (!merge) return null;
   const conflicts = merge.conflicts.filter((each) => each.choice === null);
   const chooseAll = (side: Side) =>

@@ -1,4 +1,5 @@
 import { ORG_REFRESH_MS, orgNodePath } from "#/constants/org-chart";
+import React from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { DirectorClient } from "#/api/director/director-client";
@@ -12,6 +13,7 @@ import { NavigationLink } from "#/components/shared/navigation-link";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { I18nKey } from "#/i18n/declaration";
+import { AcceptedChanges } from "./accepted-changes";
 import { CollapsibleSection } from "./collapsible-section";
 import { SessionMark } from "./org-sessions";
 
@@ -109,6 +111,8 @@ function HistoryEvents({ nodes }: { nodes: ReadonlyMap<NodeId, OrgNode> }) {
     meta: { disableToast: true },
   });
   const events = history.data?.pages.flatMap((page) => page.events) ?? [];
+  // The accept whose files are shown, by the event's key.
+  const [shown, setShown] = React.useState<string | null>(null);
 
   return (
     <>
@@ -128,9 +132,18 @@ function HistoryEvents({ nodes }: { nodes: ReadonlyMap<NodeId, OrgNode> }) {
           // under.
           const id = event.team_id || event.above_id;
           const name = event.team || event.above;
+          const key = `${event.above_id} ${event.at} ${event.kind} ${event.team_id ?? ""} ${event.detail ?? ""}`;
+          const accepted =
+            event.kind === "accepted" && event.base && event.head
+              ? {
+                  base: event.base,
+                  head: event.head,
+                  path: event.paths?.[0] ?? "",
+                }
+              : null;
           return (
             <li
-              key={`${event.above_id} ${event.at} ${event.kind} ${event.team_id ?? ""} ${event.detail ?? ""}`}
+              key={key}
               className="flex flex-wrap items-baseline gap-x-2 text-xs text-text-secondary"
             >
               <time dateTime={event.at} className="text-muted">
@@ -154,6 +167,22 @@ function HistoryEvents({ nodes }: { nodes: ReadonlyMap<NodeId, OrgNode> }) {
                 <span className="text-feedback-warning">
                   {t(I18nKey.ORG_CHART$EVENT_UNACCEPTED)}
                 </span>
+              ) : null}
+              {accepted ? (
+                <button
+                  type="button"
+                  data-testid="org-history-files"
+                  aria-expanded={shown === key}
+                  onClick={() =>
+                    setShown((open) => (open === key ? null : key))
+                  }
+                  className="underline hover:text-contrast"
+                >
+                  {t(I18nKey.ORG_CHART$ACCEPTED_FILES)}
+                </button>
+              ) : null}
+              {accepted && shown === key ? (
+                <AcceptedChanges accepted={accepted} />
               ) : null}
             </li>
           );

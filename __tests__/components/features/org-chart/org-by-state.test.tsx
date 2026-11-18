@@ -30,6 +30,7 @@ function work(status: NodeStatus, given: Given = {}): TeamWork {
               status: "idle",
               kind: "openhands",
               acp_server: null,
+              model: null,
               reason: null,
               hand_over: null,
             },

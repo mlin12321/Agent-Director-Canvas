@@ -88,6 +88,7 @@ const REFUNDS: SessionTeam = placeAt(
         status: "idle",
         kind: "openhands",
         acp_server: null,
+        model: null,
         reason: null,
         hand_over: null,
       },
@@ -129,6 +130,7 @@ const ic = (conversationId: string | null, status = "idle") => ({
   status,
   kind: "openhands" as const,
   acp_server: null,
+  model: null,
   reason: null,
   hand_over: null,
 });
@@ -317,6 +319,26 @@ describe("AgentInspectorDrawer", () => {
     await user.click(release);
     expect(refunds).toHaveAttribute("aria-pressed", "false");
     expect(release).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("says which model an agent runs on, where the director knows it", () => {
+    memoryHandlers();
+    const onModel = sessionOf("m1", "Models", [
+      placeAt(API, "m1", {
+        agents: [{ ...ic("c9"), model: "openai/gpt-5.2" }],
+      }),
+      leadPlaceAt(ROOT, "m1", { agents: [ic("review-m1")] }),
+    ]);
+    drawer(API, [onModel, REFUNDS_REVIEWED]);
+
+    const rows = within(
+      screen.getByTestId("org-node-conversations"),
+    ).getAllByRole("button");
+    expect(within(rows[0]).getByTestId("org-agent-model")).toHaveTextContent(
+      "openai/gpt-5.2",
+    );
+    // Refunds' agent has none: nothing is shown for it.
+    expect(within(rows[1]).queryByTestId("org-agent-model")).toBeNull();
   });
 
   it("shows what waits of a session's work for each of its two Division Leads, with what was decided, and lists both", () => {
