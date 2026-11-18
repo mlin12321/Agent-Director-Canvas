@@ -28,31 +28,32 @@ const DIRECTOR_SCALE = {
 
 const DIRECTOR_TOKENS: Partial<Record<AgentServerUICssVariableName, string>> = {
   ...LIGHT_PLUS_TOKENS,
-  // White first: the page and every panel, the terminal's included.
+  // White first: the page, and what opens over it.
   "--oh-color-base": PAGE,
   "--oh-background": PAGE,
-  "--oh-surface": PAGE,
   "--oh-overlay": PAGE,
   "--oh-bg-workspace": PAGE,
-  // Light gray marks an area within a panel. The grays stay close to the
-  // page so that outlines can be soft and still stand apart from them.
+  // A panel is a light gray, so that it stands apart from the page the way
+  // it does in the dark palettes. Each further gray marks an area within
+  // the one before it.
+  "--oh-surface": "#F4F4F4",
   "--oh-color-base-secondary": "#F7F7F7",
-  "--oh-surface-raised": "#F7F7F7",
-  "--oh-surface-deep": "#F7F7F7",
-  "--oh-color-tertiary": "#F2F2F2",
-  "--oh-interactive-hover": "#E0E0E0",
-  "--oh-interactive-hover-low": "#EBEBEB",
-  "--oh-interactive-active": "#E6E6E6",
-  "--oh-segment": "#F7F7F7",
-  "--oh-bg-light": "#F7F7F7",
-  "--oh-bg-editor-sidebar": "#F7F7F7",
-  "--oh-bg-editor-active": "#F2F2F2",
-  "--oh-default": "#EBEBEB",
+  "--oh-surface-raised": "#E9E9E9",
+  "--oh-surface-deep": "#EDEDED",
+  "--oh-color-tertiary": "#E9E9E9",
+  "--oh-interactive-hover": "#D9D9D9",
+  "--oh-interactive-hover-low": "#E4E4E4",
+  "--oh-interactive-active": "#DEDEDE",
+  "--oh-segment": "#E9E9E9",
+  "--oh-bg-light": "#F4F4F4",
+  "--oh-bg-editor-sidebar": "#F4F4F4",
+  "--oh-bg-editor-active": "#E9E9E9",
+  "--oh-default": "#E4E4E4",
   // Outlines are gray, never ink: black is for text alone.
-  "--oh-border": "#D6D6D6",
-  "--oh-border-subtle": "#E3E3E3",
-  "--oh-border-input": "#898989",
-  "--oh-border-editor-sidebar": "#D6D6D6",
+  "--oh-border": "#CFCFCF",
+  "--oh-border-subtle": "#DCDCDC",
+  "--oh-border-input": "#808080",
+  "--oh-border-editor-sidebar": "#CFCFCF",
   "--oh-separator": "rgba(0, 0, 0, 0.12)",
   // Black second: text.
   "--oh-foreground": INK,
