@@ -32,25 +32,24 @@ describe("fitFocusedChart", () => {
     expect(fitFocusedChart(team(3), vast)).toEqual({ columns: 3, scale: 1.6 });
   });
 
-  it("shrinks a team that does not fit at its own size", () => {
+  it("does not shrink a team that does not fit at its own size: it scrolls", () => {
     const tight = fitFocusedChart(team(15), { width: 700, height: 250 });
 
-    expect(tight.scale).toBeLessThan(1);
-    expect(tight.scale).toBeGreaterThanOrEqual(0.4);
+    // As many to a row as fit across at its own size.
+    expect(tight).toEqual({ columns: 4, scale: 1 });
   });
 
-  it("shrinks a team without reports to a space smaller than its card", () => {
+  it("does not shrink a team without reports in a space smaller than its card", () => {
     expect(
       fitFocusedChart(team(0, false, false), { width: 80, height: 500 }),
-    ).toEqual({ columns: 1, scale: 0.5 });
+    ).toEqual({ columns: 1, scale: 1 });
   });
 
-  it("stops shrinking while names are readable and lets the chart scroll", () => {
+  it("keeps a very large team at its own size and lets the chart scroll", () => {
     const fit = fitFocusedChart(team(1000, true), ROOMY);
 
-    expect(fit.scale).toBe(0.4);
-    // As many to a row as fit across at that scale.
-    expect(fit.columns).toBe(15);
+    expect(fit.scale).toBe(1);
+    expect(fit.columns).toBe(6);
   });
 
   it("does not zoom until the space is known", () => {

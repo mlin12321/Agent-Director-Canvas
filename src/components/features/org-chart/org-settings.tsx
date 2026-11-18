@@ -25,7 +25,7 @@ const DEFAULTS = {
   manager_check_ic_setbacks: 3,
   route_requests: true,
   report_compaction_chars: 24_000,
-  session_token_limit: 0,
+  session_cost_limit: 0,
   max_open_sessions: 0,
 };
 // The least the director takes for the length reports are kept at.
@@ -37,6 +37,12 @@ function whole(text: string, least: number) {
   return text.trim() !== "" && Number.isInteger(value) && value >= least;
 }
 
+/** An amount of money: any number from 0. */
+function amount(text: string) {
+  const value = Number(text);
+  return text.trim() !== "" && Number.isFinite(value) && value >= 0;
+}
+
 function CountField({
   label,
   help,
@@ -44,6 +50,7 @@ function CountField({
   disabled,
   onChange,
   least = 0,
+  step = 1,
 }: {
   label: string;
   help: string;
@@ -51,6 +58,7 @@ function CountField({
   disabled: boolean;
   onChange: (value: string) => void;
   least?: number;
+  step?: number;
 }) {
   return (
     <label className="flex flex-col gap-2 text-sm">
@@ -58,7 +66,7 @@ function CountField({
       <input
         type="number"
         min={least}
-        step={1}
+        step={step}
         required
         value={value}
         disabled={disabled}
@@ -96,7 +104,7 @@ function SettingsForm({
     String(state.manager_check_ic_setbacks),
   );
   // 0: no limit.
-  const [tokens, setTokens] = React.useState(String(state.session_token_limit));
+  const [cost, setCost] = React.useState(String(state.session_cost_limit));
   const [most, setMost] = React.useState(String(state.max_open_sessions));
   const [compaction, setCompaction] = React.useState(
     String(state.report_compaction_chars),
@@ -121,7 +129,7 @@ function SettingsForm({
         manager_check_accepted_reviews: Number(reviews),
         manager_check_ic_setbacks: Number(setbacks),
         route_requests: routes,
-        session_token_limit: Number(tokens),
+        session_cost_limit: Number(cost),
         max_open_sessions: Number(most),
         report_compaction_chars: Number(compaction),
       }),
@@ -135,7 +143,8 @@ function SettingsForm({
     whole(size, 1) &&
     whole(depth, 1) &&
     whole(compaction, LEAST_COMPACTION) &&
-    [stall, reviews, setbacks, tokens, most].every((count) => whole(count, 0));
+    amount(cost) &&
+    [stall, reviews, setbacks, most].every((count) => whole(count, 0));
 
   return (
     <ModalBackdrop
@@ -296,11 +305,12 @@ function SettingsForm({
             onChange={setSetbacks}
           />
           <CountField
-            label={t(I18nKey.ORG_CHART$SETTINGS_SESSION_TOKENS)}
-            help={t(I18nKey.ORG_CHART$SETTINGS_SESSION_TOKENS_HELP)}
-            value={tokens}
+            label={t(I18nKey.ORG_CHART$SETTINGS_SESSION_COST)}
+            help={t(I18nKey.ORG_CHART$SETTINGS_SESSION_COST_HELP)}
+            value={cost}
             disabled={save.isPending}
-            onChange={setTokens}
+            onChange={setCost}
+            step={0.01}
           />
           <CountField
             label={t(I18nKey.ORG_CHART$SETTINGS_MAX_SESSIONS)}
@@ -344,7 +354,7 @@ function SettingsForm({
                 setStall(String(DEFAULTS.stall_check_minutes));
                 setReviews(String(DEFAULTS.manager_check_accepted_reviews));
                 setSetbacks(String(DEFAULTS.manager_check_ic_setbacks));
-                setTokens(String(DEFAULTS.session_token_limit));
+                setCost(String(DEFAULTS.session_cost_limit));
                 setMost(String(DEFAULTS.max_open_sessions));
                 setCompaction(String(DEFAULTS.report_compaction_chars));
               }}

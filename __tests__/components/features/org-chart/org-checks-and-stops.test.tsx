@@ -35,7 +35,7 @@ const STATE: DirectorSettingsState = {
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
-  session_token_limit: 0,
+  session_cost_limit: 0,
   max_open_sessions: 0,
 };
 
@@ -162,7 +162,7 @@ describe("the checks in the settings", () => {
         manager_check_accepted_reviews: 5,
         manager_check_ic_setbacks: 0,
         route_requests: true,
-        session_token_limit: 0,
+        session_cost_limit: 0,
         max_open_sessions: 0,
         report_compaction_chars: 24000,
       },
@@ -176,7 +176,7 @@ describe("the checks in the settings", () => {
     const modal = await openSettings(user);
 
     const tokens = within(modal).getByLabelText(
-      /ORG_CHART\$SETTINGS_SESSION_TOKENS/,
+      /ORG_CHART\$SETTINGS_SESSION_COST/,
     );
     const most = within(modal).getByLabelText(
       /ORG_CHART\$SETTINGS_MAX_SESSIONS/,
@@ -198,7 +198,7 @@ describe("the checks in the settings", () => {
     await user.clear(length);
     await user.type(length, "12000");
     await user.clear(tokens);
-    await user.type(tokens, "2000000");
+    await user.type(tokens, "7.5");
     await user.clear(most);
     await user.type(most, "3");
     await user.click(
@@ -209,7 +209,7 @@ describe("the checks in the settings", () => {
       expect(screen.queryByTestId("org-settings-modal")).toBeNull(),
     );
     expect(saved[0]).toMatchObject({
-      session_token_limit: 2000000,
+      session_cost_limit: 7.5,
       max_open_sessions: 3,
       report_compaction_chars: 12000,
     });
@@ -239,7 +239,7 @@ describe("the checks in the settings", () => {
       manager_check_accepted_reviews: 2,
       manager_check_ic_setbacks: 0,
       route_requests: true,
-      session_token_limit: 0,
+      session_cost_limit: 0,
       max_open_sessions: 0,
       report_compaction_chars: 24000,
     });

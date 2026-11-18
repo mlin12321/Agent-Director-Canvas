@@ -30,8 +30,8 @@ const UP_MARKER = 40;
 const TEAM_TO_REPORTS = 29;
 const DOWN_MARKER = 24;
 
-/** Below this the names stop being readable; the chart scrolls instead. */
-const MIN_SCALE = 0.4;
+/** The chart is never drawn smaller than it is; it scrolls instead. */
+const MIN_SCALE = 1;
 /** A small team is enlarged up to this, not until it fills the space. */
 const MAX_SCALE = 1.6;
 
@@ -59,7 +59,14 @@ export function fitFocusedChart(
     return {
       columns: Math.max(1, count),
       scale: known
-        ? Math.min(MAX_SCALE, space.width / CARD_WIDTH, space.height / height)
+        ? Math.max(
+            MIN_SCALE,
+            Math.min(
+              MAX_SCALE,
+              space.width / CARD_WIDTH,
+              space.height / height,
+            ),
+          )
         : 1,
     };
   }

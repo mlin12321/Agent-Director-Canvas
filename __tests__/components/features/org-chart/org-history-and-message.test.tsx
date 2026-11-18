@@ -84,7 +84,7 @@ describe("OrgHistoryPanel", () => {
       }),
     );
     const user = userEvent.setup();
-    renderWithProviders(<OrgHistoryPanel nodes={NODES} />);
+    renderWithProviders(<OrgHistoryPanel startsOpen nodes={NODES} />);
 
     const panel = await screen.findByTestId("org-history");
     const lines = await within(panel).findAllByRole("listitem");
@@ -125,7 +125,9 @@ describe("OrgHistoryPanel", () => {
         HttpResponse.json({ events: [], earlier: false }),
       ),
     );
-    const { unmount } = renderWithProviders(<OrgHistoryPanel nodes={NODES} />);
+    const { unmount } = renderWithProviders(
+      <OrgHistoryPanel startsOpen nodes={NODES} />,
+    );
     expect(
       await screen.findByText("ORG_CHART$HISTORY_EMPTY"),
     ).toBeInTheDocument();
@@ -136,10 +138,33 @@ describe("OrgHistoryPanel", () => {
         HttpResponse.json({ detail: "no memory" }, { status: 503 }),
       ),
     );
-    renderWithProviders(<OrgHistoryPanel nodes={NODES} />);
+    renderWithProviders(<OrgHistoryPanel startsOpen nodes={NODES} />);
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "ORG_CHART$HISTORY_ERROR",
     );
+  });
+
+  it("is closed until it is opened, and asks for nothing while closed", async () => {
+    let asked = 0;
+    server.use(
+      http.get("*/api/director/org/history", () => {
+        asked += 1;
+        return HttpResponse.json({ events: [], earlier: false });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<OrgHistoryPanel nodes={NODES} />);
+
+    const toggle = screen.getByTestId("org-history-toggle");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(asked).toBe(0);
+
+    await user.click(toggle);
+
+    expect(
+      await screen.findByText("ORG_CHART$HISTORY_EMPTY"),
+    ).toBeInTheDocument();
+    expect(asked).toBe(1);
   });
 });
 

@@ -1,6 +1,5 @@
 import { ORG_REFRESH_MS, orgNodePath } from "#/constants/org-chart";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { History } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DirectorClient } from "#/api/director/director-client";
 import type {
@@ -13,6 +12,7 @@ import { NavigationLink } from "#/components/shared/navigation-link";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { I18nKey } from "#/i18n/declaration";
+import { CollapsibleSection } from "./collapsible-section";
 import { SessionMark } from "./org-sessions";
 
 const PAGE = 50;
@@ -71,28 +71,6 @@ function EventWords({ event }: { event: HistoryEvent }) {
 }
 
 /** Opens and closes the history of the org. */
-export function HistoryButton({
-  open,
-  onToggle,
-}: {
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const { t } = useTranslation("openhands");
-  return (
-    <button
-      type="button"
-      data-testid="org-history-button"
-      aria-expanded={open}
-      onClick={onToggle}
-      className="flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs text-text-secondary hover:bg-surface-raised hover:text-contrast"
-    >
-      <History width={12} height={12} aria-hidden="true" />
-      {t(I18nKey.ORG_CHART$HISTORY_OPEN)}
-    </button>
-  );
-}
-
 /**
  * What became of every team of the org, newest first: one list across all
  * teams, read further back on request. A team that is still there links to
@@ -100,9 +78,25 @@ export function HistoryButton({
  */
 export function OrgHistoryPanel({
   nodes,
+  startsOpen = false,
 }: {
   nodes: ReadonlyMap<NodeId, OrgNode>;
+  startsOpen?: boolean;
 }) {
+  const { t } = useTranslation("openhands");
+  return (
+    <CollapsibleSection
+      title={t(I18nKey.ORG_CHART$HISTORY_TITLE)}
+      testId="org-history"
+      startsOpen={startsOpen}
+      bodyClassName="max-h-64 overflow-y-auto"
+    >
+      <HistoryEvents nodes={nodes} />
+    </CollapsibleSection>
+  );
+}
+
+function HistoryEvents({ nodes }: { nodes: ReadonlyMap<NodeId, OrgNode> }) {
   const { t } = useTranslation("openhands");
   const { backend } = useActiveBackend();
   const history = useInfiniteQuery({
@@ -117,14 +111,7 @@ export function OrgHistoryPanel({
   const events = history.data?.pages.flatMap((page) => page.events) ?? [];
 
   return (
-    <section
-      data-testid="org-history"
-      aria-label={t(I18nKey.ORG_CHART$HISTORY_TITLE)}
-      className="flex max-h-64 flex-col gap-2 overflow-y-auto rounded-xl border border-border p-3"
-    >
-      <h3 className="text-xs font-medium text-contrast">
-        {t(I18nKey.ORG_CHART$HISTORY_TITLE)}
-      </h3>
+    <>
       {history.isError ? (
         <p role="alert" className="text-xs text-feedback-error">
           {t(I18nKey.ORG_CHART$HISTORY_ERROR)}
@@ -182,6 +169,6 @@ export function OrgHistoryPanel({
           {t(I18nKey.ORG_CHART$HISTORY_EARLIER)}
         </button>
       ) : null}
-    </section>
+    </>
   );
 }
