@@ -237,7 +237,32 @@ beforeEach(() => {
   server.use(streamHandler());
 });
 
-afterEach(() => {
+const seen: string[] = [];
+const note = (what: string) => (args: { request: Request }) => {
+  seen.push(
+    `${Math.round(performance.now())} ${what} ${args.request.method} ${new URL(args.request.url).pathname}`,
+  );
+};
+beforeAll(() => {
+  server.events.on("request:start", note("start"));
+  server.events.on("request:match", note("match"));
+  server.events.on("request:unhandled", note("UNHANDLED"));
+  server.events.on("response:bypass", note("bypass"));
+});
+beforeEach(() => {
+  seen.length = 0;
+  seen.push(`${Math.round(performance.now())} begin`);
+});
+
+afterEach((context) => {
+  if (context.task.result?.state === "fail") {
+    // eslint-disable-next-line no-console
+    console.error(
+      `FLAKE ${context.task.name}\n${seen.join("\n")}\nERROR ${String(
+        context.task.result.errors?.[0]?.message,
+      ).slice(0, 2500)}`,
+    );
+  }
   vi.restoreAllMocks();
   // Unmount first: a chart still on the page takes a closed stream for a
   // lost server and asks for a new one, which then belongs to no test.
