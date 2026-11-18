@@ -61,6 +61,12 @@ import {
 import { OpenLauncherButton } from "./open-launcher-button";
 import { OpenWorkspaceDialog } from "./open-workspace-dialog";
 import { useOpenFolderRequestStore } from "#/stores/open-folder-request-store";
+import {
+  DEFAULT_PREPARE_COMMAND,
+  prepareFolder,
+} from "#/api/director/prepare-folder";
+import { useFolderNeedsGit } from "#/hooks/query/use-folder-needs-git";
+import { PrepareFolderCommand } from "./prepare-folder-command";
 import { OpenRepositoryDialog } from "./open-repository-dialog";
 import { HomeGitControlBarPreview } from "./home-git-control-bar-preview";
 
@@ -88,12 +94,23 @@ export function HomeChatLauncher() {
   const isLocal = backend.kind === "local";
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  // Another page sent the human here to choose a folder.
+  // The org page sent the human here to choose the folder an org starts in.
+  const [forOrg, setForOrg] = useState(false);
   useEffect(() => {
-    if (useOpenFolderRequestStore.getState().take()) setIsDialogOpen(true);
+    if (!useOpenFolderRequestStore.getState().take()) return;
+    setIsDialogOpen(true);
+    setForOrg(true);
   }, []);
   const [pendingWorkspace, setPendingWorkspace] =
     useState<LocalWorkspace | null>(null);
+  // Null once the human removed the command.
+  const [prepareCommand, setPrepareCommand] = useState<string | null>(
+    DEFAULT_PREPARE_COMMAND,
+  );
+  const folderNeedsGit = useFolderNeedsGit(
+    forOrg && isLocal && pendingWorkspace ? pendingWorkspace.path : null,
+  );
+  const offersPrepare = folderNeedsGit && prepareCommand !== null;
   const {
     selection: repositorySelection,
     setSelection: setRepositorySelection,
@@ -310,6 +327,18 @@ export function HomeChatLauncher() {
       let isCreated = false;
       let createdTarget: string | null = null;
       try {
+        const prepare = offersPrepare ? prepareCommand.trim() : "";
+        if (prepare && variables.workingDir) {
+          try {
+            await prepareFolder(variables.workingDir, prepare);
+          } catch (error) {
+            throw new Error(
+              t(I18nKey.HOME$PREPARE_FOLDER_FAILED, {
+                reason: error instanceof Error ? error.message : "",
+              }),
+            );
+          }
+        }
         const data = await createConversation(variables);
         isCreated = true;
         if (suppressRouterAtStart) {
@@ -527,6 +556,14 @@ export function HomeChatLauncher() {
           />
         </div>
 
+        {!activeLaunch && offersPrepare && !isolated && (
+          <PrepareFolderCommand
+            command={prepareCommand}
+            onChange={setPrepareCommand}
+            onRemove={() => setPrepareCommand(null)}
+          />
+        )}
+
         {!activeLaunch && isolated && (
           <p role="status" className="text-xs text-text-secondary">
             {pendingWorkspace
@@ -619,7 +656,10 @@ export function HomeChatLauncher() {
         <OpenWorkspaceDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
-          onConfirm={setPendingWorkspace}
+          onConfirm={(workspace) => {
+            setPendingWorkspace(workspace);
+            setPrepareCommand(DEFAULT_PREPARE_COMMAND);
+          }}
         />
       ) : (
         <OpenRepositoryDialog
