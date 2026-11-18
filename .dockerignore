@@ -36,4 +36,6 @@ Thumbs.db
 # Misc
 artifacts/
 *.tgz
+# The SDK's typed client is installed from its packed build.
+!vendor/*.tgz
 *.log

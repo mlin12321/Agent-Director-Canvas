@@ -31,6 +31,8 @@ WORKDIR /build
 
 # Cache-friendly: package files first
 COPY package.json package-lock.json ./
+# package.json installs the SDK's typed client from this folder.
+COPY vendor ./vendor
 RUN npm ci
 
 # Copy everything needed for the build
