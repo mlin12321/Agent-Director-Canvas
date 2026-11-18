@@ -127,7 +127,7 @@ export function AgentInspectorDrawer({
     <aside
       role="dialog"
       aria-labelledby={titleId}
-      className="flex h-full w-1/2 max-w-2xl shrink-0 flex-col border-l border-border bg-surface"
+      className="flex h-full w-1/2 max-w-2xl shrink-0 flex-col border-l border-border bg-background"
     >
       <div className="flex items-center justify-between gap-2 border-b border-border p-3">
         <h2
