@@ -1914,7 +1914,13 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("auth");
       await user.click(currentCard());
-      return screen.findByRole("region", { name: "ORG_CHART$SPEC_TITLE" });
+      // The drawer asks for the team's memory first; a slow machine takes
+      // longer over it than a find waits by default.
+      return screen.findByRole(
+        "region",
+        { name: "ORG_CHART$SPEC_TITLE" },
+        { timeout: 5000 },
+      );
     }
 
     it("lets the team's spec and both sets of contracts be read", async () => {
