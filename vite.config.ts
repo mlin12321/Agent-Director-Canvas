@@ -545,6 +545,11 @@ export default defineConfig(({ mode }) => {
       // production behavior.
       testTimeout: 30000,
       hookTimeout: 30000,
+      // On CI's runners a request now and then is not answered by the mock
+      // server and a test fails that passes when run again. A test is tried
+      // up to three times there, as Playwright's are; never on a developer's
+      // machine, where a failure should be seen at once.
+      retry: process.env.CI ? 2 : 0,
       // Tests that group or print times by day assume UTC, as CI runs in.
       // Without this they fail on a machine in another time zone.
       env: { TZ: "UTC" },
