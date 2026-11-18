@@ -263,7 +263,7 @@ beforeAll(() => {
       },
       (error) => {
         seen.push(
-          `${Math.round(performance.now())} THREW ${String(error)} ${url.replace(/^https?:\/\/[^/]+/, "")}`,
+          `${Math.round(performance.now())} THREW ${String(error)} CAUSE ${String((error as Error).cause)} ${String(((error as Error).cause as Error)?.stack).slice(0, 1500)} STACK ${String((error as Error).stack).slice(0, 1200)} ${url.replace(/^https?:\/\/[^/]+/, "")}`,
         );
         throw error;
       },
