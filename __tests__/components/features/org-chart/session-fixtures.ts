@@ -81,8 +81,8 @@ export function sessionOf(
     request: "",
     opened_at: "2026-11-01T10:00:00+00:00",
     branch: "main",
-    usage: { input_tokens: 0, output_tokens: 0, cost: 0 },
-    token_allowance: 0,
+    usage: { input_tokens: 0, output_tokens: 0, cost: 0, unpriced_tokens: 0 },
+    cost_allowance: 0,
     status: opened.status,
     review: opened.review?.state ?? null,
     conversation_id:

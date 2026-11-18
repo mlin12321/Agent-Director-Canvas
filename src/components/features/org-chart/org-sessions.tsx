@@ -12,6 +12,7 @@ import type {
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { orgNodePath } from "#/constants/org-chart";
 import { I18nKey } from "#/i18n/declaration";
+import { CollapsibleSection } from "./collapsible-section";
 import { teamWork, workPlacesAt, type TeamWork } from "./team-places";
 import { StatusBadge } from "./status-badge";
 
@@ -77,29 +78,6 @@ export function SessionMark({ title }: { title: string }) {
   );
 }
 
-/** Opens and closes the list of sessions. */
-export function SessionsButton({
-  open,
-  onToggle,
-}: {
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const { t } = useTranslation("openhands");
-  return (
-    <button
-      type="button"
-      data-testid="org-sessions-button"
-      aria-expanded={open}
-      onClick={onToggle}
-      className="flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs text-text-secondary hover:bg-surface-raised hover:text-contrast"
-    >
-      <GitBranch width={12} height={12} aria-hidden="true" />
-      {t(I18nKey.ORG_CHART$SESSIONS_OPEN)}
-    </button>
-  );
-}
-
 function tokensOf(session: Session): number {
   return session.usage.input_tokens + session.usage.output_tokens;
 }
@@ -116,22 +94,39 @@ function dollars(cost: number): string {
   return "$" + cost.toFixed(2);
 }
 
-/** What a session's agents have used, of what it may use where it is limited. */
+/**
+ * What a session has cost, of what it may cost where it is limited, with the
+ * tokens beside it. Tokens of a model without a price are in no cost, and
+ * are said apart.
+ */
 function SessionUse({ session }: { session: Session }) {
   const { t, i18n } = useTranslation("openhands");
   const used = tokensOf(session);
-  if (used === 0 && session.token_allowance === 0) return null;
+  const { cost, unpriced_tokens: unpriced } = session.usage;
+  if (used === 0 && session.cost_allowance === 0) return null;
   return (
     <span data-testid={"org-session-use-" + session.id}>
-      {session.token_allowance > 0
-        ? t(I18nKey.ORG_CHART$SESSION_USE_OF, {
-            used: compact(used, i18n.language),
-            limit: compact(session.token_allowance, i18n.language),
+      {session.cost_allowance > 0
+        ? t(I18nKey.ORG_CHART$SESSION_COST_OF, {
+            used: dollars(cost),
+            limit: dollars(session.cost_allowance),
           })
-        : t(I18nKey.ORG_CHART$SESSIONS_USE, {
-            used: compact(used, i18n.language),
+        : dollars(cost)}
+      {" · "}
+      {t(I18nKey.ORG_CHART$SESSIONS_USE, {
+        used: compact(used, i18n.language),
+      })}
+      {unpriced > 0 ? (
+        <span
+          data-testid={"org-session-unpriced-" + session.id}
+          className="text-feedback-warning"
+        >
+          {" · "}
+          {t(I18nKey.ORG_CHART$SESSION_UNPRICED, {
+            count: compact(unpriced, i18n.language),
           })}
-      {session.usage.cost > 0 ? " · " + dollars(session.usage.cost) : null}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -244,9 +239,11 @@ function SessionRow({
 export function OrgSessionsPanel({
   sessions,
   nodes,
+  startsOpen = false,
 }: {
   sessions: readonly Session[];
   nodes: ReadonlyMap<NodeId, OrgNode>;
+  startsOpen?: boolean;
 }) {
   const { t, i18n } = useTranslation("openhands");
   const total = sessions.reduce(
@@ -258,25 +255,33 @@ export function OrgSessionsPanel({
   );
 
   return (
-    <section
-      data-testid="org-sessions"
-      aria-label={t(I18nKey.ORG_CHART$SESSIONS_OPEN)}
-      className="flex max-h-64 flex-col gap-2 overflow-y-auto rounded-xl border border-border p-3"
+    <CollapsibleSection
+      title={t(I18nKey.ORG_CHART$SESSIONS_OPEN)}
+      testId="org-sessions"
+      startsOpen={startsOpen}
+      bodyClassName="max-h-64 overflow-y-auto"
+      summary={
+        <>
+          {sessions.length > 0 ? (
+            <span className="rounded-full bg-surface-raised px-1.5 text-xs font-normal text-text-secondary">
+              {sessions.length}
+            </span>
+          ) : null}
+          {total.tokens > 0 ? (
+            <span
+              data-testid="org-sessions-use"
+              className="text-xs font-normal text-text-secondary"
+            >
+              {dollars(total.cost)}
+              {" · "}
+              {t(I18nKey.ORG_CHART$SESSIONS_USE, {
+                used: compact(total.tokens, i18n.language),
+              })}
+            </span>
+          ) : null}
+        </>
+      }
     >
-      <h3 className="flex flex-wrap items-baseline gap-x-3 text-xs font-medium text-contrast">
-        {t(I18nKey.ORG_CHART$SESSIONS_OPEN)}
-        {total.tokens > 0 ? (
-          <span
-            data-testid="org-sessions-use"
-            className="font-normal text-text-secondary"
-          >
-            {t(I18nKey.ORG_CHART$SESSIONS_USE, {
-              used: compact(total.tokens, i18n.language),
-            })}
-            {total.cost > 0 ? ` · ${dollars(total.cost)}` : null}
-          </span>
-        ) : null}
-      </h3>
       {sessions.length === 0 ? (
         <p className="text-xs text-muted">
           {t(I18nKey.ORG_CHART$SESSIONS_EMPTY)}
@@ -287,6 +292,6 @@ export function OrgSessionsPanel({
           <SessionRow key={session.id} session={session} nodes={nodes} />
         ))}
       </ul>
-    </section>
+    </CollapsibleSection>
   );
 }

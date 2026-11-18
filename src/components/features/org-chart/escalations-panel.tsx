@@ -10,6 +10,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { ESCALATION_LABEL_KEYS } from "./org-chart-presentation";
 import { SessionMark } from "./org-sessions";
+import { CollapsibleSection } from "./collapsible-section";
 
 interface EscalationsPanelProps {
   /** In the server's order: critical issues first, then longest waiting. */
@@ -134,18 +135,20 @@ function EscalationCard({ item }: { item: OpenEscalation }) {
  */
 export function EscalationsPanel({ escalations }: EscalationsPanelProps) {
   const { t } = useTranslation("openhands");
-  const title = t(I18nKey.ORG_CHART$ESCALATIONS);
 
   return (
-    <section aria-label={title} className="flex flex-col gap-2">
-      <h2 className="flex items-center gap-2 text-sm font-medium text-contrast">
-        {title}
-        {escalations.length > 0 ? (
-          <span className="rounded-full bg-surface-raised px-1.5 text-xs text-text-secondary">
+    <CollapsibleSection
+      title={t(I18nKey.ORG_CHART$ESCALATIONS)}
+      testId="org-escalations"
+      startsOpen
+      summary={
+        escalations.length > 0 ? (
+          <span className="rounded-full bg-surface-raised px-1.5 text-xs font-normal text-text-secondary">
             {escalations.length}
           </span>
-        ) : null}
-      </h2>
+        ) : null
+      }
+    >
       {escalations.length === 0 ? (
         <p className="text-sm text-muted">
           {t(I18nKey.ORG_CHART$ESCALATIONS_EMPTY)}
@@ -160,6 +163,6 @@ export function EscalationsPanel({ escalations }: EscalationsPanelProps) {
           ))}
         </ul>
       )}
-    </section>
+    </CollapsibleSection>
   );
 }

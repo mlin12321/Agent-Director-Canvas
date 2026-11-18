@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { sessionRequestOf } from "#/api/director/session-from-chat";
 import { joinFromChat } from "#/api/director/join-from-chat";
 import type {
@@ -115,8 +115,8 @@ const SESSION: Session = {
   request: "Add refunds.",
   opened_at: "2026-11-01T10:00:00+00:00",
   branch: "main",
-  usage: { input_tokens: 0, output_tokens: 0, cost: 0 },
-  token_allowance: 0,
+  usage: { input_tokens: 0, output_tokens: 0, cost: 0, unpriced_tokens: 0 },
+  cost_allowance: 0,
   status: "working",
   review: null,
   conversation_id: "c2",
@@ -176,6 +176,11 @@ function drawer(node: OrgNode, sessions: Session[]) {
 function opened(session: Session) {
   return { session, conversation_id: "c2", chosen_by: "path", reason: "" };
 }
+
+// A section remembers how it was left; no test starts from another's.
+afterEach(() => {
+  localStorage.clear();
+});
 
 describe("TeamCard", () => {
   it("says how many sessions are open at a team, which are no sub-teams of it", () => {
@@ -569,7 +574,7 @@ describe("OrgSessionsPanel", () => {
     );
     const user = userEvent.setup();
     const { rerender } = renderWithProviders(
-      <OrgSessionsPanel sessions={[SESSION]} nodes={NODES} />,
+      <OrgSessionsPanel startsOpen sessions={[SESSION]} nodes={NODES} />,
     );
 
     const row = screen.getByTestId("org-session-s1a2b3c");
@@ -602,7 +607,7 @@ describe("OrgSessionsPanel", () => {
     await waitFor(() => expect(closed).toEqual(["s1a2b3c"]));
 
     // The list is the stream's: it is empty once the server says so.
-    rerender(<OrgSessionsPanel sessions={[]} nodes={NODES} />);
+    rerender(<OrgSessionsPanel startsOpen sessions={[]} nodes={NODES} />);
     expect(screen.getByText("ORG_CHART$SESSIONS_EMPTY")).toBeInTheDocument();
   });
 
@@ -617,7 +622,7 @@ describe("OrgSessionsPanel", () => {
     );
     const user = userEvent.setup();
     renderWithProviders(
-      <OrgSessionsPanel sessions={[SESSION]} nodes={NODES} />,
+      <OrgSessionsPanel startsOpen sessions={[SESSION]} nodes={NODES} />,
     );
     const row = screen.getByTestId("org-session-s1a2b3c");
     await user.click(
@@ -634,32 +639,75 @@ describe("OrgSessionsPanel", () => {
   it("shows what each session has used, against its limit where it has one, and the total", () => {
     const limited: Session = {
       ...SESSION,
-      usage: { input_tokens: 9000, output_tokens: 1000, cost: 1.5 },
-      token_allowance: 50000,
+      usage: {
+        input_tokens: 9000,
+        output_tokens: 1000,
+        cost: 1.5,
+        unpriced_tokens: 0,
+      },
+      cost_allowance: 5,
     };
     const free: Session = {
       ...SESSION,
       id: "s2",
-      usage: { input_tokens: 400, output_tokens: 100, cost: 0 },
+      usage: {
+        input_tokens: 400,
+        output_tokens: 100,
+        cost: 0,
+        unpriced_tokens: 500,
+      },
     };
     const unused: Session = { ...SESSION, id: "s3" };
     renderWithProviders(
-      <OrgSessionsPanel sessions={[limited, free, unused]} nodes={NODES} />,
+      <OrgSessionsPanel
+        startsOpen
+        sessions={[limited, free, unused]}
+        nodes={NODES}
+      />,
     );
 
     const first = screen.getByTestId("org-session-use-s1a2b3c");
-    expect(first).toHaveTextContent("ORG_CHART$SESSION_USE_OF");
-    expect(first).toHaveTextContent("$1.50");
+    expect(first).toHaveTextContent("ORG_CHART$SESSION_COST_OF");
+    expect(first).toHaveTextContent("ORG_CHART$SESSIONS_USE");
+    expect(screen.queryByTestId("org-session-unpriced-s1a2b3c")).toBeNull();
+    // Tokens of a model without a price are in no cost, and are said apart.
     const second = screen.getByTestId("org-session-use-s2");
-    expect(second).toHaveTextContent("ORG_CHART$SESSIONS_USE");
-    expect(second).not.toHaveTextContent("·");
+    expect(second).toHaveTextContent("$0.00");
+    expect(screen.getByTestId("org-session-unpriced-s2")).toHaveTextContent(
+      "ORG_CHART$SESSION_UNPRICED",
+    );
     expect(screen.queryByTestId("org-session-use-s3")).toBeNull();
     expect(screen.getByTestId("org-sessions-use")).toHaveTextContent("$1.50");
   });
 
+  it("is closed until it is opened, and says how many sessions and what they cost while closed", async () => {
+    const used: Session = {
+      ...SESSION,
+      usage: {
+        input_tokens: 9000,
+        output_tokens: 1000,
+        cost: 1.5,
+        unpriced_tokens: 0,
+      },
+    };
+    const user = userEvent.setup();
+    renderWithProviders(<OrgSessionsPanel sessions={[used]} nodes={NODES} />);
+
+    const toggle = screen.getByTestId("org-sessions-toggle");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveTextContent("1");
+    expect(screen.getByTestId("org-sessions-use")).toHaveTextContent("$1.50");
+    expect(screen.queryByTestId("org-session-s1a2b3c")).toBeNull();
+
+    await user.click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("org-session-s1a2b3c")).toBeInTheDocument();
+  });
+
   it("shows no total while nothing was used", () => {
     renderWithProviders(
-      <OrgSessionsPanel sessions={[SESSION]} nodes={NODES} />,
+      <OrgSessionsPanel startsOpen sessions={[SESSION]} nodes={NODES} />,
     );
 
     expect(screen.queryByTestId("org-sessions-use")).toBeNull();
@@ -704,8 +752,17 @@ describe("EscalationsPanel with sessions", () => {
     renderWithProviders(<EscalationsPanel escalations={[waiting]} />);
 
     expect(screen.getByTestId("org-session-mark")).toHaveTextContent("Refunds");
+    // Escalations are open from the start.
+    expect(screen.getByTestId("org-escalations-toggle")).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
     await user.type(screen.getByRole("textbox"), "Yes.");
-    await user.click(screen.getByRole("button"));
+    await user.click(
+      screen.getByRole("button", {
+        name: "ORG_CHART$ESCALATION_ANSWER_SUBMIT",
+      }),
+    );
 
     await waitFor(() =>
       expect(answered).toEqual(["s1a2b3c services.api partial Yes."]),
@@ -963,7 +1020,7 @@ describe("OrgHistoryPanel with sessions", () => {
         HttpResponse.json({ events, earlier: false }),
       ),
     );
-    renderWithProviders(<OrgHistoryPanel nodes={NODES} />);
+    renderWithProviders(<OrgHistoryPanel startsOpen nodes={NODES} />);
 
     const lines = await within(
       await screen.findByTestId("org-history"),

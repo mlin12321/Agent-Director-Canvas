@@ -250,8 +250,8 @@ export class OrgStore {
       request: "",
       opened_at: "",
       branch: "main",
-      usage: { input_tokens: 0, output_tokens: 0, cost: 0 },
-      token_allowance: 0,
+      usage: { input_tokens: 0, output_tokens: 0, cost: 0, unpriced_tokens: 0 },
+      cost_allowance: 0,
       ...structuredClone(input),
       above_id: aboveId,
     });

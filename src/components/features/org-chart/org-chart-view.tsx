@@ -25,12 +25,8 @@ import { OrgSettings } from "./org-settings";
 import { OrgByState } from "./org-by-state";
 import { OrgTree } from "./org-tree";
 import { MessageToTeam } from "./message-to-team";
-import { HistoryButton, OrgHistoryPanel } from "./org-history";
-import {
-  OrgSessionsContext,
-  OrgSessionsPanel,
-  SessionsButton,
-} from "./org-sessions";
+import { OrgHistoryPanel } from "./org-history";
+import { OrgSessionsContext, OrgSessionsPanel } from "./org-sessions";
 import { OwnershipMap } from "./ownership-map";
 import { HOME_PATH, StartOrgNotice } from "./start-org-notice";
 import { TeamSearch } from "./team-search";
@@ -161,8 +157,6 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
   const [detailsId, setDetailsId] = React.useState<NodeId | null>(null);
   const closeDetails = React.useCallback(() => setDetailsId(null), []);
   // The room the chart has, less the space kept free around what is drawn.
-  const [showsHistory, setShowsHistory] = React.useState(false);
-  const [showsSessions, setShowsSessions] = React.useState(false);
   const [frame, setFrame] = React.useState<HTMLElement | null>(null);
   const [space, setSpace] = React.useState({ width: 0, height: 0 });
   React.useLayoutEffect(() => {
@@ -269,7 +263,8 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
   return (
     <OrgSessionsContext.Provider value={sessions}>
       <div data-testid="org-chart" className="flex h-full min-h-0">
-        <div className="flex min-w-0 flex-1 flex-col gap-4 p-4">
+        {/* The page scrolls; nothing on it is squeezed to make room. */}
+        <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-4 [&>*]:shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <OrgBreadcrumb ancestors={ancestors} current={current} />
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2">
@@ -292,18 +287,6 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
                 </span>
               ) : null}
               <TeamSearch />
-              {org.data ? (
-                <HistoryButton
-                  open={showsHistory}
-                  onToggle={() => setShowsHistory((shown) => !shown)}
-                />
-              ) : null}
-              {org.data ? (
-                <SessionsButton
-                  open={showsSessions}
-                  onToggle={() => setShowsSessions((shown) => !shown)}
-                />
-              ) : null}
               {org.data ? <OrgSync merging={org.data.merging} /> : null}
               <ChartToolbar />
               {org.data?.paused === null ? <PauseButton /> : null}
@@ -313,14 +296,12 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
           {org.data ? <PausedBanner paused={org.data.paused} /> : null}
           {org.data?.merging ? <MergeConflicts /> : null}
           <EscalationsPanel escalations={escalations} />
-          {showsHistory ? <OrgHistoryPanel nodes={nodes} /> : null}
-          {showsSessions ? (
-            <OrgSessionsPanel sessions={sessions} nodes={nodes} />
-          ) : null}
+          <OrgSessionsPanel sessions={sessions} nodes={nodes} />
+          <OrgHistoryPanel nodes={nodes} />
           <section
             ref={setFrame}
             aria-label={t(I18nKey.ORG_CHART$NAV)}
-            className="min-h-0 flex-1 overflow-auto rounded-xl border border-border"
+            className="min-h-80 flex-1 overflow-auto rounded-xl border border-border"
           >
             {byState ? (
               <OrgByState
