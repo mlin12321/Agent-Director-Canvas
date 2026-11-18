@@ -995,6 +995,10 @@ test.describe("UI regressions", () => {
   // @spec WN-001 — Canvas Apps trust notice follows the host warning role
   test("Apps trust notice follows the host warning color", async ({ page }) => {
     await routeSessionApiKey(page);
+    // The notice takes the host's warning colour in a dark palette only.
+    await page.addInitScript(() =>
+      localStorage.setItem("openhands-color-theme", "openhands-neutral"),
+    );
     await page.goto("/apps", { waitUntil: "domcontentloaded" });
     const notice = page.getByText("This app runs trusted JavaScript", {
       exact: false,
