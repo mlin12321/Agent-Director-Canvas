@@ -22,7 +22,7 @@ const CHECKLIST_ITEM_TOOLTIP_CLASS =
 
 const CHECKLIST_ITEM_CLASS = cn(
   "flex min-w-0 w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm",
-  "transition-colors hover:bg-surface",
+  "transition-colors hover:bg-surface director:hover:bg-surface-raised",
 );
 
 interface SidebarOnboardingChecklistProps {
@@ -163,14 +163,14 @@ export function SidebarOnboardingChecklist({
       data-minimized={isMinimized ? "true" : "false"}
       className={cn(
         "group w-full shrink-0 overflow-hidden rounded-xl border border-border",
-        "bg-surface-raised shadow-sm",
+        "bg-surface-raised shadow-sm director:bg-surface",
       )}
     >
       <div className={cn("px-1", isMinimized ? "py-1" : "pt-2 pb-1")}>
         <div
           className={cn(
             "relative flex w-full items-center gap-0.5 rounded-md px-1.5",
-            "transition-colors hover:bg-surface",
+            "transition-colors hover:bg-surface director:hover:bg-surface-raised",
             isMinimized ? "py-1" : "py-1.5",
           )}
         >
