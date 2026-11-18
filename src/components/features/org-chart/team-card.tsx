@@ -30,7 +30,7 @@ interface TeamCardProps {
 // Every card is the same size wherever it is drawn. Fitting a chart to the
 // page zooms it as a whole.
 const MAIN_CLASS =
-  "flex size-full flex-col items-start justify-center gap-0.5 rounded-lg px-2 text-left hover:bg-surface-raised";
+  "flex size-full flex-col items-start justify-center gap-0.5 rounded-lg px-2.5 text-left hover:bg-surface-raised";
 
 /**
  * One team. Clicking it moves the page to that team; clicking the team the
@@ -144,7 +144,10 @@ export const TeamCard = React.memo(function TeamCard({
         </span>
       ) : null}
       {work.headline && !waiting ? (
-        <span className="w-full truncate text-[11px] text-contrast">
+        <span
+          data-testid="org-team-headline"
+          className="line-clamp-3 w-full text-[11px] leading-snug text-text-secondary"
+        >
           {work.headline}
         </span>
       ) : null}
@@ -168,7 +171,7 @@ export const TeamCard = React.memo(function TeamCard({
       data-testid={`org-node-${node.id}`}
       data-current={current || undefined}
       className={cn(
-        "h-18 w-40 rounded-lg border bg-surface",
+        "h-24 w-56 rounded-lg border bg-surface",
         current ? "border-primary ring-1 ring-primary" : "border-border",
       )}
     >

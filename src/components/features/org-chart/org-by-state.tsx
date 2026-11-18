@@ -90,7 +90,7 @@ export function OrgByState({
             key={state}
             data-testid={`org-state-${state}`}
             aria-label={t(label)}
-            className="flex h-full w-43 shrink-0 flex-col rounded-lg border border-border bg-surface-raised"
+            className="flex h-full w-59 shrink-0 flex-col rounded-lg border border-border bg-surface-raised"
           >
             <h3 className="flex items-center justify-between gap-2 border-b border-border px-2 py-1.5 text-xs font-medium text-contrast">
               <span className="w-0 flex-1 truncate">{t(label)}</span>

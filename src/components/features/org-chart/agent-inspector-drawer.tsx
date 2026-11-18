@@ -9,6 +9,7 @@ import type {
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { MergeWaits } from "./merge-waits";
+import { MessageToTeam } from "./message-to-team";
 import { ProposedTeams } from "./proposed-teams";
 import { TeamMessages } from "./team-messages";
 import { TeamRecord } from "./team-record";
@@ -58,11 +59,12 @@ interface AgentInspectorDrawerProps {
 
 const ROW_CLASS =
   "flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-sm";
+// What the org runs by itself stands back,
 const ROW_PLAIN_CLASS =
-  "border-border text-contrast hover:bg-surface-raised disabled:text-muted disabled:hover:bg-transparent";
-// What the human started here stands out from what the org runs by itself.
+  "border-border-subtle bg-tertiary text-text-secondary hover:bg-interactive-hover-low disabled:hover:bg-tertiary";
+// and what the human started here is in the page's main colour.
 const ROW_MINE_CLASS =
-  "border-feedback-error bg-feedback-error/5 text-feedback-error hover:bg-feedback-error/10";
+  "border-border bg-surface text-contrast hover:bg-surface-raised";
 const ROW_OPEN_CLASS = "ring-2 ring-primary";
 
 /**
@@ -323,6 +325,12 @@ export function AgentInspectorDrawer({
         ) : null}
       </div>
 
+      {!open && !(showsChanges && changed) ? (
+        // A new request to the team is written here, beside its conversations.
+        <div className="shrink-0 border-b border-border p-3">
+          <MessageToTeam key={node.id} node={node} />
+        </div>
+      ) : null}
       {showsChanges && changed ? (
         <div className="min-h-0 flex-1">
           <React.Suspense fallback={null}>

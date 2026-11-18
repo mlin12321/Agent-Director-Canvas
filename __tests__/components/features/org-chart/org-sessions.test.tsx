@@ -305,9 +305,11 @@ describe("AgentInspectorDrawer", () => {
     const [release, refunds] = rows;
     // Release came down from the top team; Refunds the human opened here.
     expect(release).not.toHaveAttribute("data-mine");
-    expect(release).not.toHaveClass("text-feedback-error");
+    // What the org runs by itself stands back; the human's own is plain.
+    expect(release).toHaveClass("bg-tertiary", "text-text-secondary");
     expect(refunds).toHaveAttribute("data-mine");
-    expect(refunds).toHaveClass("text-feedback-error", "border-feedback-error");
+    expect(refunds).toHaveClass("bg-surface", "text-contrast");
+    expect(refunds).not.toHaveClass("bg-tertiary");
     expect(screen.queryByTestId("agent-conversation")).toBeNull();
     expect(screen.getByText("ORG_CHART$CONVERSATION_PICK")).toBeInTheDocument();
 
