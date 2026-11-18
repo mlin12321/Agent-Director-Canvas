@@ -6,6 +6,7 @@
 export const DIRECTOR_BASE_PATH = "/api/director";
 
 export type {
+  DirectorAcceptedChanges as AcceptedChanges,
   DirectorAgentKind as AgentKind,
   DirectorAgentRef as AgentRef,
   DirectorAgentRole as AgentRole,

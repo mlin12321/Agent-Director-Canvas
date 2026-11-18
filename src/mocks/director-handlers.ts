@@ -1,7 +1,10 @@
 import { http, HttpResponse } from "msw";
 import {
   DIRECTOR_BASE_PATH,
+  type AcceptedChanges,
   type AgentRef,
+  type FileSides,
+  type HistoryEvent,
   type DirectorSettingsState,
   type OrgHistory,
   type Recovery,
@@ -609,6 +612,43 @@ function notFound(id: string) {
   return HttpResponse.json({ detail: `Unknown node: ${id}` }, { status: 404 });
 }
 
+/** What the mock org did before the page was opened, newest first. */
+const MOCK_HISTORY: HistoryEvent[] = [
+  {
+    at: "2026-05-11T05:10:00+00:00",
+    kind: "accepted",
+    team_id: "payments",
+    team: "payments domain",
+    above_id: ROOT_ID,
+    above: "Root organization",
+    session: "Release 2.4",
+    detail: "at review 2",
+    paths: ["payments"],
+    base: "3dd5e1284c1f0c9a7e6b5d4c3b2a190817263544",
+    head: "9cd48bb5a6f7e8d9c0b1a2f3e4d5c6b7a8091827",
+  },
+  {
+    at: "2026-05-11T04:40:00+00:00",
+    kind: "sent_back",
+    team_id: "payments",
+    team: "payments domain",
+    above_id: ROOT_ID,
+    above: "Root organization",
+    session: "Release 2.4",
+    detail: "Retries charge twice.",
+  },
+  {
+    at: "2026-05-11T02:05:00+00:00",
+    kind: "set_up",
+    team_id: "payments",
+    team: "payments domain",
+    above_id: ROOT_ID,
+    above: "Root organization",
+    session: "Release 2.4",
+    detail: "Keeps the payments services working together.",
+  },
+];
+
 export const DIRECTOR_HANDLERS = [
   http.get(`${BASE}/org`, () => {
     const body: OrgSummary = {
@@ -735,7 +775,48 @@ export const DIRECTOR_HANDLERS = [
   http.get(`${BASE}/org/sessions`, () => HttpResponse.json(sessionsNow())),
 
   http.get(`${BASE}/org/history`, () => {
-    const body: OrgHistory = { events: [], earlier: false };
+    const body: OrgHistory = { events: MOCK_HISTORY, earlier: false };
+    return HttpResponse.json(body);
+  }),
+
+  http.get(`${BASE}/org/accepted/changes`, ({ request }) => {
+    const asked = new URL(request.url).searchParams;
+    const folder = asked.get("path") ?? "";
+    const body: AcceptedChanges = {
+      base: asked.get("base") ?? "",
+      head: asked.get("head") ?? "",
+      files: [
+        {
+          path: `${folder}/src/main.py`,
+          kind: "modified",
+          added: 2,
+          removed: 1,
+          committed: true,
+        },
+        {
+          path: `${folder}/tests/test_main.py`,
+          kind: "added",
+          added: 3,
+          removed: 0,
+          committed: true,
+        },
+      ],
+      truncated: false,
+    };
+    return HttpResponse.json(body);
+  }),
+
+  http.get(`${BASE}/org/accepted/changes/file`, ({ request }) => {
+    const path = new URL(request.url).searchParams.get("path") ?? "";
+    const added = path.includes("tests/");
+    const body: FileSides = {
+      path,
+      before: added ? null : "def charge(order):\n    return order.total\n",
+      after: added
+        ? "def test_charge():\n    assert charge(ORDER) == 12\n"
+        : "def charge(order):\n    key = order.idempotency_key\n    return pay(order.total, key)\n",
+      unreadable: false,
+    };
     return HttpResponse.json(body);
   }),
 

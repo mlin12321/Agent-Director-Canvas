@@ -1,0 +1,72 @@
+name: Org Chart E2E Tests
+
+# The org page in a browser, against the mock director (`npm run dev:mock`).
+# No agent server and no model are started.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - src/components/features/org-chart/**
+      - src/api/director/**
+      - src/mocks/director-handlers.ts
+      - src/routes/org*
+      - tests/e2e/org-chart.spec.ts
+      - vendor/**
+      - playwright.config.ts
+      - .github/workflows/org-chart-e2e.yml
+  workflow_dispatch:
+
+concurrency:
+  group: org-chart-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  org-chart-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24.22.1"
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Get Playwright version
+        id: pw_version
+        run: echo "version=$(npx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: pw_cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw_version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.pw_cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium
+
+      - name: Install Playwright system dependencies
+        run: npx playwright install-deps chromium
+
+      - name: Run the org page tests
+        run: npx playwright test tests/e2e/org-chart.spec.ts --project=chromium --reporter=line
+
+      - name: Upload the traces of failed tests
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: org-chart-e2e-traces
+          path: test-results
+          retention-days: 7
