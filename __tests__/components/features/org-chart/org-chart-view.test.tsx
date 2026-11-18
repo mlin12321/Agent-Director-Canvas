@@ -248,6 +248,27 @@ beforeAll(() => {
   server.events.on("request:match", note("match"));
   server.events.on("request:unhandled", note("UNHANDLED"));
   server.events.on("response:bypass", note("bypass"));
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+    const url = input instanceof Request ? input.url : String(input);
+    seen.push(
+      `${Math.round(performance.now())} FETCH ${init?.method ?? (input instanceof Request ? input.method : "GET")} ${url.replace(/^https?:\/\/[^/]+/, "")}`,
+    );
+    return realFetch(input, init).then(
+      (response) => {
+        seen.push(
+          `${Math.round(performance.now())} DONE ${response.status} ${url.replace(/^https?:\/\/[^/]+/, "")}`,
+        );
+        return response;
+      },
+      (error) => {
+        seen.push(
+          `${Math.round(performance.now())} THREW ${String(error)} ${url.replace(/^https?:\/\/[^/]+/, "")}`,
+        );
+        throw error;
+      },
+    );
+  }) as typeof fetch;
 });
 beforeEach(() => {
   seen.length = 0;
@@ -260,7 +281,20 @@ afterEach((context) => {
     console.error(
       `FLAKE ${context.task.name}\n${seen.join("\n")}\nERROR ${String(
         context.task.result.errors?.[0]?.message,
-      ).slice(0, 2500)}`,
+      ).slice(
+        0,
+        300,
+      )}\nBACKEND ${activeStore.getEffectiveLocalBackend()?.host}\nTEXT ${(
+        document.body.textContent ?? ""
+      ).slice(0, 5000)}\nBUTTONS ${Array.from(
+        document.querySelectorAll("button"),
+      )
+        .map(
+          (b) =>
+            `${b.textContent?.slice(0, 30)}${b.disabled ? "[disabled]" : ""}`,
+        )
+        .join(" | ")
+        .slice(0, 3000)}`,
     );
   }
   vi.restoreAllMocks();
