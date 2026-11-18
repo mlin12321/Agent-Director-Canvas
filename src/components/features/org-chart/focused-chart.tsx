@@ -21,10 +21,10 @@ interface FocusedChartProps {
 const LINE = "w-px bg-line-accent";
 
 // Sizes in px of what `FocusedChart` draws, for working out what fits.
-// They mirror its classes: w-40 h-18 cards, gap-4, h-4 lines, size-4 icons,
+// They mirror its classes: w-56 h-24 cards, gap-4, h-4 lines, size-4 icons,
 // an h-6 way up.
-const CARD_WIDTH = 160;
-const CARD_HEIGHT = 72;
+const CARD_WIDTH = 224;
+const CARD_HEIGHT = 96;
 const GAP = 16;
 const UP_MARKER = 40;
 const TEAM_TO_REPORTS = 29;

@@ -16,6 +16,7 @@ import { cn } from "#/utils/utils";
 import { AgentInspectorDrawer } from "./agent-inspector-drawer";
 import { MergeConflicts } from "./org-merge";
 import { ChartToolbar } from "./chart-toolbar";
+import { CollapsibleSection } from "./collapsible-section";
 import { EscalationsPanel } from "./escalations-panel";
 import { FocusedChart, fitFocusedChart } from "./focused-chart";
 import { OrgBreadcrumb } from "./org-breadcrumb";
@@ -24,7 +25,6 @@ import { OrgSync } from "./org-sync";
 import { OrgSettings } from "./org-settings";
 import { OrgByState } from "./org-by-state";
 import { OrgTree } from "./org-tree";
-import { MessageToTeam } from "./message-to-team";
 import { OrgHistoryPanel } from "./org-history";
 import { OrgSessionsContext, OrgSessionsPanel } from "./org-sessions";
 import { OwnershipMap } from "./ownership-map";
@@ -157,7 +157,7 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
   const [detailsId, setDetailsId] = React.useState<NodeId | null>(null);
   const closeDetails = React.useCallback(() => setDetailsId(null), []);
   // The room the chart has, less the space kept free around what is drawn.
-  const [frame, setFrame] = React.useState<HTMLElement | null>(null);
+  const [frame, setFrame] = React.useState<HTMLDivElement | null>(null);
   const [space, setSpace] = React.useState({ width: 0, height: 0 });
   React.useLayoutEffect(() => {
     if (!frame) return undefined;
@@ -296,12 +296,13 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
           {org.data ? <PausedBanner paused={org.data.paused} /> : null}
           {org.data?.merging ? <MergeConflicts /> : null}
           <EscalationsPanel escalations={escalations} />
-          <OrgSessionsPanel sessions={sessions} nodes={nodes} />
-          <OrgHistoryPanel nodes={nodes} />
-          <section
-            ref={setFrame}
-            aria-label={t(I18nKey.ORG_CHART$NAV)}
-            className="min-h-80 flex-1 overflow-auto rounded-xl border border-border"
+          <CollapsibleSection
+            title={t(I18nKey.ORG_CHART$NAV)}
+            testId="org-chart-section"
+            startsOpen
+            className="flex-1"
+            bodyRef={setFrame}
+            bodyClassName="min-h-80 flex-1 gap-0 overflow-auto p-0"
           >
             {byState ? (
               <OrgByState
@@ -332,9 +333,10 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
                 )}
               </ChartCanvas>
             )}
-          </section>
+          </CollapsibleSection>
           <OwnershipMap node={current} ownership={ownership} />
-          {org.data ? <MessageToTeam key={current.id} node={current} /> : null}
+          <OrgSessionsPanel sessions={sessions} nodes={nodes} />
+          <OrgHistoryPanel nodes={nodes} />
           {org.data ? (
             <p className="text-xs text-muted">
               {t(I18nKey.ORG_CHART$TALK_HINT, { path: org.data.repo_path })}{" "}

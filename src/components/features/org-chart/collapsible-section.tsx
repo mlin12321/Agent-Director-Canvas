@@ -32,7 +32,9 @@ export function CollapsibleSection({
   testId,
   startsOpen,
   summary,
+  className,
   bodyClassName,
+  bodyRef,
   children,
 }: {
   title: string;
@@ -40,7 +42,11 @@ export function CollapsibleSection({
   startsOpen: boolean;
   /** Shown beside the title, open or closed. */
   summary?: React.ReactNode;
+  /** For the part as a whole, as where it may grow. */
+  className?: string;
   bodyClassName?: string;
+  /** What is inside, while it is open. */
+  bodyRef?: React.Ref<HTMLDivElement>;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = React.useState(
@@ -50,7 +56,10 @@ export function CollapsibleSection({
     <section
       aria-label={title}
       data-testid={testId}
-      className="flex shrink-0 flex-col rounded-xl border border-border"
+      className={cn(
+        "flex shrink-0 flex-col rounded-xl border border-border",
+        open ? className : null,
+      )}
     >
       <button
         type="button"
@@ -72,6 +81,7 @@ export function CollapsibleSection({
       </button>
       {open ? (
         <div
+          ref={bodyRef}
           className={cn(
             "flex flex-col gap-2 border-t border-border px-3 py-2",
             bodyClassName,

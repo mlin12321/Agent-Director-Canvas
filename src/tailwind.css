@@ -1365,7 +1365,7 @@ code .token {
 }
 
 /* The reports of the team the org chart is on: no wider than the number of
-   cards (10rem, 1rem apart) that `fitFocusedChart` puts in a row. */
+   cards (14rem, 1rem apart) that `fitFocusedChart` puts in a row. */
 @utility org-chart-reports {
-  max-width: calc(var(--org-chart-columns, 1) * 11rem - 1rem);
+  max-width: calc(var(--org-chart-columns, 1) * 15rem - 1rem);
 }

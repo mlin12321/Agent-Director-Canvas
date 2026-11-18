@@ -2187,4 +2187,35 @@ describe("mock mode", () => {
       )[0],
     ).toHaveTextContent("ORG_CHART$ROLE_IC · Release 2.4");
   });
+
+  it("puts the chart first and closes it, and takes a new request in the drawer", async () => {
+    server.resetHandlers();
+    const user = userEvent.setup();
+
+    renderWithProviders(<OrgChartView nodeId="payments" />);
+    await findCard("payments.worker");
+
+    // The chart is open, above the sessions and what happened.
+    const chart = screen.getByTestId("org-chart-section");
+    const after = (testId: string) =>
+      // eslint-disable-next-line no-bitwise
+      chart.compareDocumentPosition(screen.getByTestId(testId)) &
+      Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(after("org-sessions")).toBeTruthy();
+    expect(after("org-history")).toBeTruthy();
+    // The page itself takes no request.
+    expect(screen.queryByTestId("org-message")).toBeNull();
+
+    // A request to the team is written beside its conversations.
+    await user.click(currentCard());
+    expect(await screen.findByTestId("org-message")).toBeInTheDocument();
+
+    const toggle = screen.getByTestId("org-chart-section-toggle");
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByTestId("org-node-payments.worker")).toBeNull();
+    // How it was left is kept in the browser; the next test starts afresh.
+    localStorage.clear();
+  });
 });
