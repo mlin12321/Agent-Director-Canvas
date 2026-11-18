@@ -61,9 +61,10 @@ const ROW_CLASS =
   "flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-sm";
 // What the org runs by itself stands back,
 const ROW_PLAIN_CLASS =
-  "border-border-subtle text-muted hover:bg-surface-raised hover:text-text-secondary disabled:hover:bg-transparent disabled:hover:text-muted";
+  "border-border-subtle bg-tertiary text-text-secondary hover:bg-interactive-hover-low disabled:hover:bg-tertiary";
 // and what the human started here is in the page's main colour.
-const ROW_MINE_CLASS = "border-border text-contrast hover:bg-surface-raised";
+const ROW_MINE_CLASS =
+  "border-border bg-surface text-contrast hover:bg-surface-raised";
 const ROW_OPEN_CLASS = "ring-2 ring-primary";
 
 /**
