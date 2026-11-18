@@ -109,6 +109,12 @@ control-openhands stop                         # stops only this run; evidence s
   (`OH_DIRECTOR_FIXTURE=1`) and keeps boundary memory in the run's `qa-repo`,
   which the org chart (F30) needs.
   Never hand-start these processes on fixed ports: `stop` cannot see them.
+- **A non-loopback origin** comes with every run: `lanUrl`
+  (`$OH_VERIFY_LAN_URL` from `control-openhands env`) is the run's ingress
+  under a name its browser resolves to loopback, so the page is plain HTTP
+  outside a secure context, as it is for a user on a LAN or VPN address
+  (`F26.lan-http-origin`). It has its own browser storage: `onboard --skip
+  --stay` and `conversation start --stay` act on the page that is open.
 - **Doctor** checks the launcher's process group, ports, served build revision,
   unauthenticated rejection, authenticated settings, Agent Server pin and the
   UI's minimum Agent Server version, automation health and a throwaway-tab UI
@@ -270,7 +276,11 @@ prerequisite; never substitute a mock and call it a pass.
   yesterday's is at hand.
 - **Create or extend the map**: follow [references/mapping.md](references/mapping.md).
   It teaches how to discover features, write entries against the CLI and prove
-  each one live. `control-openhands map coverage` measures what is still unmapped.
+  each one live. `control-openhands map coverage` measures what is still unmapped,
+  `map controls` lists the controls on mapped pages that no bullet operates, and
+  [references/scenarios.md](references/scenarios.md) lists the situations (the
+  item edited later, two actions at once, real data, another environment) to
+  ask of every sub-feature beyond its happy path.
 - **Maintain the map (periodic or weekly)**: follow
   [references/maintenance.md](references/maintenance.md): index hygiene, a source
   wave, one live pass over every feature, PR-intent reconciliation for the week's
