@@ -32,12 +32,24 @@ describe("Director palette", () => {
     ).toBeGreaterThanOrEqual(4.5);
   });
 
-  it.each(["--oh-color-tertiary", "--oh-surface-raised"] as const)(
-    "marks %s within a panel with a darker gray",
-    (area) => {
+  it.each([
+    "--oh-color-tertiary",
+    "--oh-surface-raised",
+    "--oh-surface-deep",
+    "--oh-segment",
+    "--oh-color-base-secondary",
+  ] as const)("fills %s with the same gray as a panel", (area) => {
+    expect(surfaceColor("director", area)).toEqual(
+      surfaceColor("director", "--oh-surface"),
+    );
+  });
+
+  it.each(["--oh-interactive-hover", "--oh-interactive-hover-low"] as const)(
+    "shows %s on that gray",
+    (hover) => {
       expect(
         contrast(
-          surfaceColor("director", area),
+          surfaceColor("director", hover),
           surfaceColor("director", "--oh-surface"),
         ),
       ).toBeGreaterThanOrEqual(1.08);

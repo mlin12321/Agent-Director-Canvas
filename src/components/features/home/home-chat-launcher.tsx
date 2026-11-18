@@ -496,7 +496,7 @@ export function HomeChatLauncher() {
           <div className="custom-scrollbar-always flex min-h-0 flex-1 flex-col overflow-y-auto px-4">
             <div
               data-testid="startup-user-message"
-              className="mt-6 w-fit max-w-full self-end whitespace-pre-wrap break-words rounded-xl bg-tertiary px-4 py-2.5 text-sm leading-6 director:bg-surface"
+              className="mt-6 w-fit max-w-full self-end whitespace-pre-wrap break-words rounded-xl bg-tertiary px-4 py-2.5 text-sm leading-6"
             >
               {activeLaunch.message}
               {activeLaunch.files.length > 0 && (
