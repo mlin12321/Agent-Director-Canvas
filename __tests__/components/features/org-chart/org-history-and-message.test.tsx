@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { HistoryEvent, OrgNode } from "#/api/director/types";
 import { MessageToTeam } from "#/components/features/org-chart/message-to-team";
 import { OrgHistoryPanel } from "#/components/features/org-chart/org-history";
@@ -45,6 +45,11 @@ function happened(
     ...rest,
   };
 }
+
+// A section remembers how it was left; no test starts from another's.
+afterEach(() => {
+  localStorage.clear();
+});
 
 describe("OrgHistoryPanel", () => {
   it("lists what happened, newest first, and reads further back on request", async () => {

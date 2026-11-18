@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { sessionRequestOf } from "#/api/director/session-from-chat";
 import { joinFromChat } from "#/api/director/join-from-chat";
 import type {
@@ -176,6 +176,11 @@ function drawer(node: OrgNode, sessions: Session[]) {
 function opened(session: Session) {
   return { session, conversation_id: "c2", chosen_by: "path", reason: "" };
 }
+
+// A section remembers how it was left; no test starts from another's.
+afterEach(() => {
+  localStorage.clear();
+});
 
 describe("TeamCard", () => {
   it("says how many sessions are open at a team, which are no sub-teams of it", () => {
