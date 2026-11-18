@@ -2,6 +2,7 @@
 
 This directory contains the project documentation.
 
+- [The director](./DIRECTOR.md): start the org of agent teams from this fork, and what its page shows.
 - [Architecture](./architecture.md): system boundaries, runtime modes, and quality gates.
 - [Using ACP agents](./ACP_AGENTS.md): onboard and configure external agents (Claude Code, Codex, Gemini CLI, Pi, OpenCode).
 - [Development guide](./DEVELOPMENT.md)
