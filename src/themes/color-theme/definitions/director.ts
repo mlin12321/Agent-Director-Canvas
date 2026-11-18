@@ -5,6 +5,7 @@ import { LIGHT_PLUS_HEROUI, LIGHT_PLUS_TOKENS } from "./light-plus";
 
 const INK = "#000000";
 const PAGE = "#FFFFFF";
+const FILL = "#F4F4F4";
 // Drawn, never read: lines, rings and dots.
 const BRIGHT_RED = "#E60012";
 // Read as text, so it stays legible on the gray areas too.
@@ -33,21 +34,20 @@ const DIRECTOR_TOKENS: Partial<Record<AgentServerUICssVariableName, string>> = {
   "--oh-background": PAGE,
   "--oh-overlay": PAGE,
   "--oh-bg-workspace": PAGE,
-  // A panel is a light gray, so that it stands apart from the page the way
-  // it does in the dark palettes. Each further gray marks an area within
-  // the one before it.
-  "--oh-surface": "#F4F4F4",
-  "--oh-color-base-secondary": "#F7F7F7",
-  "--oh-surface-raised": "#E9E9E9",
-  "--oh-surface-deep": "#EDEDED",
-  "--oh-color-tertiary": "#E9E9E9",
+  // One light gray for whatever is filled to stand apart from the page.
+  "--oh-surface": FILL,
+  "--oh-color-base-secondary": FILL,
+  "--oh-surface-raised": FILL,
+  "--oh-surface-deep": FILL,
+  "--oh-color-tertiary": FILL,
+  "--oh-segment": FILL,
+  "--oh-bg-light": FILL,
+  "--oh-bg-editor-sidebar": FILL,
+  // Darker only while pointed at, pressed or chosen.
   "--oh-interactive-hover": "#D9D9D9",
   "--oh-interactive-hover-low": "#E4E4E4",
   "--oh-interactive-active": "#DEDEDE",
-  "--oh-segment": "#E9E9E9",
-  "--oh-bg-light": "#F4F4F4",
-  "--oh-bg-editor-sidebar": "#F4F4F4",
-  "--oh-bg-editor-active": "#E9E9E9",
+  "--oh-bg-editor-active": "#E4E4E4",
   "--oh-default": "#E4E4E4",
   // Outlines are gray, never ink: black is for text alone.
   "--oh-border": "#CFCFCF",

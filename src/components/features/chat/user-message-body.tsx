@@ -97,7 +97,7 @@ export function UserMessageBody({
           <div
             aria-hidden
             data-testid="chat-message-truncation-gradient"
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-tertiary to-transparent director:from-surface"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-tertiary to-transparent"
           />
           <span
             data-testid="chat-message-view-more"

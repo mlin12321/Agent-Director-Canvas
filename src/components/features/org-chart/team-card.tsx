@@ -171,7 +171,7 @@ export const TeamCard = React.memo(function TeamCard({
       data-testid={`org-node-${node.id}`}
       data-current={current || undefined}
       className={cn(
-        "h-24 w-56 rounded-lg border bg-surface",
+        "h-24 w-56 rounded-lg border bg-background",
         current ? "border-primary ring-1 ring-primary" : "border-border",
       )}
     >

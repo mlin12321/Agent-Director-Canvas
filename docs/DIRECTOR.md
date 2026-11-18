@@ -77,7 +77,8 @@ teams, when a team counts as stalled.
 ## The Director palette
 
 The default palette. The page is white, text is black, and red marks what
-is chosen or acts. The chat box, your messages, a team's card and the
-getting-started card are a light gray so that they stand apart from the
-page, and the chat box is outlined. The agent drawer is white.
+is chosen or acts. Whatever is filled to stand apart from the page (the
+chat box, your messages, an agent's conversation row, the getting-started
+card) is one light gray, darker only while pointed at or chosen, and the
+chat box is outlined. Team cards and the agent drawer are white.
 Another palette can be chosen in the settings.
