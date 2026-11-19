@@ -86,9 +86,9 @@ export function AgentInspectorDrawer({
   // updates; nothing is open until one is chosen.
   const [openKey, setOpenKey] = React.useState<string | null>(null);
   const [showsChanges, setShowsChanges] = React.useState(false);
-  // Loaded when first asked for, and kept from then on.
-  const changesOpened = React.useRef(false);
-  if (showsChanges) changesOpened.current = true;
+  // Whose changes were asked for. They stay loaded from then on, so that
+  // a change being made by hand is still there after a look elsewhere.
+  const [changesOf, setChangesOf] = React.useState<string | null>(null);
   const open =
     conversations.find(
       (candidate) => candidate.key === openKey && candidate.conversationId,
@@ -101,8 +101,13 @@ export function AgentInspectorDrawer({
   const titles = new Map(
     sessions.map((session) => [session.id, session.title]),
   );
-  // The changes are those of the session whose conversation is open.
-  const changed = open && !open.divisionLead ? open.place : (places[0] ?? null);
+  // The changes are those of the session whose conversation is open: for
+  // its reviewer's, what that session has at the team.
+  const changed =
+    (open && places.find((place) => place.session === open.place.session)) ??
+    places[0] ??
+    null;
+  const loaded = places.find((place) => place.id === changesOf);
   const noneToOpen =
     conversations.length === 0
       ? I18nKey.ORG_CHART$TEAM_NOT_STARTED_HELP
@@ -233,7 +238,10 @@ export function AgentInspectorDrawer({
               type="button"
               data-testid="org-team-changes-tab"
               aria-pressed={showsChanges}
-              onClick={() => setShowsChanges((shown) => !shown)}
+              onClick={() => {
+                if (!showsChanges) setChangesOf(changed.id);
+                setShowsChanges(!showsChanges);
+              }}
               className={cn(TAB_CLASS, showsChanges ? TAB_CHOSEN_CLASS : null)}
             >
               {t(I18nKey.ORG_CHART$CHANGES)}
@@ -345,12 +353,12 @@ export function AgentInspectorDrawer({
       >
         <MessageToTeam key={node.id} node={node} />
       </div>
-      {changed && changesOpened.current ? (
+      {loaded ? (
         // Hidden while a conversation is open, not unmounted: a change
         // being made by hand is still there afterwards.
         <div hidden={!showsChanges} className="min-h-0 flex-1">
           <React.Suspense fallback={null}>
-            <TeamChanges key={changed.id} node={changed} />
+            <TeamChanges key={loaded.id} node={loaded} />
           </React.Suspense>
         </div>
       ) : null}

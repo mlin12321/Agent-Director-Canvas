@@ -573,6 +573,10 @@ describe("AgentInspectorDrawer", () => {
     await user.click(
       screen.getByRole("button", { name: /ORG_CHART\$ROLE_IC · Refunds/ }),
     );
+    // Put away, not dropped: a change being made by hand there is kept.
+    expect(screen.getByTestId("team-changes")).toHaveTextContent(
+      /^services\.api@r9$/,
+    );
     await user.click(screen.getByTestId("org-team-changes-tab"));
     expect(await screen.findByTestId("team-changes")).toHaveTextContent(
       /^services\.api@s1a2b3c$/,
