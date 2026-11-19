@@ -1,12 +1,12 @@
-# Agent Canvas architecture
+# Agent Director architecture
 
-Agent Canvas is a React and TypeScript frontend for running and monitoring OpenHands agents across local, remote, and hosted environments. It is adapted from the OpenHands frontend to talk directly to the OpenHands Agent Server and related automation services.
+Agent Director is OpenHands Agent Canvas: a React and TypeScript frontend for running and monitoring OpenHands agents across local, remote, and hosted environments. It talks directly to the OpenHands Agent Server and related automation services. The server includes the director, so the same page is also the org of agent teams: sessions, escalations, ownership, and accepted work. The director's own account is in [DIRECTOR.md](./DIRECTOR.md).
 
 ## System boundaries
 
 Agent Canvas is responsible for:
 
-- Rendering the agent conversation, terminal, browser, files, settings, and automation UI.
+- Rendering the agent conversation, terminal, browser, files, settings, automation UI, and the org page of the director.
 - Managing frontend state for conversations, backend selection, settings, profiles, and local metadata.
 - Translating UI actions into OpenHands Agent Server API calls.
 - Packaging the UI both as a standalone app and as library entrypoints for host applications.
@@ -20,7 +20,7 @@ Agent Canvas is not responsible for:
 
 ## Runtime services
 
-The primary backend is the [OpenHands Agent Server](https://github.com/OpenHands/software-agent-sdk/tree/main/openhands-agent-server/openhands/agent_server). Agent Canvas can connect to one or more Agent Server instances and switch between them from the UI.
+The primary backend is the [OpenHands Agent Server](https://github.com/OpenHands/software-agent-sdk/tree/main/openhands-agent-server/openhands/agent_server). With the director, that server also keeps an org of agent teams under `/api/director`. Agent Canvas can connect to one or more Agent Server instances and switch between them from the UI.
 
 Optional runtime services include:
 

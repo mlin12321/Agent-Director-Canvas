@@ -1,7 +1,7 @@
 {
-    "name": "OpenHands",
-    "short_name": "OpenHands",
-    "description": "OpenHands AI-powered development workspace.",
+    "name": "Agent Director",
+    "short_name": "Agent Director",
+    "description": "A control center for an organisation of coding agents, built on OpenHands.",
     "start_url": "./",
     "scope": "./",
     "categories": ["productivity"],

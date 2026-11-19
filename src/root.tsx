@@ -234,8 +234,12 @@ export const links: LinksFunction = () => [
 ];
 
 export const meta: MetaFunction = () => [
-  { title: "OpenHands" },
-  { name: "description", content: "Let's Start Building!" },
+  { title: "Agent Director" },
+  {
+    name: "description",
+    content:
+      "A control center for an organisation of coding agents, built on OpenHands.",
+  },
 ];
 
 export default function App() {

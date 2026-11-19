@@ -1,13 +1,13 @@
 <a name="readme-top"></a>
 
 <div align="center">
-  <img src="https://assets.openhands.dev/logo-whitebackground.png" alt="OpenHands logo" width="340">
-  <h1 align="center" style="border-bottom: none">Agent Canvas</h1>
+  <img src="./public/favicon.svg" alt="Agent Director" width="180">
+  <h1 align="center" style="border-bottom: none">Agent Director</h1>
   <p align="center">
-    <strong>The self-hosted developer control center for coding agents and automations.</strong>
+    <strong>The page for an organisation of coding agents, built on OpenHands.</strong>
   </p>
   <p align="center">
-    Run OpenHands, Claude Code, Codex, Gemini, Pi, OpenCode, or any ACP-compatible agent across local, remote, and cloud backends.
+    Agent Canvas runs OpenHands, Claude Code, Codex, Gemini, Pi, OpenCode, or any ACP-compatible agent. The director, in the Agent Server, runs them as teams on a git repository.
   </p>
 </div>
 <div align="center">
@@ -29,9 +29,9 @@
 </p>
 <hr>
 
-OpenHands Agent Canvas turns your coding agents into a self-hosted, always-on engineering team. It's a developer control center for starting conversations and automating everyday tasks — like generating reports that publish to Slack or automatically decomposing GitHub issues into tasks.
+Agent Director is OpenHands Agent Canvas pointed at an Agent Server that includes the director. The page is a self-hosted control center for conversations and automations — reports that publish to Slack, GitHub issues decomposed into tasks — and for an org of agent teams. Each team owns a folder. An IC does the work and reviews the teams below it. A Manager approves, declines, and prunes teams. Accepted work lands in your checkout. What the director does is in [the director](./docs/DIRECTOR.md).
 
-It runs locally on your machine by default, but can connect to multiple “agent backends”, e.g. running agents in Docker containers, on VMs, or within your company infrastructure. You can optionally choose to run agents on OpenHands Cloud or OpenHands Enterprise infrastructure.
+It runs locally on your machine by default, but can connect to multiple “agent backends”, e.g. running agents in Docker containers, on VMs, or within your company infrastructure. You can optionally choose to run agents on OpenHands Cloud or OpenHands Enterprise infrastructure. A released OpenHands Agent Server has the conversations and none of the director; the org page then says it is unavailable.
 
 Agent Canvas runs the open source OpenHands agent out-of-the-box, but can use third-party agents such as Claude Code, Codex, Gemini CLI, Pi, and OpenCode.
 
@@ -180,11 +180,13 @@ requirement is for contributor dependency resolution, not for installing the
 published Canvas package.
 
 ```sh
-git clone https://github.com/OpenHands/OpenHands.git
-cd OpenHands
+git clone https://github.com/mlin12321/Agent-Director-Canvas.git
+cd Agent-Director-Canvas
 npm ci
 npm run dev
 ```
+
+Agent Director Canvas is [OpenHands](https://github.com/OpenHands/OpenHands) with the org page. The server is [software-director-sdk](https://github.com/mlin12321/software-director-sdk), the [OpenHands Software Agent SDK](https://github.com/OpenHands/software-agent-sdk) with the director. Point `OH_AGENT_SERVER_LOCAL_PATH` at that checkout. See [the director](./docs/DIRECTOR.md).
 
 ---
 
@@ -196,7 +198,7 @@ Docker listens on all container interfaces so port publishing works, but does no
 
 # Architecture
 
-Agent Canvas is powered by the [OpenHands Agent Server](https://github.com/OpenHands/software-agent-sdk/tree/main/openhands-agent-server/openhands/agent_server), a REST API for running multiple agents on a single machine. Each Agent Server runs on a single host/port; the Agent Canvas can connect to multiple Agent Servers and easily flip between them.
+Agent Director is powered by the [OpenHands Agent Server](https://github.com/OpenHands/software-agent-sdk/tree/main/openhands-agent-server/openhands/agent_server), a REST API for running multiple agents on a single machine. In this fork the server also includes the director, under `/api/director`, which keeps the org tree and the team memory in the repository. Each Agent Server runs on a single host/port; Agent Canvas can connect to multiple Agent Servers and flip between them.
 
 You can run an Agent Server anywhere:
 
