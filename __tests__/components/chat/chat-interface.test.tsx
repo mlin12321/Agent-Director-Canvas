@@ -1,3 +1,4 @@
+import { forgetServersWithoutDirector } from "#/api/director/director-client";
 import { useLayoutEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import {
@@ -779,6 +780,7 @@ describe("ChatInterface - Pending message queue", () => {
       defaultOptions: { queries: { retry: false } },
     });
     useOptimisticUserMessageStore.getState().clearPendingMessages();
+    forgetServersWithoutDirector();
     useErrorMessageStore.setState({ errorMessage: null });
     (useConfig as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       data: {},
