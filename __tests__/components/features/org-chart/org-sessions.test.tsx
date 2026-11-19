@@ -578,9 +578,14 @@ describe("AgentInspectorDrawer", () => {
       /^services\.api@r9$/,
     );
     await user.click(screen.getByTestId("org-team-changes-tab"));
-    expect(await screen.findByTestId("team-changes")).toHaveTextContent(
-      /^services\.api@s1a2b3c$/,
-    );
+    const shown = () =>
+      screen
+        .getAllByTestId("team-changes")
+        .filter((pane) => !pane.closest("[hidden]"))
+        .map((pane) => pane.textContent);
+    await waitFor(() => expect(shown()).toEqual(["services.api@s1a2b3c"]));
+    // Those of the first session are kept too, with what is changed there.
+    expect(screen.getAllByTestId("team-changes")).toHaveLength(2);
     unmount();
 
     // Refunds is only reviewed from the top team: nothing is changed there.

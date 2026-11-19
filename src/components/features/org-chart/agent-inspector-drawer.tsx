@@ -86,9 +86,10 @@ export function AgentInspectorDrawer({
   // updates; nothing is open until one is chosen.
   const [openKey, setOpenKey] = React.useState<string | null>(null);
   const [showsChanges, setShowsChanges] = React.useState(false);
-  // Whose changes were asked for. They stay loaded from then on, so that
-  // a change being made by hand is still there after a look elsewhere.
-  const [changesOf, setChangesOf] = React.useState<string | null>(null);
+  // Whose changes were asked for, the last one shown. Each stays loaded
+  // from then on, so that a change being made by hand is still there after
+  // a look elsewhere.
+  const [changesOf, setChangesOf] = React.useState<string[]>([]);
   const open =
     conversations.find(
       (candidate) => candidate.key === openKey && candidate.conversationId,
@@ -107,7 +108,10 @@ export function AgentInspectorDrawer({
     (open && places.find((place) => place.session === open.place.session)) ??
     places[0] ??
     null;
-  const loaded = places.find((place) => place.id === changesOf);
+  const loaded = places.filter((place) => changesOf.includes(place.id));
+  const shown = showsChanges
+    ? (places.find((place) => place.id === changesOf.at(-1)) ?? null)
+    : null;
   const noneToOpen =
     conversations.length === 0
       ? I18nKey.ORG_CHART$TEAM_NOT_STARTED_HELP
@@ -239,7 +243,11 @@ export function AgentInspectorDrawer({
               data-testid="org-team-changes-tab"
               aria-pressed={showsChanges}
               onClick={() => {
-                if (!showsChanges) setChangesOf(changed.id);
+                if (!showsChanges)
+                  setChangesOf((asked) => [
+                    ...asked.filter((id) => id !== changed.id),
+                    changed.id,
+                  ]);
                 setShowsChanges(!showsChanges);
               }}
               className={cn(TAB_CLASS, showsChanges ? TAB_CHOSEN_CLASS : null)}
@@ -337,7 +345,7 @@ export function AgentInspectorDrawer({
             {t(I18nKey.ORG_CHART$HAND_OVER_LOST)}
           </p>
         ) : null}
-        {!open && !(showsChanges && changed) ? (
+        {!open && !shown ? (
           <p className="p-3 text-center text-sm text-muted">
             {t(nothingOpenKey)}
           </p>
@@ -348,21 +356,25 @@ export function AgentInspectorDrawer({
           conversations. Hidden while one of those is open, not unmounted:
           what was typed is still there afterwards. */}
       <div
-        hidden={Boolean(open || (showsChanges && changed))}
+        hidden={Boolean(open || shown)}
         className="shrink-0 border-b border-border p-3"
       >
         <MessageToTeam key={node.id} node={node} />
       </div>
-      {loaded ? (
-        // Hidden while a conversation is open, not unmounted: a change
-        // being made by hand is still there afterwards.
-        <div hidden={!showsChanges} className="min-h-0 flex-1">
+      {loaded.map((place) => (
+        // Hidden while another is shown, not unmounted: a change being made
+        // by hand is still there afterwards.
+        <div
+          key={place.id}
+          hidden={place.id !== shown?.id}
+          className="min-h-0 flex-1"
+        >
           <React.Suspense fallback={null}>
-            <TeamChanges key={loaded.id} node={loaded} />
+            <TeamChanges node={place} />
           </React.Suspense>
         </div>
-      ) : null}
-      {!(showsChanges && changed) && open && conversationId ? (
+      ))}
+      {!shown && open && conversationId ? (
         <>
           <p className="border-b border-border px-3 py-1.5 text-xs text-muted">
             {open.handOver
