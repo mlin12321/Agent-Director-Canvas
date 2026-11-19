@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown, ChevronRight, TriangleAlert } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import type { NodeId } from "#/api/director/types";
 import type { FileTreeNode } from "#/utils/file-tree";
 import { cn } from "#/utils/utils";
@@ -14,10 +14,6 @@ export interface OwnershipLookup {
   swatchOf: (owner: NodeId | null) => string;
   /** "Owned by <team>", for a swatch. */
   ownerLabel: (owner: NodeId | null) => string;
-  /** Why a file collides, or null when it does not. */
-  collisionAt: (path: string) => string | null;
-  /** How many files below a directory collide, in words; null for none. */
-  collisionsBelow: (path: string) => string | null;
 }
 
 interface RowProps {
@@ -46,19 +42,6 @@ function Swatch({
   );
 }
 
-function CollisionMark({ label }: { label: string }) {
-  return (
-    <span
-      role="img"
-      aria-label={label}
-      title={label}
-      className="flex shrink-0 text-feedback-error"
-    >
-      <TriangleAlert width={12} height={12} aria-hidden="true" />
-    </span>
-  );
-}
-
 const ROW =
   "flex w-full items-center gap-1.5 py-0.5 pr-2 pl-(--ownership-row-indent) text-left text-xs";
 
@@ -76,7 +59,6 @@ export function OwnershipRow({ node, depth, lookup }: RowProps) {
   const [isOpen, setIsOpen] = React.useState(() => (owners?.size ?? 0) > 1);
 
   if (!node.isDirectory) {
-    const collision = lookup.collisionAt(node.path);
     return (
       <li
         data-testid={`ownership-file-${node.path}`}
@@ -89,13 +71,11 @@ export function OwnershipRow({ node, depth, lookup }: RowProps) {
       >
         <Swatch owner={lookup.ownerOf(node.path)} lookup={lookup} />
         <span className="truncate">{node.name}</span>
-        {collision ? <CollisionMark label={collision} /> : null}
       </li>
     );
   }
 
   const [only] = owners ?? [];
-  const below = isOpen ? null : lookup.collisionsBelow(node.path);
   return (
     <li>
       <button
@@ -119,7 +99,6 @@ export function OwnershipRow({ node, depth, lookup }: RowProps) {
         </span>
         {owners?.size === 1 ? <Swatch owner={only} lookup={lookup} /> : null}
         <span className="truncate">{node.name}</span>
-        {below ? <CollisionMark label={below} /> : null}
       </button>
       {isOpen ? (
         <ul>
