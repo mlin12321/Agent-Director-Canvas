@@ -402,6 +402,19 @@ export function ConversationPanel({
     ],
   );
 
+  // An org's agents can fill whole pages. While they are all that is loaded,
+  // the next page is fetched: the human's own conversations are further on.
+  const onlyAgentStartedLoaded =
+    !showAgentStartedConversations &&
+    !!hasNextPage &&
+    allLoadedConversations.length > 0 &&
+    allLoadedConversations.every((conversation) =>
+      isAgentOnlyConversation(conversation.tags),
+    );
+  React.useEffect(() => {
+    if (onlyAgentStartedLoaded && !isFetchingNextPage) fetchNextPage();
+  }, [onlyAgentStartedLoaded, isFetchingNextPage, fetchNextPage]);
+
   // Pin/archive ID sets derive from the tags on the loaded conversations
   // (the unfiltered set, so archived-but-pinned rows still resolve and
   // pruning is unnecessary — a deleted conversation takes its tags with it).
@@ -1298,6 +1311,7 @@ export function ConversationPanel({
     !isLoading &&
     !compact &&
     listIsEffectivelyEmpty &&
+    !onlyAgentStartedLoaded &&
     !showPinnedSection &&
     !startTasks?.length &&
     !hasVisibleGroups;
