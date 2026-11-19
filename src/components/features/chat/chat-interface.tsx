@@ -449,6 +449,15 @@ export function ChatInterface({
   const isHistoryLoading = !showConversationMessages;
   const isChatLoading = isHistoryLoading && !isTask;
 
+  // Written straight to an agent the director started: from now on the
+  // conversation is listed with the human's own.
+  const joinsOrgConversation = () => {
+    if (!conversationId) return;
+    joinFromChat(conversationId, activeConversation?.tags).then((joined) => {
+      if (joined) queryClient.invalidateQueries({ queryKey: ["user"] });
+    });
+  };
+
   const handleSendMessage = async (
     content: string,
     originalImages: File[],
@@ -610,13 +619,7 @@ export function ChatInterface({
         await send(
           createChatMessage(prompt, imageUrls, uploadedFiles, timestamp),
         );
-        // Written straight to an agent the director started: from now on
-        // the conversation is listed with the human's own.
-        joinFromChat(conversationId!, activeConversation?.tags).then(
-          (joined) => {
-            if (joined) queryClient.invalidateQueries({ queryKey: ["user"] });
-          },
-        );
+        joinsOrgConversation();
       }
       const errors = useErrorMessageStore.getState();
       if (errors.errorCode === STARTUP_UPLOAD_ERROR_CODE)
@@ -727,6 +730,7 @@ export function ChatInterface({
   const pendingUserMessages = React.useMemo(
     () => (
       <PendingUserMessages
+        onSent={joinsOrgConversation}
         pendingLabel={pendingMessageLabel}
         showPendingStatus={!isSessionStarting}
       />
