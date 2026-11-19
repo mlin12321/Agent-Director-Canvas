@@ -11,6 +11,9 @@ import type {
 } from "./types";
 
 const RETRY_DELAYS_MS = [1000, 2000, 5000];
+// A call may start conversations and ask a model where a message goes. A
+// caller that gave up sooner would send the message itself as well.
+const CALL_TIMEOUT_MS = 5 * 60 * 1000;
 
 export class DirectorError extends Error {
   constructor(
@@ -48,6 +51,7 @@ function director() {
   return new SdkDirectorClient({
     host: backend.host.replace(/\/+$/, ""),
     apiKey: backend.apiKey?.trim() || undefined,
+    timeout: CALL_TIMEOUT_MS,
   });
 }
 

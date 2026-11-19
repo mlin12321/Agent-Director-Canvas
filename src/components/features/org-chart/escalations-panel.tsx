@@ -157,7 +157,7 @@ export function EscalationsPanel({ escalations }: EscalationsPanelProps) {
         <ul className="flex max-h-72 flex-wrap gap-2 overflow-y-auto">
           {escalations.map((item) => (
             <EscalationCard
-              key={`${item.node_id}/${item.escalation.id}`}
+              key={`${item.session_id}/${item.node_id}/${item.escalation.id}/${item.escalation.raised_at}`}
               item={item}
             />
           ))}

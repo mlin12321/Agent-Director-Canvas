@@ -222,6 +222,11 @@ export interface FileDiffEdit {
   isSaving: boolean;
   /** Why the last save was refused, in words to show. */
   error?: string | null;
+  /**
+   * The file as it is now, read again as editing starts: what is shown may
+   * be older than what an agent has written since.
+   */
+  latest?: () => Promise<string | undefined>;
 }
 
 export interface FileDiffViewProps {
@@ -358,8 +363,9 @@ export function FileDiffView({
     </div>
   );
 
-  const startEditing = () => {
-    setDraft(diff?.modified ?? "");
+  const startEditing = async () => {
+    const latest = await edit?.latest?.().catch(() => undefined);
+    setDraft(latest ?? diff?.modified ?? "");
     setViewMode("edit");
   };
   const saveDraft = () => {
@@ -379,8 +385,9 @@ export function FileDiffView({
               className="w-full h-full"
               language={language}
               // Not controlled: feeding the text back while it is typed
-              // makes Monaco drop keystrokes.
-              defaultValue={diff?.modified ?? ""}
+              // makes Monaco drop keystrokes. It starts from the draft, which
+              // is what Save writes, also when the row is opened again.
+              defaultValue={draft}
               onChange={(value) => setDraft(value ?? "")}
               theme={monacoTheme}
               beforeMount={beforeMount}

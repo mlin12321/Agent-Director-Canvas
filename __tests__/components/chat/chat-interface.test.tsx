@@ -1008,6 +1008,48 @@ describe("ChatInterface - Pending message queue", () => {
     expect(sent).toEqual([]);
   });
 
+  it("sends /session on as it was written to a server that has no director", async () => {
+    server.use(
+      http.get("*/api/director/org/sessions", () =>
+        HttpResponse.json({ detail: "Not Found" }, { status: 404 }),
+      ),
+      http.post("*/api/director/org/sessions", () =>
+        HttpResponse.json({ detail: "Not Found" }, { status: 404 }),
+      ),
+    );
+    mockSend.mockResolvedValue({ queued: false });
+
+    renderInterface();
+    submitMessage("/session Add refunds");
+
+    await waitFor(() => expect(mockSend).toHaveBeenCalledTimes(1));
+    expect(JSON.stringify(mockSend.mock.calls[0])).toContain(
+      "/session Add refunds",
+    );
+  });
+
+  it("keeps /session unsent when the director refuses to open one", async () => {
+    let asked = 0;
+    server.use(
+      http.post("*/api/director/org/sessions", () => {
+        asked += 1;
+        return HttpResponse.json(
+          { detail: "The org is paused" },
+          { status: 409 },
+        );
+      }),
+    );
+
+    renderInterface();
+    submitMessage("/session Add refunds");
+
+    await waitFor(() => expect(asked).toBe(1));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
   it("never routes what is written to an agent opened from the org chart", async () => {
     const sent = director("test-conversation-id", "conv-api");
     mockSend.mockResolvedValue({ queued: false });

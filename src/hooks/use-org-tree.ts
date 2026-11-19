@@ -1,4 +1,5 @@
 import React from "react";
+import { useActiveBackend } from "#/contexts/active-backend-context";
 import {
   subscribeOrgTree,
   type OrgStreamStatus,
@@ -126,6 +127,8 @@ export interface OrgTreeView {
  */
 export function useOrgTree(nodeId: NodeId | null, full = false): OrgTreeView {
   const [state, dispatch] = React.useReducer(reduce, INITIAL_STATE);
+  // The stream is the active backend's: another backend is another org.
+  const backendId = useActiveBackend().backend.id;
 
   React.useEffect(() => {
     dispatch({ kind: "subscribe" });
@@ -137,7 +140,7 @@ export function useOrgTree(nodeId: NodeId | null, full = false): OrgTreeView {
       },
       full,
     );
-  }, [nodeId, full]);
+  }, [nodeId, full, backendId]);
 
   return state;
 }

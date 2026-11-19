@@ -372,6 +372,18 @@ export function ConversationPanel({
   // Display collection: same loaded pages, with effectively-archived rows
   // (explicitly archived or missing-runtime) filtered out unless the user has
   // opted into "Show archived".
+  // "Delete all" means all the user can list here: an org's agents are not
+  // deleted from under it while they are hidden.
+  const deletableConversations = React.useMemo(
+    () =>
+      allLoadedConversations.filter(
+        (conversation) =>
+          showAgentStartedConversations ||
+          !isAgentOnlyConversation(conversation.tags),
+      ),
+    [allLoadedConversations, showAgentStartedConversations],
+  );
+
   // Conversations an org's director started for its agents are reached from
   // the org chart, and are listed here only on request.
   const conversations = React.useMemo(
@@ -1104,7 +1116,7 @@ export function ConversationPanel({
     setIsDeletingAll(true);
     // Enumeration completes before confirmation. Capture that complete,
     // deduplicated set before deletes start invalidating the paginated cache.
-    const idsToDelete = allLoadedConversations.map((c) => c.id);
+    const idsToDelete = deletableConversations.map((c) => c.id);
     const results = await Promise.allSettled(
       idsToDelete.map((conversationId) =>
         deleteConversationAsync({ conversationId, deletionScope }),
@@ -1367,7 +1379,7 @@ export function ConversationPanel({
                 backendKind={activeBackend.kind}
                 tagFacets={tagFacets}
                 automationNameFacets={automationNameFacets}
-                totalConversationsCount={allLoadedConversations.length}
+                totalConversationsCount={deletableConversations.length}
                 onRequestDeleteAll={handleRequestDeleteAll}
               />
             </div>
@@ -1663,7 +1675,7 @@ export function ConversationPanel({
           description={
             deleteAllPreparation === "ready"
               ? t(I18nKey.CONVERSATION$CONFIRM_DELETE_ALL_DESC, {
-                  count: allLoadedConversations.length,
+                  count: deletableConversations.length,
                 })
               : t(
                   deleteAllPreparation === "error"

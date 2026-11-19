@@ -37,7 +37,7 @@ import { useSendMessage } from "#/hooks/use-send-message";
 import { useQueryClient } from "@tanstack/react-query";
 import { routeFromChat } from "#/api/director/route-from-chat";
 import { sessionRequestOf } from "#/api/director/session-from-chat";
-import { DirectorClient } from "#/api/director/director-client";
+import { DirectorClient, DirectorError } from "#/api/director/director-client";
 import { joinFromChat } from "#/api/director/join-from-chat";
 import { ConversationLinks } from "#/components/features/org-chart/conversation-links";
 import { ExplicitAgentChatContext } from "#/context/explicit-agent-chat";
@@ -347,11 +347,15 @@ export function ChatInterface({
   const hasPendingUserMessages = React.useMemo(
     () =>
       conversationId
-        ? pendingMessages.some((message) =>
-            matchesPendingConversationId(
-              conversationId,
-              message.conversationId,
-            ),
+        ? pendingMessages.some(
+            (message) =>
+              // One the director sent to another team is delivered: this
+              // conversation waits for nothing of it.
+              message.status !== "routed" &&
+              matchesPendingConversationId(
+                conversationId,
+                message.conversationId,
+              ),
           )
         : false,
     [pendingMessages, conversationId],
@@ -478,27 +482,36 @@ export function ChatInterface({
         displayErrorToast(t(I18nKey.CHAT_INTERFACE$SESSION_REQUEST_REQUIRED));
         return;
       }
-      if (conversationId)
-        setConversationState(conversationId, { draftMessage: null });
-      setMessageToSend("");
       try {
         const { session } = await DirectorClient.openSession({
           text: sessionRequest,
         });
+        // Only now: a request that was not taken stays to be sent again.
+        if (conversationId)
+          setConversationState(conversationId, { draftMessage: null });
+        setMessageToSend("");
         displaySuccessToast(
           t(I18nKey.ORG_CHART$SESSION_OPENED, {
             title: session.title,
             team: session.team,
           }),
         );
+        return;
       } catch (openError) {
-        displayErrorToast(
-          openError instanceof Error
-            ? openError.message
-            : t(I18nKey.CHAT_INTERFACE$FAILED_TO_SEND_MESSAGE),
-        );
+        // A server with no director has no sessions: the words are sent on
+        // as they were written.
+        const noDirector =
+          openError instanceof DirectorError &&
+          (openError.status === null || openError.status === 404);
+        if (!noDirector) {
+          displayErrorToast(
+            openError instanceof Error
+              ? openError.message
+              : t(I18nKey.CHAT_INTERFACE$FAILED_TO_SEND_MESSAGE),
+          );
+          return;
+        }
       }
-      return;
     }
     // Capture before attachment conversion/upload can yield to a new edit.
     const draftRevision = conversationId
