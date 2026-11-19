@@ -1803,12 +1803,13 @@ describe("OrgChartView", () => {
       expect(within(card("root")).queryByRole("img", mark)).toBeNull();
     });
 
-    it("says when conflicts were not looked for, when the list is cut, and when there are no files", async () => {
+    it("says when the list is cut and when there are no files, and of an org team not that conflicts were not looked for", async () => {
+      // The server never looks for them at a team of the org.
       serveOwnership({ collisions_checked: false, truncated: true, files: [] });
       renderWithProviders(<OrgChartView nodeId={null} />);
       const map = await ownershipMap();
 
-      expect(map).toHaveTextContent("ORG_CHART$COLLISIONS_UNCHECKED");
+      expect(map).not.toHaveTextContent("ORG_CHART$COLLISIONS_UNCHECKED");
       expect(map).toHaveTextContent("ORG_CHART$OWNERSHIP_TRUNCATED");
       expect(map).toHaveTextContent("ORG_CHART$OWNERSHIP_EMPTY");
       expect(within(map).queryByRole("alert")).toBeNull();
