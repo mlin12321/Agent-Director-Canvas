@@ -669,6 +669,27 @@ describe("HomeChatLauncher", () => {
     );
   });
 
+  it("does not prepare the folder for an automation, which no org takes", async () => {
+    mockIsGitRepository.mockResolvedValue(false);
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(makeConversationResponse());
+    useOpenFolderRequestStore.getState().request();
+    renderLauncher();
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByTestId("stub-workspace-dialog-confirm"),
+    );
+    await screen.findByTestId("prepare-folder-command");
+    await user.click(screen.getByTestId("home-launcher-mode-automate"));
+    expect(screen.queryByTestId("prepare-folder-command")).toBeNull();
+    await user.click(screen.getByTestId("stub-chat-submit"));
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+    expect(mockPrepareFolder).not.toHaveBeenCalled();
+  });
+
   it("starts an ordinary conversation once the human removed the command", async () => {
     mockIsGitRepository.mockResolvedValue(false);
     const createSpy = vi
@@ -734,7 +755,8 @@ describe("HomeChatLauncher", () => {
     renderLauncher();
     const user = userEvent.setup();
 
-    if (!fromOrgPage) await user.click(screen.getByTestId("open-workspace-button"));
+    if (!fromOrgPage)
+      await user.click(screen.getByTestId("open-workspace-button"));
     await user.click(
       await screen.findByTestId("stub-workspace-dialog-confirm"),
     );
