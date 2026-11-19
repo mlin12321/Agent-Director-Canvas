@@ -1887,42 +1887,7 @@ describe("OrgChartView", () => {
         "Tokens now carry an expiry in token.py.",
       );
       expect(review).toHaveTextContent("Add a refresh test.");
-      expect(review).toHaveTextContent("services/auth/token.py:12");
-      expect(review).toHaveTextContent("The token never expires.");
-      expect(review).toHaveTextContent("expires_at = None");
-    });
-
-    it("says when the automated review found nothing, and when it did not run", async () => {
-      memoryHandlers();
-      put("auth", "root", "done", "services/auth", [], {
-        review: { ...REVIEW, state: "pending", round: 1, automated: [] },
-      });
-      const user = userEvent.setup();
-      renderWithProviders(<OrgChartView nodeId="auth" />);
-      await findCard("auth");
-      await user.click(currentCard());
-      const review = within(screen.getByRole("dialog")).getByRole("region", {
-        name: "ORG_CHART$REVIEW",
-      });
-
-      expect(review).toHaveTextContent("ORG_CHART$REVIEW_AUTOMATED_NONE");
-      expect(review).not.toHaveTextContent("ORG_CHART$REVIEW_ROUND");
-
-      act(() => {
-        put("auth", "root", "done", "services/auth", [], {
-          review: {
-            ...REVIEW,
-            state: "pending",
-            round: 1,
-            automated: [],
-            automated_ran: false,
-          },
-        });
-      });
-
-      await waitFor(() =>
-        expect(review).toHaveTextContent("ORG_CHART$REVIEW_AUTOMATED_SKIPPED"),
-      );
+      expect(review).not.toHaveTextContent("The token never expires.");
     });
 
     it("shows no review for a team that has reported nothing", async () => {

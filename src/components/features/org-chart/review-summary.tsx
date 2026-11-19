@@ -56,29 +56,11 @@ interface ReviewSummaryProps {
 
 /**
  * Where the review of a team's finished work stands: what the team said it
- * delivered and changed, what the reviewing IC wants changed, and what the
- * team's own review found.
+ * delivered and changed, and what the reviewing IC wants changed.
  */
 export function ReviewSummary({ review }: ReviewSummaryProps) {
   const { t } = useTranslation("openhands");
   const label = useReviewLabel();
-  let automated: React.ReactNode = (
-    <p className="text-xs text-muted">
-      {t(
-        review.automated_ran
-          ? I18nKey.ORG_CHART$REVIEW_AUTOMATED_NONE
-          : I18nKey.ORG_CHART$REVIEW_AUTOMATED_SKIPPED,
-      )}
-    </p>
-  );
-  if (review.automated.length > 0) {
-    automated = (
-      <Findings
-        title={t(I18nKey.ORG_CHART$REVIEW_AUTOMATED)}
-        findings={review.automated}
-      />
-    );
-  }
 
   return (
     <section
@@ -115,7 +97,6 @@ export function ReviewSummary({ review }: ReviewSummaryProps) {
           findings={review.findings}
         />
       ) : null}
-      {automated}
     </section>
   );
 }
