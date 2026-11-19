@@ -518,6 +518,10 @@ export function ChatInterface({
               ? openError.message
               : t(I18nKey.CHAT_INTERFACE$FAILED_TO_SEND_MESSAGE),
           );
+          // The composer was emptied as it was sent: it is to send again.
+          useConversationStore
+            .getState()
+            .setMessageToSend(content, "conversation");
           return;
         }
       }
@@ -614,6 +618,8 @@ export function ChatInterface({
           team: routed.team || routed.node_id,
           reason: routed.reason,
         });
+        // No echo comes back here to clear what was saved of it.
+        setConversationState(conversationId!, { draftMessage: null });
       }
       if (!routed) {
         await send(

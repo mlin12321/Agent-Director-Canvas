@@ -67,6 +67,39 @@ describe("optimistic-user-message-store", () => {
     expect(pending.map((m) => m.text)).toEqual(["first", "second", "third"]);
   });
 
+  it("drops the note of where an earlier message went when the next is written", () => {
+    const store = useOptimisticUserMessageStore.getState();
+    const routed = store.enqueuePendingMessage({
+      conversationId: "conv-a",
+      text: "Add refunds",
+    });
+    store.markPendingMessageRouted(routed, {
+      nodeId: "services.api",
+      team: "API",
+      reason: "",
+    });
+    const elsewhere = store.enqueuePendingMessage({
+      conversationId: "conv-b",
+      text: "Other chat",
+    });
+    store.markPendingMessageRouted(elsewhere, {
+      nodeId: "apps.web",
+      team: "Web",
+      reason: "",
+    });
+
+    store.enqueuePendingMessage({
+      conversationId: "conv-a",
+      text: "And tests",
+    });
+
+    expect(
+      useOptimisticUserMessageStore
+        .getState()
+        .pendingMessages.map((message) => message.text),
+    ).toEqual(["Other chat", "And tests"]);
+  });
+
   it("marks a pending message as 'error' with details", () => {
     const store = useOptimisticUserMessageStore.getState();
     const id = store.enqueuePendingMessage({
