@@ -93,6 +93,11 @@ interface OptimisticUserMessageActions {
   enqueuePendingMessage: (payload: EnqueuePendingMessagePayload) => string;
   /** Mark a pending message as failed (the API rejected it). */
   markPendingMessageError: (id: string, errorMessage?: string) => void;
+  /**
+   * The director has the message and delivers it itself, at once or when
+   * the org it holds goes on: it is not sent again for taking long.
+   */
+  markPendingMessageTaken: (id: string) => void;
   /** The message went to another team's conversation; it stays shown. */
   markPendingMessageRouted: (id: string, routedTo: RoutedTo) => void;
   /** Mark a pending message as sending again (used when retrying). */
@@ -221,6 +226,14 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
         ),
       })),
 
+    markPendingMessageTaken: (id) =>
+      set((state) => ({
+        // A new entry is one the watchdog of the old does not know.
+        pendingMessages: state.pendingMessages.map((message) =>
+          message.id === id ? { ...message } : message,
+        ),
+      })),
+
     markPendingMessageRouted: (id, routedTo) =>
       set((state) => ({
         pendingMessages: state.pendingMessages.map((message) =>
@@ -268,7 +281,8 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
           ) &&
           (message.afterTimestamp === undefined ||
             confirmedAt > message.afterTimestamp) &&
-          message.content.trim() === content.trim();
+          // The director adds notes of its own below what it delivers.
+          message.content.trim() === content.split("\n\n[director] ")[0].trim();
         let target = state.pendingMessages.findIndex(
           (message) => message.status === "sending" && matches(message),
         );

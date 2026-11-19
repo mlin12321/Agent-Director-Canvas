@@ -152,6 +152,9 @@ export function ChatInterface({
   const markPendingMessageRouted = useOptimisticUserMessageStore(
     (state) => state.markPendingMessageRouted,
   );
+  const markPendingMessageTaken = useOptimisticUserMessageStore(
+    (state) => state.markPendingMessageTaken,
+  );
   const pendingMessages = useOptimisticUserMessageStore(
     (state) => state.pendingMessages,
   );
@@ -621,6 +624,8 @@ export function ChatInterface({
         // No echo comes back here to clear what was saved of it.
         setConversationState(conversationId!, { draftMessage: null });
       }
+      if (routed?.conversation_id === conversationId)
+        markPendingMessageTaken(pendingId);
       if (!routed) {
         await send(
           createChatMessage(prompt, imageUrls, uploadedFiles, timestamp),
@@ -741,7 +746,13 @@ export function ChatInterface({
         showPendingStatus={!isSessionStarting}
       />
     ),
-    [pendingMessageLabel, isSessionStarting],
+    // What a retry joins is the conversation shown now, not the first one.
+    [
+      pendingMessageLabel,
+      isSessionStarting,
+      conversationId,
+      activeConversation?.tags,
+    ],
   );
   const isComposerDocked = Boolean(composerDockTarget);
   const isMinimalComposer = isComposerDocked || minimalComposer;

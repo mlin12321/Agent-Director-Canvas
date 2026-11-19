@@ -25,6 +25,31 @@ describe("useOrgTree", () => {
     mocks.backendId = "one";
   });
 
+  it("follows the top team of an org that begins after the last one went", () => {
+    const { result } = renderHook(() => useOrgTree(null));
+    const root = { id: "root", parent_id: null };
+    act(() =>
+      mocks.handlers!.onEvent({
+        type: "snapshot",
+        focus_id: "root",
+        nodes: [root],
+        escalations: [],
+        sessions: [],
+      } as never),
+    );
+    act(() =>
+      mocks.handlers!.onEvent({ type: "node_removed", id: "root" } as never),
+    );
+    expect(result.current.status).toBe("unavailable");
+
+    act(() =>
+      mocks.handlers!.onEvent({ type: "node_upsert", node: root } as never),
+    );
+
+    expect(result.current.focusId).toBe("root");
+    expect(result.current.status).toBe("live");
+  });
+
   it("shows nothing of one backend's org once another backend is active", () => {
     const { result, rerender } = renderHook(() => useOrgTree(null));
     act(() =>

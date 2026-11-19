@@ -83,7 +83,10 @@ function reduce(state: OrgTreeState, action: OrgTreeAction): OrgTreeState {
     case "node_upsert": {
       const nodes = new Map(state.nodes);
       nodes.set(event.node.id, event.node);
-      return { ...state, nodes };
+      // The top team of an org that began after the last one went.
+      return state.focusId === null && event.node.parent_id === null
+        ? { ...state, nodes, focusId: event.node.id, status: "live" }
+        : { ...state, nodes };
     }
     case "node_removed": {
       // Losing the followed node means there is nothing left to show here.
