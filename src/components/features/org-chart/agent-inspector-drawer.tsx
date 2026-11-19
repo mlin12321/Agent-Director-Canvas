@@ -331,12 +331,15 @@ export function AgentInspectorDrawer({
         ) : null}
       </div>
 
-      {!open && !(showsChanges && changed) ? (
-        // A new request to the team is written here, beside its conversations.
-        <div className="shrink-0 border-b border-border p-3">
-          <MessageToTeam key={node.id} node={node} />
-        </div>
-      ) : null}
+      {/* A new request to the team is written here, beside its
+          conversations. Hidden while one of those is open, not unmounted:
+          what was typed is still there afterwards. */}
+      <div
+        hidden={Boolean(open || (showsChanges && changed))}
+        className="shrink-0 border-b border-border p-3"
+      >
+        <MessageToTeam key={node.id} node={node} />
+      </div>
       {showsChanges && changed ? (
         <div className="min-h-0 flex-1">
           <React.Suspense fallback={null}>

@@ -585,6 +585,22 @@ describe("AgentInspectorDrawer", () => {
     ).toHaveTextContent("ORG_CHART$DIVISION_LEAD_IC · Refunds");
     expect(screen.queryByTestId("org-team-changes-tab")).toBeNull();
   });
+
+  it("keeps what was typed to the team while its changes are looked at", async () => {
+    memoryHandlers();
+    const user = userEvent.setup();
+    drawer(API, [RELEASE]);
+    const draft = () =>
+      within(screen.getByTestId("org-message")).getByLabelText(/MESSAGE_LABEL/);
+
+    await user.type(draft(), "Add refunds");
+    const tab = screen.getByTestId("org-team-changes-tab");
+    await user.click(tab);
+    await screen.findByTestId("team-changes");
+    await user.click(tab);
+
+    expect(draft()).toHaveValue("Add refunds");
+  });
 });
 
 describe("OrgSessionsPanel", () => {
