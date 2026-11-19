@@ -19,9 +19,23 @@ import { conversationPath } from "./org-sessions";
  * was opened on is put away while a sub-chat is read and comes back when
  * the path is left.
  */
-export function SubChatHost({ children }: { children: React.ReactNode }) {
+export function SubChatHost({
+  of,
+  children,
+}: {
+  /** The conversation the window is on: the path starts again with it. */
+  of?: string;
+  children: React.ReactNode;
+}) {
   const { t } = useTranslation("openhands");
   const [path, setPath] = React.useState<ConversationLink[]>([]);
+  // Not by a `key` on the host: that would mount what is inside it anew,
+  // and with it the connection to the conversation.
+  const [was, setWas] = React.useState(of);
+  if (was !== of) {
+    setWas(of);
+    setPath([]);
+  }
   const label = useLinkLabel();
   const open = React.useCallback((link: ConversationLink) => {
     setPath((current) => {

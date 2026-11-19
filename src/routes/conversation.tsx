@@ -200,7 +200,7 @@ function AppContent() {
   // which open here in place of it; the path starts again with each
   // conversation the window is opened on.
   return (
-    <SubChatHost key={conversationId}>
+    <SubChatHost of={conversationId}>
       <ConversationSurface conversationId={conversationId}>
         <div data-testid="app-route" className="flex h-full min-h-0 flex-col">
           {showsMobilePanelPage ? (
