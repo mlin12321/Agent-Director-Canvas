@@ -100,6 +100,39 @@ describe("optimistic-user-message-store", () => {
     ).toEqual(["Other chat", "And tests"]);
   });
 
+  it("takes what the director delivered with a note of its own for what was written", () => {
+    const store = useOptimisticUserMessageStore.getState();
+    store.enqueuePendingMessage({ conversationId: "conv-a", text: "Refunds" });
+
+    const consumed = store.consumeMatchingPendingMessage(
+      "conv-a",
+      'Refunds\n\n[director] context update (changed)\n{"teams": []}',
+      { id: "event-1", timestamp: new Date(Date.now() + 1000).toISOString() },
+    );
+
+    expect(consumed?.text).toBe("Refunds");
+    expect(useOptimisticUserMessageStore.getState().pendingMessages).toEqual(
+      [],
+    );
+  });
+
+  it("does not time out a message the director took and may hold", () => {
+    vi.useFakeTimers();
+    const store = useOptimisticUserMessageStore.getState();
+    const id = store.enqueuePendingMessage({
+      conversationId: "conv-a",
+      text: "Refunds",
+    });
+
+    store.markPendingMessageTaken(id);
+    vi.advanceTimersByTime(10 * 60 * 1000);
+
+    expect(
+      useOptimisticUserMessageStore.getState().pendingMessages[0].status,
+    ).toBe("sending");
+    vi.useRealTimers();
+  });
+
   it("marks a pending message as 'error' with details", () => {
     const store = useOptimisticUserMessageStore.getState();
     const id = store.enqueuePendingMessage({
