@@ -50,7 +50,7 @@ import type { Backend } from "#/api/backend-registry/types";
 
 const ICON_SIZE = 18;
 const SIDEBAR_LOGO_WIDTH = 34;
-const SIDEBAR_LOGO_HEIGHT = Math.round((SIDEBAR_LOGO_WIDTH * 30) / 46);
+const SIDEBAR_LOGO_HEIGHT = Math.round((SIDEBAR_LOGO_WIDTH * 203) / 268);
 
 export interface SidebarRailBodyProps {
   collapsed: boolean;

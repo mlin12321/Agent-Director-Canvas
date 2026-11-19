@@ -1,7 +1,7 @@
 {
-    "name": "OpenHands",
-    "short_name": "OpenHands",
-    "description": "OpenHands AI-powered development workspace.",
+    "name": "Agent Director",
+    "short_name": "Agent Director",
+    "description": "A control center for an organisation of coding agents, built on OpenHands.",
     "start_url": "./",
     "scope": "./",
     "categories": ["productivity"],
@@ -17,7 +17,7 @@
             "type": "image/png"
         }
     ],
-    "theme_color": "#181818",
-    "background_color": "#181818",
+    "theme_color": "#d3121a",
+    "background_color": "#f6f3ee",
     "display": "standalone"
 }

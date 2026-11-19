@@ -1,11 +1,12 @@
 import { useTranslation } from "react-i18next";
-import OpenHandsLogo from "#/assets/branding/openhands-logo.svg?react";
+import NorthStarLogo from "#/assets/branding/north-star-logo.svg?react";
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 
+// The north star mark is 268×203. Keep that ratio so the long point is not cropped.
 const DEFAULT_LOGO_WIDTH = 46;
-const DEFAULT_LOGO_HEIGHT = 30;
+const DEFAULT_LOGO_HEIGHT = Math.round((DEFAULT_LOGO_WIDTH * 203) / 268);
 
 export type OpenHandsLogoButtonProps = {
   className?: string;
@@ -31,13 +32,10 @@ export function OpenHandsLogoButton({
       aria-label={ariaLabel}
       className={cn(className)}
     >
-      <OpenHandsLogo
+      <NorthStarLogo
         width={logoWidth}
         height={logoHeight}
-        className={cn(
-          "shrink-0 text-contrast [&_path[fill=white]]:fill-current",
-          logoClassName,
-        )}
+        className={cn("shrink-0", logoClassName)}
       />
     </NavigationLink>
   );

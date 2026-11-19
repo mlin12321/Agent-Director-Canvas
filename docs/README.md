@@ -1,6 +1,6 @@
-# Agent Canvas docs
+# Agent Director docs
 
-This directory contains the project documentation.
+This directory contains the documentation for Agent Director: OpenHands Agent Canvas, with the director.
 
 - [The director](./DIRECTOR.md): start the org of agent teams from this fork, and what its page shows.
 - [Architecture](./architecture.md): system boundaries, runtime modes, and quality gates.

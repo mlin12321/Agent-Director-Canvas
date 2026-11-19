@@ -72,7 +72,7 @@ const projectRoot = app.isPackaged ? __dirname : join(__dirname, "..");
 const buildDir = join(projectRoot, "build");
 const scriptsDir = join(projectRoot, "scripts");
 
-// OpenHands raised-hands app icon, used as the BrowserWindow.icon option.
+// North star app icon, used as the BrowserWindow.icon option.
 // Windows gets the multi-size icon.ico (16→256, small sizes as classic BMP
 // entries — the Windows shell needs those); Linux uses the 1024×1024 PNG
 // for its taskbar. On macOS the dock icon comes from the .app bundle's
@@ -754,7 +754,7 @@ app.whenReady().then(async () => {
   nativeTheme.themeSource = "dark";
 
   // Set the dock icon explicitly on macOS so `npm run desktop` shows the
-  // OpenHands logo instead of the default Electron logo. In a packaged
+  // north star instead of the default Electron logo. In a packaged
   // build the .app bundle's icon.icns already provides this, but
   // app.dock.setIcon() is a cheap idempotent override that also fixes
   // the dev workflow.

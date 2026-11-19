@@ -2,7 +2,7 @@
 
 ## General
 
-- This repository is the OpenHands Agent Canvas React/TypeScript frontend.
+- This repository is Agent Director: the OpenHands Agent Canvas React/TypeScript frontend, including the org page of the director.
 
 ## i18n workflow
 - After editing `src/i18n/translation.json`, run `npm run make-i18n` to
