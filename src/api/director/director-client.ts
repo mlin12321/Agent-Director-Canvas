@@ -60,11 +60,12 @@ function director() {
 /** What a server answers for a path it does not serve at all. */
 const NO_SUCH_ROUTE = "Not Found";
 /**
- * The servers that have no director, until the page is loaded again: what
- * is asked of one is answered here, without a request for every message
- * written and every key pressed.
+ * The servers found to have no director, and when: what is asked of one is
+ * answered here for a while, without a request for every message written
+ * and every key pressed. A server started again with a director is found.
  */
-const withoutDirector = new Set<string>();
+const withoutDirector = new Map<string, number>();
+const NO_DIRECTOR_KEPT_MS = 30_000;
 
 /** Ask every server again, as after the page is loaded again. */
 export function forgetServersWithoutDirector() {
@@ -82,13 +83,17 @@ async function call<T>(
   always = false,
 ) {
   const { host, client } = director();
-  if (withoutDirector.has(host)) throw new DirectorError(NO_SUCH_ROUTE, 404);
+  if (
+    Date.now() - (withoutDirector.get(host) ?? -Infinity) <
+    NO_DIRECTOR_KEPT_MS
+  )
+    throw new DirectorError(NO_SUCH_ROUTE, 404);
   try {
     return await run(client);
   } catch (error) {
     if (isHttpError(error)) {
       if (always && error.status === 404 && error.detail === NO_SUCH_ROUTE) {
-        withoutDirector.add(host);
+        withoutDirector.set(host, Date.now());
       }
       throw new DirectorError(error.detail ?? error.statusText, error.status);
     }
