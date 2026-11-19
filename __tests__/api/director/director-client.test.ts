@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DirectorClient,
   forgetServersWithoutDirector,
@@ -8,6 +8,7 @@ import { server } from "#/mocks/node";
 
 describe("DirectorClient on a server without a director", () => {
   beforeEach(() => forgetServersWithoutDirector());
+  afterEach(() => vi.useRealTimers());
 
   it("asks once, then answers for the server without asking it", async () => {
     let asked = 0;
@@ -29,6 +30,26 @@ describe("DirectorClient on a server without a director", () => {
     });
 
     expect(asked).toBe(1);
+  });
+
+  it("asks again a while later, when the server may have a director", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    let director = false;
+    server.use(
+      http.get("*/api/director/org/sessions", () =>
+        director
+          ? HttpResponse.json([])
+          : HttpResponse.json({ detail: "Not Found" }, { status: 404 }),
+      ),
+    );
+    await expect(DirectorClient.listSessions()).rejects.toMatchObject({
+      status: 404,
+    });
+
+    director = true;
+    vi.setSystemTime(Date.now() + 60_000);
+
+    await expect(DirectorClient.listSessions()).resolves.toEqual([]);
   });
 
   it("goes on asking a director that only does not know one thing", async () => {

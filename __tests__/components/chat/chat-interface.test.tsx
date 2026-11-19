@@ -1065,6 +1065,40 @@ describe("ChatInterface - Pending message queue", () => {
     );
   });
 
+  it("opens one session for a /session pressed twice, and keeps what is written meanwhile", async () => {
+    let asked = 0;
+    let answer: () => void = () => {};
+    server.use(
+      http.post("*/api/director/org/sessions", async () => {
+        asked += 1;
+        await new Promise<void>((resolve) => {
+          answer = resolve;
+        });
+        return HttpResponse.json({
+          session: { id: "s1", title: "Refunds", team: "API" },
+          conversation_id: "c1",
+        });
+      }),
+    );
+
+    renderInterface();
+    submitMessage("/session Add refunds");
+    await waitFor(() => expect(asked).toBe(1));
+    submitMessage("/session Add refunds");
+    act(() =>
+      useConversationStore
+        .getState()
+        .setMessageToSend("and tests", "conversation"),
+    );
+    answer();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+
+    expect(asked).toBe(1);
+    expect(screen.getByTestId("chat-input")).toHaveTextContent("and tests");
+  });
+
   it("never routes what is written to an agent opened from the org chart", async () => {
     const sent = director("test-conversation-id", "conv-api");
     mockSend.mockResolvedValue({ queued: false });
