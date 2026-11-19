@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { RotateCw } from "lucide-react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { DirectorClient, DirectorError } from "#/api/director/director-client";
 import type { SessionTeam } from "#/api/director/types";
@@ -23,8 +24,14 @@ export function StartAgain({ node }: { node: SessionTeam }) {
     mutationFn: () => DirectorClient.startAgain(node.session, node.id),
     meta: { disableToast: true },
   });
+  const lost = isLost(node);
+  // Started, it may be lost again later and then be started again.
+  const { reset } = start;
+  React.useEffect(() => {
+    if (!lost) reset();
+  }, [lost, reset]);
 
-  if (!isLost(node)) return null;
+  if (!lost) return null;
   return (
     <div
       data-testid="org-start-again"

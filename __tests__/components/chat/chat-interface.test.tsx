@@ -1099,6 +1099,72 @@ describe("ChatInterface - Pending message queue", () => {
     expect(screen.getByTestId("chat-input")).toHaveTextContent("and tests");
   });
 
+  it("leaves what is written in plan mode to the planner", async () => {
+    const sent = director("test-conversation-id", "conv-api");
+    mockSend.mockResolvedValue({ queued: false });
+    act(() => useConversationStore.setState({ conversationMode: "plan" }));
+
+    renderInterface();
+    submitMessage("Plan refunds");
+
+    await waitFor(() => expect(mockSend).toHaveBeenCalledTimes(1));
+    expect(sent).toEqual([]);
+    act(() => useConversationStore.setState({ conversationMode: "code" }));
+  });
+
+  it("sends nothing that was stopped while the director was asked whose it is", async () => {
+    let answer: () => void = () => {};
+    server.use(
+      http.get("*/api/director/org/sessions", async () => {
+        await new Promise<void>((resolve) => {
+          answer = resolve;
+        });
+        return HttpResponse.json([]);
+      }),
+    );
+    mockSend.mockResolvedValue({ queued: false });
+
+    renderInterface();
+    submitMessage("Add refunds");
+    fireEvent.click(await screen.findByTestId("chat-message-stop"));
+    answer();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("keeps what was written while a message went to another team", async () => {
+    let answer: () => void = () => {};
+    director("test-conversation-id", "conv-api");
+    server.use(
+      http.get("*/api/director/org/sessions", async () => {
+        await new Promise<void>((resolve) => {
+          answer = resolve;
+        });
+        return HttpResponse.json([
+          {
+            id: "s1a2b3c",
+            team_id: "root",
+            conversation_id: "test-conversation-id",
+          },
+        ]);
+      }),
+    );
+
+    renderInterface();
+    submitMessage("Add refunds");
+    await waitFor(() => expect(answer).not.toBe(undefined));
+    setConversationState("test-conversation-id", { draftMessage: "Next" });
+    answer();
+
+    await screen.findByTestId("routed-to-team");
+    expect(getConversationState("test-conversation-id").draftMessage).toBe(
+      "Next",
+    );
+  });
+
   it("never routes what is written to an agent opened from the org chart", async () => {
     const sent = director("test-conversation-id", "conv-api");
     mockSend.mockResolvedValue({ queued: false });

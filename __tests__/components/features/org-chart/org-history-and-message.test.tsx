@@ -197,4 +197,33 @@ describe("MessageToTeam", () => {
     );
     expect(box).toHaveValue("Hello");
   });
+
+  it("keeps what was written while a request was being sent", async () => {
+    let answer: () => void = () => {};
+    server.use(
+      http.post("*/api/director/org/sessions", async () => {
+        await new Promise<void>((resolve) => {
+          answer = resolve;
+        });
+        return HttpResponse.json({
+          conversation_id: "c1",
+          session: { title: "Hello", team: "API" },
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<MessageToTeam node={API} />);
+    const box = screen.getByLabelText("ORG_CHART$MESSAGE_LABEL");
+    await user.type(box, "Hello");
+    await user.click(
+      screen.getByRole("button", { name: "ORG_CHART$MESSAGE_SEND" }),
+    );
+
+    await user.clear(box);
+    await user.type(box, "Next");
+    answer();
+
+    expect(await screen.findByRole("status")).toBeInTheDocument();
+    expect(box).toHaveValue("Next");
+  });
 });

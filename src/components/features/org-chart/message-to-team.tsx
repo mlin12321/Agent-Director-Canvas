@@ -25,18 +25,23 @@ export function MessageToTeam({ node }: { node: OrgNode }) {
   const [name, setName] = React.useState("");
   const inputId = React.useId();
   const send = useMutation({
-    mutationFn: (text: string): Promise<OpenedSession> => {
-      const title = name.trim();
-      return DirectorClient.openSession({
+    mutationFn: ({
+      text,
+      title,
+    }: {
+      text: string;
+      title: string;
+    }): Promise<OpenedSession> =>
+      DirectorClient.openSession({
         text,
         ...(title ? { title } : {}),
         // From the top team the director chooses the team.
         ...(node.parent_id === null ? {} : { node_id: node.id }),
-      });
-    },
-    onSuccess: () => {
-      setDraft("");
-      setName("");
+      }),
+    // What was typed while it was sent is the next request.
+    onSuccess: (_, sent) => {
+      setDraft((now) => (now.trim() === sent.text ? "" : now));
+      setName((now) => (now.trim() === sent.title ? "" : now));
     },
     meta: { disableToast: true },
   });
@@ -45,7 +50,7 @@ export function MessageToTeam({ node }: { node: OrgNode }) {
 
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (text) send.mutate(text);
+    if (text) send.mutate({ text, title: name.trim() });
   };
 
   return (

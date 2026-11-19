@@ -183,6 +183,8 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
     () => setDetailsId(currentId),
     [currentId],
   );
+  // Left for another team, they are closed, not kept for a return.
+  React.useEffect(() => setDetailsId(null), [currentId]);
   // Alt+ArrowUp goes to the team above, which the chart does not draw.
   const { navigate } = useNavigation();
   const parentId = current?.parent_id ?? null;

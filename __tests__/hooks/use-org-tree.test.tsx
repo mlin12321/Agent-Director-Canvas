@@ -50,6 +50,30 @@ describe("useOrgTree", () => {
     expect(result.current.status).toBe("live");
   });
 
+  it("shows a team again that a pull moved under another team", () => {
+    const { result } = renderHook(() => useOrgTree("api"));
+    const snapshot = (parent: string) =>
+      act(() =>
+        mocks.handlers!.onEvent({
+          type: "snapshot",
+          focus_id: "api",
+          nodes: [{ id: "api", parent_id: parent }],
+          escalations: [],
+          sessions: [],
+        } as never),
+      );
+    snapshot("b");
+    act(() =>
+      mocks.handlers!.onEvent({ type: "node_removed", id: "api" } as never),
+    );
+    expect(result.current.status).toBe("not_found");
+
+    snapshot("root");
+
+    expect(result.current.status).toBe("live");
+    expect(result.current.nodes.get("api")?.parent_id).toBe("root");
+  });
+
   it("shows nothing of one backend's org once another backend is active", () => {
     const { result, rerender } = renderHook(() => useOrgTree(null));
     act(() =>

@@ -163,7 +163,8 @@ export function OwnershipMap({ node, ownership }: OwnershipMapProps) {
               ))}
             </ul>
           ) : null}
-          {ownership.collisions_checked ? null : (
+          {/* The server checks the work of a session's teams, not the org's. */}
+          {ownership.collisions_checked || !("session" in node) ? null : (
             <p className="text-xs text-muted">
               {t(I18nKey.ORG_CHART$COLLISIONS_UNCHECKED)}
             </p>

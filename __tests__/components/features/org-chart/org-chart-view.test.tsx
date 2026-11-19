@@ -437,6 +437,30 @@ describe("OrgChartView", () => {
       expect(navigate).toHaveBeenCalledTimes(1);
     });
 
+    it("closes a team's details once the page has gone to another team", async () => {
+      server.resetHandlers();
+      const navigate = vi.fn();
+      const user = userEvent.setup();
+      const { rerender } = renderWithProviders(
+        <OrgChartView nodeId="payments" />,
+        { navigation: { navigate } },
+      );
+      await findCard("payments.worker");
+      await user.click(currentCard());
+      expect(await screen.findByTestId("org-message")).toBeInTheDocument();
+
+      rerender(<OrgChartView nodeId="payments.worker" />);
+      await waitFor(() =>
+        expect(screen.queryByTestId("org-message")).toBeNull(),
+      );
+      await user.keyboard("{Alt>}{ArrowUp}{/Alt}");
+      expect(navigate).toHaveBeenCalledWith("/org/payments");
+
+      rerender(<OrgChartView nodeId="payments" />);
+      await findCard("payments.worker");
+      expect(screen.queryByTestId("org-message")).toBeNull();
+    });
+
     it("draws a team without reports on its own", async () => {
       renderWithProviders(<OrgChartView nodeId="search" />);
       await findCard("search");
@@ -1779,12 +1803,13 @@ describe("OrgChartView", () => {
       expect(within(card("root")).queryByRole("img", mark)).toBeNull();
     });
 
-    it("says when conflicts were not looked for, when the list is cut, and when there are no files", async () => {
+    it("says when the list is cut and when there are no files, and of an org team not that conflicts were not looked for", async () => {
+      // The server never looks for them at a team of the org.
       serveOwnership({ collisions_checked: false, truncated: true, files: [] });
       renderWithProviders(<OrgChartView nodeId={null} />);
       const map = await ownershipMap();
 
-      expect(map).toHaveTextContent("ORG_CHART$COLLISIONS_UNCHECKED");
+      expect(map).not.toHaveTextContent("ORG_CHART$COLLISIONS_UNCHECKED");
       expect(map).toHaveTextContent("ORG_CHART$OWNERSHIP_TRUNCATED");
       expect(map).toHaveTextContent("ORG_CHART$OWNERSHIP_EMPTY");
       expect(within(map).queryByRole("alert")).toBeNull();

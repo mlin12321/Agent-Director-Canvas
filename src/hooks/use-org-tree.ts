@@ -53,8 +53,17 @@ function reduce(state: OrgTreeState, action: OrgTreeAction): OrgTreeState {
       : state;
   }
   // Terminal for this subscription: later frames about the node's former
-  // ancestors must not bring a removed node back.
-  if (state.status === "not_found") return state;
+  // ancestors must not bring a removed node back. Only a fresh snapshot of
+  // it does, which the server sends once a pull has moved it elsewhere.
+  if (
+    state.status === "not_found" &&
+    !(
+      action.kind === "event" &&
+      action.event.type === "snapshot" &&
+      action.event.focus_id === state.focusId
+    )
+  )
+    return state;
   if (action.kind === "status") {
     return state.status === action.status
       ? state
