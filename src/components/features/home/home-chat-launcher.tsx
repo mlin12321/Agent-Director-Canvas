@@ -1,6 +1,7 @@
 import { useConversationLaunchStore } from "#/stores/conversation-launch-store";
 import { useConversationWorkspace } from "#/hooks/query/use-conversation-workspace";
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { ConversationStartupProgress } from "#/components/features/chat/conversation-startup-progress";
@@ -66,6 +67,7 @@ import {
   prepareFolder,
 } from "#/api/director/prepare-folder";
 import { useFolderNeedsGit } from "#/hooks/query/use-folder-needs-git";
+import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { PrepareFolderCommand } from "./prepare-folder-command";
 import { OpenRepositoryDialog } from "./open-repository-dialog";
 import { HomeGitControlBarPreview } from "./home-git-control-bar-preview";
@@ -78,6 +80,7 @@ const CREATING_TOAST_MIN_VISIBLE_MS = 700;
 export function HomeChatLauncher() {
   const { t } = useTranslation("openhands");
   const { backend, orgId } = useActiveBackend();
+  const queryClient = useQueryClient();
   const { navigate, currentPath } = useNavigation();
   const ownerKey = JSON.stringify([backend.id, orgId, currentPath]);
   const currentOwner = useRef(ownerKey);
@@ -338,6 +341,15 @@ export function HomeChatLauncher() {
               }),
             );
           }
+        }
+        if (prepare && variables.workingDir) {
+          // It is a repository now: a second try must not prepare it again.
+          queryClient.invalidateQueries({
+            queryKey: DIRECTOR_QUERY_KEYS.folderIsGit(
+              backend.id,
+              variables.workingDir,
+            ),
+          });
         }
         const data = await createConversation(variables);
         isCreated = true;
