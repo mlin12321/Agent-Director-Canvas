@@ -100,7 +100,6 @@ function board(teams: ReturnType<typeof team>[], currentId = teams[0].node.id) {
       <OrgByState
         nodes={new Map(teams.map(({ node }) => [node.id, node]))}
         currentId={currentId}
-        collidingIds={new Set()}
         onOpenDetails={() => {}}
       />
     </OrgSessionsContext.Provider>

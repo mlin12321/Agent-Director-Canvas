@@ -204,11 +204,6 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
   }, [parentId, detailsId, navigate]);
   // A server without the route answers with an error and gets no map.
   const ownership = useTeamOwnership(current).data;
-  const colliding = React.useMemo(
-    () =>
-      new Set(ownership?.collisions.flatMap((collision) => collision.node_ids)),
-    [ownership],
-  );
 
   // In the whole-org view an unknown team is one the tree does not hold.
   if (status === "not_found" || (top && !current)) {
@@ -310,7 +305,6 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
               <OrgByState
                 nodes={nodes}
                 currentId={current.id}
-                collidingIds={colliding}
                 onOpenDetails={openDetails}
               />
             ) : (
@@ -320,7 +314,6 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
                     root={top}
                     nodes={nodes}
                     currentId={current.id}
-                    collidingIds={colliding}
                     onOpenDetails={openDetails}
                   />
                 ) : (
@@ -329,7 +322,6 @@ export function OrgChartView({ nodeId }: OrgChartViewProps) {
                     parent={ancestors.at(-1) ?? null}
                     reports={reports}
                     columns={fit.columns}
-                    collidingIds={colliding}
                     onOpenDetails={openDetails}
                   />
                 )}

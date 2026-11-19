@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown, ChevronRight, TriangleAlert } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { NodeId, NodeOwnership, OrgNode } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
@@ -26,11 +26,7 @@ function directoriesAbove(path: string) {
     .map((_, index) => segments.slice(0, index + 1).join("/"));
 }
 
-/**
- * The files of the team the page is on, by the direct report that owns
- * them, and the files where the committed work of two of these teams would
- * conflict if it were merged now.
- */
+/** The files of the team the page is on, by the direct report that owns them. */
 export function OwnershipMap({ node, ownership }: OwnershipMapProps) {
   const { t } = useTranslation("openhands");
   const open = useOrgChartStore((state) => state.ownershipOpen);
@@ -52,22 +48,6 @@ export function OwnershipMap({ node, ownership }: OwnershipMapProps) {
         teams.add(file.owner);
       }
     }
-    const collisions = new Map(
-      ownership.collisions.map((collision) => [
-        collision.path,
-        t(I18nKey.ORG_CHART$COLLISION_BETWEEN, {
-          teams: collision.node_ids
-            .map((id) => titles.get(id) ?? id)
-            .join(", "),
-        }),
-      ]),
-    );
-    const collidingBelow = new Map<string, number>();
-    for (const path of collisions.keys()) {
-      for (const directory of directoriesAbove(path)) {
-        collidingBelow.set(directory, (collidingBelow.get(directory) ?? 0) + 1);
-      }
-    }
     const none: ReadonlySet<NodeId | null> = new Set();
     const lookup: OwnershipLookup = {
       ownerOf: (path) => owners.get(path) ?? null,
@@ -77,22 +57,16 @@ export function OwnershipMap({ node, ownership }: OwnershipMapProps) {
         t(I18nKey.ORG_CHART$OWNERSHIP_OWNER, {
           team: titles.get(owner ?? node.id) ?? owner,
         }),
-      collisionAt: (path) => collisions.get(path) ?? null,
-      collisionsBelow: (path) => {
-        const count = collidingBelow.get(path);
-        return count ? t(I18nKey.ORG_CHART$COLLISIONS, { count }) : null;
-      },
     };
     return {
       lookup,
       swatches,
-      collisions,
       tree: buildFileTree(ownership.files.map((file) => file.path)),
     };
   }, [ownership, node.id, node.title, t]);
 
   if (!ownership || !model) return null;
-  const { lookup, swatches, collisions, tree } = model;
+  const { lookup, swatches, tree } = model;
 
   return (
     <section
@@ -112,12 +86,6 @@ export function OwnershipMap({ node, ownership }: OwnershipMapProps) {
           <ChevronRight width={14} height={14} aria-hidden="true" />
         )}
         {t(I18nKey.ORG_CHART$OWNERSHIP_TITLE)}
-        {collisions.size > 0 ? (
-          <span className="flex items-center gap-1 text-xs font-normal text-feedback-error">
-            <TriangleAlert width={12} height={12} aria-hidden="true" />
-            {t(I18nKey.ORG_CHART$COLLISIONS, { count: collisions.size })}
-          </span>
-        ) : null}
       </button>
       {open ? (
         <div className="flex min-h-0 flex-col gap-2 overflow-auto border-t border-border px-3 py-2">
@@ -151,24 +119,6 @@ export function OwnershipMap({ node, ownership }: OwnershipMapProps) {
               </li>
             ))}
           </ul>
-          {collisions.size > 0 ? (
-            <ul
-              role="alert"
-              className="flex flex-col gap-0.5 text-xs text-feedback-error"
-            >
-              {[...collisions].map(([path, between]) => (
-                <li key={path}>
-                  <span className="font-medium">{path}</span>: {between}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {/* The server checks the work of a session's teams, not the org's. */}
-          {ownership.collisions_checked || !("session" in node) ? null : (
-            <p className="text-xs text-muted">
-              {t(I18nKey.ORG_CHART$COLLISIONS_UNCHECKED)}
-            </p>
-          )}
           {ownership.files.length === 0 ? (
             <p className="text-xs text-muted">
               {t(I18nKey.ORG_CHART$OWNERSHIP_EMPTY)}

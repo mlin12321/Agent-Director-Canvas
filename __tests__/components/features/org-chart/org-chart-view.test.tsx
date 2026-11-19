@@ -1776,43 +1776,13 @@ describe("OrgChartView", () => {
       );
     });
 
-    it("warns of files that would conflict, on the map and on the teams' cards", async () => {
-      serveOwnership({
-        collisions: [
-          { path: "services/auth/login.py", node_ids: ["auth", "billing"] },
-        ],
-      });
+    it("says when the list is cut and when there are no files", async () => {
+      serveOwnership({ truncated: true, files: [] });
       renderWithProviders(<OrgChartView nodeId={null} />);
       const map = await ownershipMap();
 
-      expect(within(map).getByRole("alert")).toHaveTextContent(
-        "services/auth/login.py: ORG_CHART$COLLISION_BETWEEN",
-      );
-      // The directory is closed, so it carries the warning for the file.
-      expect(
-        within(
-          within(map).getByTestId("ownership-dir-services/auth"),
-        ).getByRole("img", { name: "ORG_CHART$COLLISIONS" }),
-      ).toBeInTheDocument();
-      const mark = { name: "ORG_CHART$COLLISION_MARK" };
-      expect(within(card("auth")).getByRole("img", mark)).toBeInTheDocument();
-      expect(
-        within(card("billing")).getByRole("img", mark),
-      ).toBeInTheDocument();
-      expect(within(card("search")).queryByRole("img", mark)).toBeNull();
-      expect(within(card("root")).queryByRole("img", mark)).toBeNull();
-    });
-
-    it("says when the list is cut and when there are no files, and of an org team not that conflicts were not looked for", async () => {
-      // The server never looks for them at a team of the org.
-      serveOwnership({ collisions_checked: false, truncated: true, files: [] });
-      renderWithProviders(<OrgChartView nodeId={null} />);
-      const map = await ownershipMap();
-
-      expect(map).not.toHaveTextContent("ORG_CHART$COLLISIONS_UNCHECKED");
       expect(map).toHaveTextContent("ORG_CHART$OWNERSHIP_TRUNCATED");
       expect(map).toHaveTextContent("ORG_CHART$OWNERSHIP_EMPTY");
-      expect(within(map).queryByRole("alert")).toBeNull();
     });
 
     it("asks for the team the page is on", async () => {

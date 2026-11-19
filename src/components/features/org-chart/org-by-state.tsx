@@ -55,7 +55,6 @@ interface OrgByStateProps {
   /** Every team of the org, in the order of the tree. */
   nodes: ReadonlyMap<NodeId, OrgNode>;
   currentId: NodeId;
-  collidingIds: ReadonlySet<NodeId>;
   onOpenDetails: () => void;
 }
 
@@ -66,7 +65,6 @@ interface OrgByStateProps {
 export function OrgByState({
   nodes,
   currentId,
-  collidingIds,
   onOpenDetails,
 }: OrgByStateProps) {
   const { t } = useTranslation("openhands");
@@ -107,7 +105,6 @@ export function OrgByState({
                   <TeamCard
                     node={node}
                     current={node.id === currentId}
-                    collides={collidingIds.has(node.id)}
                     onOpenDetails={onOpenDetails}
                   />
                 </li>

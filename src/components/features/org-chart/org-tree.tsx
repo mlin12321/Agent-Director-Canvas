@@ -7,8 +7,6 @@ interface OrgTreeProps {
   nodes: ReadonlyMap<NodeId, OrgNode>;
   /** The team the page is on; it is outlined and brought to the middle. */
   currentId: NodeId;
-  /** Teams whose committed work conflicts with another team's. */
-  collidingIds: ReadonlySet<NodeId>;
   onOpenDetails: () => void;
 }
 
@@ -31,7 +29,6 @@ function Card({ node, ...tree }: Omit<BranchProps, "isTop">) {
     <TeamCard
       node={node}
       current={node.id === tree.currentId}
-      collides={tree.collidingIds.has(node.id)}
       onOpenDetails={tree.onOpenDetails}
       centerInScroller
     />

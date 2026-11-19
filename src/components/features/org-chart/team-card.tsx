@@ -1,5 +1,5 @@
 import React from "react";
-import { CircleStop, GitMerge, Pause, TriangleAlert } from "lucide-react";
+import { CircleStop, Pause, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { NodeStatus, OrgNode } from "#/api/director/types";
 import { NavigationLink } from "#/components/shared/navigation-link";
@@ -20,8 +20,6 @@ interface TeamCardProps {
   node: OrgNode;
   /** The team the page is on. Its card opens its details. */
   current: boolean;
-  /** Its committed work conflicts with another team's. */
-  collides?: boolean;
   onOpenDetails: () => void;
   /** Bring the current team to the middle of a chart that scrolls. */
   centerInScroller?: boolean;
@@ -40,7 +38,6 @@ const MAIN_CLASS =
 export const TeamCard = React.memo(function TeamCard({
   node,
   current,
-  collides = false,
   onOpenDetails,
   centerInScroller = false,
 }: TeamCardProps) {
@@ -113,16 +110,6 @@ export const TeamCard = React.memo(function TeamCard({
             className="flex shrink-0 text-feedback-warning"
           >
             <CircleStop width={11} height={11} aria-hidden="true" />
-          </span>
-        ) : null}
-        {collides ? (
-          <span
-            role="img"
-            aria-label={t(I18nKey.ORG_CHART$COLLISION_MARK)}
-            title={t(I18nKey.ORG_CHART$COLLISION_MARK)}
-            className="flex shrink-0 text-feedback-error"
-          >
-            <GitMerge width={11} height={11} aria-hidden="true" />
           </span>
         ) : null}
         {work.waiting.length > 0 ? (
