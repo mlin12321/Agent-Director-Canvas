@@ -60,6 +60,8 @@ export interface PendingUserMessage {
   afterTimestamp?: number;
   errorMessage?: string;
   routedTo?: RoutedTo;
+  /** Taken by the director, which delivers it: it can no longer be stopped. */
+  taken?: boolean;
 }
 
 interface OptimisticUserMessageState {
@@ -230,7 +232,7 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
       set((state) => ({
         // A new entry is one the watchdog of the old does not know.
         pendingMessages: state.pendingMessages.map((message) =>
-          message.id === id ? { ...message } : message,
+          message.id === id ? { ...message, taken: true } : message,
         ),
       })),
 

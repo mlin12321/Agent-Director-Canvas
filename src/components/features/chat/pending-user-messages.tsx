@@ -140,7 +140,7 @@ export function PendingUserMessages({
               : undefined
           }
           onStop={
-            message.status === "sending"
+            message.status === "sending" && !message.taken
               ? () => handleStop(message.id, message.text)
               : undefined
           }

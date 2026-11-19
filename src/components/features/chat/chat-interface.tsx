@@ -75,7 +75,9 @@ import { getStatusColor, getStatusText } from "#/utils/utils";
 import { useNewConversationCommand } from "#/hooks/mutation/use-new-conversation-command";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import {
+  clearConfirmedConversationDraft,
   getConversationDraftRevision,
+  getConversationState,
   setConversationState,
 } from "#/utils/conversation-local-storage";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
@@ -255,6 +257,9 @@ export function ChatInterface({
   ]);
 
   const { conversationId } = useOptionalConversationId();
+  // Which conversation is open now, for what finishes after a switch.
+  const openConversation = React.useRef(conversationId);
+  openConversation.current = conversationId;
 
   // The live goal banner renders in the scroll stream but advances via store
   // updates (in-progress goal events are filtered out of `renderableEvents`),
@@ -501,13 +506,20 @@ export function ChatInterface({
         return;
       }
       openingSession.current = true;
+      const sessionDraft = conversationId
+        ? getConversationDraftRevision(conversationId)
+        : undefined;
       try {
         const { session } = await DirectorClient.openSession({
           text: sessionRequest,
         });
         // Only now: a request that was not taken stays to be sent again.
+        // What was written since is kept.
         if (conversationId)
-          setConversationState(conversationId, { draftMessage: null });
+          clearConfirmedConversationDraft(conversationId, {
+            text: content,
+            draftRevision: sessionDraft,
+          });
         displaySuccessToast(
           t(I18nKey.ORG_CHART$SESSION_OPENED, {
             title: session.title,
@@ -528,8 +540,17 @@ export function ChatInterface({
               : t(I18nKey.CHAT_INTERFACE$FAILED_TO_SEND_MESSAGE),
           );
           // The composer was emptied as it was sent: it is to send again,
-          // unless something else was written there meanwhile.
-          useConversationStore.getState().restoreMessageToInputIfEmpty(content);
+          // unless something else was written there meanwhile. The composer
+          // of another conversation is not this one's.
+          if (openConversation.current === conversationId)
+            useConversationStore
+              .getState()
+              .restoreMessageToInputIfEmpty(content);
+          else if (
+            conversationId &&
+            !getConversationState(conversationId).draftMessage
+          )
+            setConversationState(conversationId, { draftMessage: content });
           return;
         }
       } finally {
@@ -617,10 +638,19 @@ export function ChatInterface({
       // session: the director may send it straight to the team of the
       // session it concerns. Attachments
       // travel with the conversation, so a message with any goes as it is.
+      // The planner's words are the planner's to take.
       const routed =
-        !isExplicitAgentChat && !imageUrls.length && !uploadedFiles.length
+        !isExplicitAgentChat &&
+        useConversationStore.getState().conversationMode !== "plan" &&
+        !imageUrls.length &&
+        !uploadedFiles.length
           ? await routeFromChat(conversationId!, prompt)
           : null;
+      // Stopped while it was being routed: it goes nowhere.
+      const stopped = !useOptimisticUserMessageStore
+        .getState()
+        .pendingMessages.some((message) => message.id === pendingId);
+      if (!routed && stopped) return;
       if (routed && routed.conversation_id !== conversationId) {
         markPendingMessageRouted(pendingId, {
           // The team's page, whichever session's team took it.
@@ -629,7 +659,10 @@ export function ChatInterface({
           reason: routed.reason,
         });
         // No echo comes back here to clear what was saved of it.
-        setConversationState(conversationId!, { draftMessage: null });
+        clearConfirmedConversationDraft(conversationId!, {
+          text: content,
+          draftRevision,
+        });
       }
       if (routed?.conversation_id === conversationId)
         markPendingMessageTaken(pendingId);
