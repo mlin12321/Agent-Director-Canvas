@@ -746,7 +746,13 @@ export function ChatInterface({
         showPendingStatus={!isSessionStarting}
       />
     ),
-    [pendingMessageLabel, isSessionStarting],
+    // What a retry joins is the conversation shown now, not the first one.
+    [
+      pendingMessageLabel,
+      isSessionStarting,
+      conversationId,
+      activeConversation?.tags,
+    ],
   );
   const isComposerDocked = Boolean(composerDockTarget);
   const isMinimalComposer = isComposerDocked || minimalComposer;
