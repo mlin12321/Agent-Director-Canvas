@@ -1,4 +1,5 @@
 import { useQueries } from "@tanstack/react-query";
+import { ORG_REFRESH_MS } from "#/constants/org-chart";
 import { DirectorClient } from "#/api/director/director-client";
 import type { NodeId } from "#/api/director/types";
 import { useActiveBackend } from "#/contexts/active-backend-context";
@@ -16,6 +17,8 @@ export function useTeamMessages(placeIds: NodeId[]) {
       queryKey: DIRECTOR_QUERY_KEYS.messages(backend.id, placeId),
       queryFn: () => DirectorClient.getNodeMessages(placeId),
       retry: false,
+      // The stream tells of teams, not of what they write.
+      refetchInterval: ORG_REFRESH_MS,
     })),
     combine: (results) => ({
       isSuccess: results.every((result) => result.isSuccess),
