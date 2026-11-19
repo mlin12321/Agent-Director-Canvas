@@ -27,9 +27,12 @@ import { ChatMessage } from "./chat-message";
 export function PendingUserMessages({
   pendingLabel,
   showPendingStatus = true,
+  onSent,
 }: {
   pendingLabel?: string;
   showPendingStatus?: boolean;
+  /** After a message that failed was sent again, as after a first send. */
+  onSent?: () => void;
 } = {}) {
   const { t } = useTranslation("openhands");
   const { conversationId } = useOptionalConversationId();
@@ -81,6 +84,7 @@ export function PendingUserMessages({
             message.timestamp,
           ),
         );
+        onSent?.();
       } catch (error) {
         const errorMessage =
           error instanceof Error
@@ -89,7 +93,7 @@ export function PendingUserMessages({
         markPendingMessageError(id, errorMessage);
       }
     },
-    [send, markPendingMessageError, markPendingMessageSending, t],
+    [send, markPendingMessageError, markPendingMessageSending, onSent, t],
   );
 
   const handleStop = React.useCallback(

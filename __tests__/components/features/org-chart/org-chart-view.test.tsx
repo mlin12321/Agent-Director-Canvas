@@ -862,6 +862,22 @@ describe("OrgChartView", () => {
       ).toHaveAttribute("href", "/org");
     });
 
+    it("waits for the next org when the top team is removed, and shows it", async () => {
+      renderWithProviders(<OrgChartView nodeId={null} />);
+      const rootId = String(store.rootId);
+      await findCard(rootId);
+      const again = store.snapshot(rootId, false);
+
+      streams[0].send({ type: "node_removed", id: rootId });
+      await waitFor(() =>
+        expect(screen.queryByTestId(`org-node-${rootId}`)).toBeNull(),
+      );
+      expect(screen.queryByText("ORG_CHART$NOT_FOUND_TITLE")).toBeNull();
+
+      streams[0].send(again as OrgEvent);
+      await findCard(rootId);
+    });
+
     it("stays gone when the team is removed along with an ancestor", async () => {
       renderWithProviders(<OrgChartView nodeId="oauth" />);
       await findCard("oauth");

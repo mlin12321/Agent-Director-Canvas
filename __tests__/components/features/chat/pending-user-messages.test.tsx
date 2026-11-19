@@ -299,12 +299,15 @@ describe("PendingUserMessages", () => {
       .getState()
       .markPendingMessageError(id, "Server unavailable");
 
-    renderWithProviders(<PendingUserMessages />);
+    const onSent = vi.fn();
+    renderWithProviders(<PendingUserMessages onSent={onSent} />);
 
     const user = userEvent.setup();
     await user.click(screen.getByTestId("chat-message-retry"));
 
     expect(mockSend).toHaveBeenCalledTimes(1);
+    // What follows a first send follows this one too.
+    await waitFor(() => expect(onSent).toHaveBeenCalledTimes(1));
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "message",

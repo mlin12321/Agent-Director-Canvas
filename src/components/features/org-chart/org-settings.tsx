@@ -430,7 +430,14 @@ export function OrgSettings() {
       </button>
       {isOpen ? (
         <SettingsForm
-          key={JSON.stringify(settings.data)}
+          // Anew when what it edits was changed elsewhere, not with every
+          // team the org gains: that would throw away what is being typed.
+          key={JSON.stringify({
+            ...settings.data,
+            teams: 0,
+            depth: 0,
+            max_concurrent_runs: 0,
+          })}
           state={settings.data}
           onClose={() => setIsOpen(false)}
         />

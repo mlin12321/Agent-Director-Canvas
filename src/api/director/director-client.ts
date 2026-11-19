@@ -48,20 +48,48 @@ function director() {
   if (!backend) {
     throw new DirectorError("No local backend is active", null);
   }
-  return new SdkDirectorClient({
-    host: backend.host.replace(/\/+$/, ""),
+  const host = backend.host.replace(/\/+$/, "");
+  const client = new SdkDirectorClient({
+    host,
     apiKey: backend.apiKey?.trim() || undefined,
     timeout: CALL_TIMEOUT_MS,
   });
+  return { host, client };
 }
 
-/** Run one call, with a refusal told as the page tells it. */
-async function call<T>(run: (client: SdkDirectorClient) => Promise<T>) {
-  const client = director();
+/** What a server answers for a path it does not serve at all. */
+const NO_SUCH_ROUTE = "Not Found";
+/**
+ * The servers that have no director, until the page is loaded again: what
+ * is asked of one is answered here, without a request for every message
+ * written and every key pressed.
+ */
+const withoutDirector = new Set<string>();
+
+/** Ask every server again, as after the page is loaded again. */
+export function forgetServersWithoutDirector() {
+  withoutDirector.clear();
+}
+
+/**
+ * Run one call, with a refusal told as the page tells it.
+ *
+ * @param always Whether every director serves the call, so that a server
+ * which does not know it has no director.
+ */
+async function call<T>(
+  run: (client: SdkDirectorClient) => Promise<T>,
+  always = false,
+) {
+  const { host, client } = director();
+  if (withoutDirector.has(host)) throw new DirectorError(NO_SUCH_ROUTE, 404);
   try {
     return await run(client);
   } catch (error) {
     if (isHttpError(error)) {
+      if (always && error.status === 404 && error.detail === NO_SUCH_ROUTE) {
+        withoutDirector.add(host);
+      }
       throw new DirectorError(error.detail ?? error.statusText, error.status);
     }
     throw error;
@@ -74,7 +102,7 @@ async function call<T>(run: (client: SdkDirectorClient) => Promise<T>) {
  */
 export const DirectorClient = {
   /** Whether the director has an org; `root_id` is null when it has none. */
-  getOrg: () => call((client) => client.getOrg()),
+  getOrg: () => call((client) => client.getOrg(), true),
 
   /**
    * Say something to the org. It goes to the IC of the nearest team at or
@@ -84,7 +112,7 @@ export const DirectorClient = {
     call((client) => client.routeMessage(request)),
 
   /** The sessions that are open, oldest first. */
-  listSessions: () => call((client) => client.listSessions()),
+  listSessions: () => call((client) => client.listSessions(), true),
 
   /**
    * Answer an escalation a team raised in a session and that waits on the
@@ -201,7 +229,7 @@ export function subscribeOrgTree(
   let everLive = false;
 
   const connect = async () => {
-    const events = director().streamOrgTree({
+    const events = director().client.streamOrgTree({
       node: nodeId ?? undefined,
       full,
       signal: controller.signal,

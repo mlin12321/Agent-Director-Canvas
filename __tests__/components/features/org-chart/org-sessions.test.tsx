@@ -1,3 +1,4 @@
+import React from "react";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
@@ -585,6 +586,22 @@ describe("AgentInspectorDrawer", () => {
     ).toHaveTextContent("ORG_CHART$DIVISION_LEAD_IC · Refunds");
     expect(screen.queryByTestId("org-team-changes-tab")).toBeNull();
   });
+
+  it("keeps what was typed to the team while its changes are looked at", async () => {
+    memoryHandlers();
+    const user = userEvent.setup();
+    drawer(API, [RELEASE]);
+    const draft = () =>
+      within(screen.getByTestId("org-message")).getByLabelText(/MESSAGE_LABEL/);
+
+    await user.type(draft(), "Add refunds");
+    const tab = screen.getByTestId("org-team-changes-tab");
+    await user.click(tab);
+    await screen.findByTestId("team-changes");
+    await user.click(tab);
+
+    expect(draft()).toHaveValue("Add refunds");
+  });
 });
 
 describe("OrgSessionsPanel", () => {
@@ -892,6 +909,44 @@ describe("conversations of agents in the chat window", () => {
     );
     expect(screen.getByTestId("main-chat")).toBeInTheDocument();
     expect(screen.queryByTestId("sub-chat")).toBeNull();
+  });
+
+  it("starts the path again on another conversation without mounting what it holds anew", async () => {
+    server.use(
+      http.get("*/api/director/org/conversations/:id", () =>
+        HttpResponse.json(place("top", [link("api", "below", "API")])),
+      ),
+    );
+    let mounted = 0;
+    function Main() {
+      React.useEffect(() => {
+        mounted += 1;
+      }, []);
+      return <ConversationLinks conversationId="top" />;
+    }
+    const user = userEvent.setup();
+    const { rerender } = renderWithProviders(
+      <SubChatHost of="top">
+        <Main />
+      </SubChatHost>,
+    );
+    rerender(
+      <SubChatHost of="other">
+        <Main />
+      </SubChatHost>,
+    );
+    expect(mounted).toBe(1);
+
+    await user.click(await screen.findByRole("button", { name: /API/ }));
+    expect(screen.getByTestId("sub-chat")).toBeInTheDocument();
+    rerender(
+      <SubChatHost of="top">
+        <Main />
+      </SubChatHost>,
+    );
+    expect(screen.queryByTestId("sub-chat")).toBeNull();
+    // Nothing is still asked for when the next test starts.
+    await screen.findByTestId("conversation-links");
   });
 
   it("shows no links for a conversation that is no agent's, or where no sub-chat can be opened", async () => {

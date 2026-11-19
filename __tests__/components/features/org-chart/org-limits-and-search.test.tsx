@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import type {
@@ -137,6 +138,39 @@ describe("OrgSettings", () => {
       within(modal).getByRole("button", { name: "BUTTON$SAVE" }),
     ).toBeDisabled();
     expect(saved).toEqual([]);
+  });
+
+  it("keeps what is being typed when the org gains a team meanwhile", async () => {
+    settingsHandlers();
+    let client: QueryClient | undefined;
+    function Probe() {
+      client = useQueryClient();
+      return null;
+    }
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <Probe />
+        <OrgSettings />
+      </>,
+    );
+    const modal = await openSettings(user);
+    const teams = () =>
+      within(modal).getByLabelText(/ORG_CHART\$SETTINGS_MAX_TEAMS/);
+    await user.clear(teams());
+    await user.type(teams(), "7");
+
+    let asked = 0;
+    server.use(
+      http.get("*/api/director/settings", () => {
+        asked += 1;
+        return HttpResponse.json({ ...STATE, teams: STATE.teams + 1 });
+      }),
+    );
+    await client?.invalidateQueries();
+    await waitFor(() => expect(asked).toBe(1));
+
+    expect(teams()).toHaveValue(7);
   });
 
   it("goes back to the defaults when asked to", async () => {

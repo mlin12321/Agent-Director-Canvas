@@ -122,6 +122,29 @@ describe("ConversationPanel filters and pagination", () => {
     expect(screen.getAllByTestId("conversation-card")).toHaveLength(4);
   });
 
+  it("goes on to the next page while an org's agents are all that is loaded", async () => {
+    const agentOnly = (id: string) =>
+      createMockConversation({
+        id,
+        title: `Agent ${id}`,
+        tags: { startedby: "director" },
+      });
+    const search = vi
+      .spyOn(AgentServerConversationService, "searchConversations")
+      .mockResolvedValueOnce({ items: [agentOnly("1")], next_page_id: "2" })
+      .mockResolvedValueOnce({ items: [agentOnly("2")], next_page_id: "3" })
+      .mockResolvedValueOnce({
+        items: [createMockConversation({ id: "3", title: "Mine" })],
+        next_page_id: null,
+      });
+
+    renderConversationPanel();
+
+    expect(await screen.findByText("Mine")).toBeInTheDocument();
+    expect(search).toHaveBeenCalledTimes(3);
+    expect(screen.queryByTestId("conversation-panel-empty-state")).toBeNull();
+  });
+
   it("filters from the persistent filter bar and couples automation chips to the mode", async () => {
     // Arrange: one tagged manual conversation, one untagged, one automation
     // run (recognized by its automation tags).

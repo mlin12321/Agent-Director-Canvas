@@ -86,7 +86,11 @@ function reduce(state: OrgTreeState, action: OrgTreeAction): OrgTreeState {
     case "node_removed": {
       // Losing the followed node means there is nothing left to show here.
       if (event.id === state.focusId) {
-        return { ...state, status: "not_found" };
+        // Without its top team the org is gone, not a team of it: the page
+        // waits for the next one, which the same stream announces.
+        return state.nodes.get(event.id)?.parent_id === null
+          ? { ...INITIAL_STATE, status: "unavailable" }
+          : { ...state, status: "not_found" };
       }
       const nodes = new Map(state.nodes);
       nodes.delete(event.id);

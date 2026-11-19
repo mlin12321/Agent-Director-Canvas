@@ -330,7 +330,15 @@ export function HomeChatLauncher() {
       let isCreated = false;
       let createdTarget: string | null = null;
       try {
-        const prepare = offersPrepare ? prepareCommand.trim() : "";
+        // Only what can become an org's first request is prepared for one:
+        // the conditions `createConversation` routes a first message on.
+        const prepare =
+          offersPrepare &&
+          variables.query &&
+          !variables.automationSetup &&
+          variables.workspaceMode !== "docker_container"
+            ? prepareCommand.trim()
+            : "";
         if (prepare && variables.workingDir) {
           try {
             await prepareFolder(variables.workingDir, prepare);
@@ -568,7 +576,7 @@ export function HomeChatLauncher() {
           />
         </div>
 
-        {!activeLaunch && offersPrepare && !isolated && (
+        {!activeLaunch && offersPrepare && !isolated && !isAutomateMode && (
           <PrepareFolderCommand
             command={prepareCommand}
             onChange={setPrepareCommand}
