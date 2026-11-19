@@ -347,11 +347,15 @@ export function ChatInterface({
   const hasPendingUserMessages = React.useMemo(
     () =>
       conversationId
-        ? pendingMessages.some((message) =>
-            matchesPendingConversationId(
-              conversationId,
-              message.conversationId,
-            ),
+        ? pendingMessages.some(
+            (message) =>
+              // One the director sent to another team is delivered: this
+              // conversation waits for nothing of it.
+              message.status !== "routed" &&
+              matchesPendingConversationId(
+                conversationId,
+                message.conversationId,
+              ),
           )
         : false,
     [pendingMessages, conversationId],

@@ -147,7 +147,7 @@ describe("TeamChanges", () => {
     await user.click(await screen.findByTestId("collapse"));
     await screen.findByTestId("file-diff-viewer");
     await user.click(screen.getByTestId("view-mode-edit"));
-    const editor = screen.getByTestId("file-edit-editor");
+    const editor = await screen.findByTestId("file-edit-editor");
     expect(editor).toHaveValue("new\n");
     expect(screen.getByTestId("file-edit-save")).toBeDisabled();
     await user.type(editor, "mine");
@@ -186,6 +186,54 @@ describe("TeamChanges", () => {
       "An agent of team 'API' is working.",
     );
     expect(screen.getByTestId("file-edit-editor")).toHaveValue("new\nx");
+  });
+
+  it("starts an edit from the file as it is now, and keeps it when the row is opened again", async () => {
+    serve([file("services/api/app.py")]);
+    let reads = 0;
+    server.use(
+      http.get("*/api/director/org/nodes/:nodeId/changes/file", () => {
+        reads += 1;
+        // The team's agent wrote the file after it was first shown.
+        return HttpResponse.json({
+          path: "services/api/app.py",
+          before: "old\n",
+          after: reads === 1 ? "new\n" : "newer\n",
+          unreadable: false,
+        });
+      }),
+    );
+    const saved: string[] = [];
+    server.use(
+      http.put(
+        "*/api/director/org/nodes/:nodeId/files",
+        async ({ request }) => {
+          saved.push(((await request.json()) as { content: string }).content);
+          return HttpResponse.json({
+            path: "services/api/app.py",
+            commit: "d",
+          });
+        },
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<TeamChanges node={NODE} />);
+    await user.click(await screen.findByTestId("collapse"));
+    await screen.findByTestId("file-diff-viewer");
+
+    await user.click(screen.getByTestId("view-mode-edit"));
+    const editor = await screen.findByTestId("file-edit-editor");
+    expect(editor).toHaveValue("newer\n");
+    await user.type(editor, "mine");
+    await user.click(screen.getByTestId("collapse"));
+    await user.click(screen.getByTestId("collapse"));
+
+    // What is shown is what Save writes.
+    expect(await screen.findByTestId("file-edit-editor")).toHaveValue(
+      "newer\nmine",
+    );
+    await user.click(screen.getByTestId("file-edit-save"));
+    await waitFor(() => expect(saved).toEqual(["newer\nmine"]));
   });
 
   it("offers no editing for a deleted file", async () => {

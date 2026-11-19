@@ -98,6 +98,8 @@ function ChangedFileRow({
                 save: (content) => save.mutateAsync(content),
                 isSaving: save.isPending,
                 error: saveError,
+                latest: () =>
+                  sides.refetch().then((read) => read.data?.after ?? undefined),
               }
         }
       />
