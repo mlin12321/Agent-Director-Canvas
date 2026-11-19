@@ -1443,6 +1443,20 @@ describe("OrgChartView", () => {
       expect(screen.queryByRole("dialog")).toBeNull();
     });
 
+    it("stays open on Escape while something is being written in it", async () => {
+      memoryHandlers();
+      const user = userEvent.setup();
+      renderWithProviders(<OrgChartView nodeId="auth" />);
+      await findCard("auth");
+      await user.click(currentCard());
+      const box = within(screen.getByRole("dialog")).getAllByRole("textbox")[0];
+
+      await user.type(box, "Use opaque tokens.{Escape}");
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(box).toHaveValue("Use opaque tokens.");
+    });
+
     it("lists what the team's two agents reported, and by whom", async () => {
       memoryHandlers([
         {

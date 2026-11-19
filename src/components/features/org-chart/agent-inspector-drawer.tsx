@@ -117,7 +117,13 @@ export function AgentInspectorDrawer({
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      // Escape that dismissed a menu, or was pressed while writing, is not
+      // a wish to close the drawer and lose what was written.
+      const writing =
+        event.target instanceof HTMLElement &&
+        event.target.closest("input, textarea, [contenteditable]") !== null;
+      if (event.key === "Escape" && !event.defaultPrevented && !writing)
+        onClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);

@@ -478,13 +478,14 @@ export function ChatInterface({
         displayErrorToast(t(I18nKey.CHAT_INTERFACE$SESSION_REQUEST_REQUIRED));
         return;
       }
-      if (conversationId)
-        setConversationState(conversationId, { draftMessage: null });
-      setMessageToSend("");
       try {
         const { session } = await DirectorClient.openSession({
           text: sessionRequest,
         });
+        // Only now: a request that was not taken stays to be sent again.
+        if (conversationId)
+          setConversationState(conversationId, { draftMessage: null });
+        setMessageToSend("");
         displaySuccessToast(
           t(I18nKey.ORG_CHART$SESSION_OPENED, {
             title: session.title,
