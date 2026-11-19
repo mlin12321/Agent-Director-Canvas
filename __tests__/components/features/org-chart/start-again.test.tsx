@@ -81,7 +81,9 @@ describe("StartAgain", () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<StartAgain node={team("working", "lost")} />);
+    const { rerender } = renderWithProviders(
+      <StartAgain node={team("working", "lost")} />,
+    );
 
     const button = screen.getByRole("button", {
       name: "ORG_CHART$START_AGAIN",
@@ -93,6 +95,13 @@ describe("StartAgain", () => {
       expect(asked).toEqual(["s1a2b3c services.api@s1a2b3c"]),
     );
     await waitFor(() => expect(button).toBeDisabled());
+
+    // Lost again later, it can be started again.
+    rerender(<StartAgain node={team("working", "idle")} />);
+    rerender(<StartAgain node={team("working", "lost")} />);
+    expect(
+      screen.getByRole("button", { name: "ORG_CHART$START_AGAIN" }),
+    ).toBeEnabled();
   });
 
   it("says in the server's words why the team cannot be started", async () => {
