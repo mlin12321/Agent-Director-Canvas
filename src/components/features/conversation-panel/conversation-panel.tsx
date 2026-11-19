@@ -304,6 +304,7 @@ export function ConversationPanel({
     hasNextPage,
     isFetching,
     isFetchingNextPage,
+    isFetchNextPageError,
     fetchNextPage,
   } = usePaginatedConversations();
   const { workspaces: knownWorkspaces } = useResolvedWorkspaces();
@@ -407,6 +408,8 @@ export function ConversationPanel({
   const onlyAgentStartedLoaded =
     !showAgentStartedConversations &&
     !!hasNextPage &&
+    // A page that fails is not asked for again and again.
+    !isFetchNextPageError &&
     allLoadedConversations.length > 0 &&
     allLoadedConversations.every((conversation) =>
       isAgentOnlyConversation(conversation.tags),

@@ -1473,6 +1473,23 @@ describe("OrgChartView", () => {
       expect(box).toHaveValue("Use opaque tokens.");
     });
 
+    it("stays open on Escape in the editor of a change made by hand", async () => {
+      memoryHandlers();
+      const user = userEvent.setup();
+      renderWithProviders(<OrgChartView nodeId="auth" />);
+      await findCard("auth");
+      await user.click(currentCard());
+      const editor = document.createElement("div");
+      editor.className = "monaco-editor";
+      editor.tabIndex = 0;
+      screen.getByRole("dialog").append(editor);
+
+      editor.focus();
+      await user.keyboard("{Escape}");
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
     it("lists what the team's two agents reported, and by whom", async () => {
       memoryHandlers([
         {

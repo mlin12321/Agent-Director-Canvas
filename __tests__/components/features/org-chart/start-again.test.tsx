@@ -88,7 +88,10 @@ describe("StartAgain", () => {
     });
     await user.click(button);
 
-    await waitFor(() => expect(asked).toEqual(["s1a2b3c services.api"]));
+    // By the place, not the team: at the top team a session has two.
+    await waitFor(() =>
+      expect(asked).toEqual(["s1a2b3c services.api@s1a2b3c"]),
+    );
     await waitFor(() => expect(button).toBeDisabled());
   });
 

@@ -964,11 +964,18 @@ describe("ChatInterface - Pending message queue", () => {
 
   it("sends what is written to a session's first IC through its session and says which team took it", async () => {
     const sent = director("test-conversation-id", "conv-api");
+    setConversationState("test-conversation-id", {
+      draftMessage: "Add refunds",
+    });
 
     renderInterface();
     submitMessage("Add refunds");
 
     const line = await screen.findByTestId("routed-to-team");
+    // It was delivered: it does not come back into the composer.
+    expect(
+      getConversationState("test-conversation-id").draftMessage,
+    ).toBeNull();
     expect(line).toHaveTextContent(
       "ORG_CHART$ROUTED_TO API (It is about the API.)",
     );
@@ -1050,6 +1057,12 @@ describe("ChatInterface - Pending message queue", () => {
       setTimeout(resolve, 50);
     });
     expect(mockSend).not.toHaveBeenCalled();
+    // It is in the composer again, to be sent once the director takes it.
+    await waitFor(() =>
+      expect(screen.getByTestId("chat-input")).toHaveTextContent(
+        "/session Add refunds",
+      ),
+    );
   });
 
   it("never routes what is written to an agent opened from the org chart", async () => {

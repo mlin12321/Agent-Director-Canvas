@@ -86,6 +86,9 @@ export function AgentInspectorDrawer({
   // updates; nothing is open until one is chosen.
   const [openKey, setOpenKey] = React.useState<string | null>(null);
   const [showsChanges, setShowsChanges] = React.useState(false);
+  // Loaded when first asked for, and kept from then on.
+  const changesOpened = React.useRef(false);
+  if (showsChanges) changesOpened.current = true;
   const open =
     conversations.find(
       (candidate) => candidate.key === openKey && candidate.conversationId,
@@ -121,7 +124,9 @@ export function AgentInspectorDrawer({
       // a wish to close the drawer and lose what was written.
       const writing =
         event.target instanceof HTMLElement &&
-        event.target.closest("input, textarea, [contenteditable]") !== null;
+        event.target.closest(
+          "input, textarea, [contenteditable], .monaco-editor",
+        ) !== null;
       if (event.key === "Escape" && !event.defaultPrevented && !writing)
         onClose();
     };
@@ -340,8 +345,10 @@ export function AgentInspectorDrawer({
       >
         <MessageToTeam key={node.id} node={node} />
       </div>
-      {showsChanges && changed ? (
-        <div className="min-h-0 flex-1">
+      {changed && changesOpened.current ? (
+        // Hidden while a conversation is open, not unmounted: a change
+        // being made by hand is still there afterwards.
+        <div hidden={!showsChanges} className="min-h-0 flex-1">
           <React.Suspense fallback={null}>
             <TeamChanges key={changed.id} node={changed} />
           </React.Suspense>

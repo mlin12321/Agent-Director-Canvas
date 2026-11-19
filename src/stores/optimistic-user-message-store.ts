@@ -191,7 +191,16 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
         afterTimestamp: latestServerTimestamp(payload.conversationId),
       };
       set((state) => ({
-        pendingMessages: [...state.pendingMessages, message],
+        // A note of where an earlier message went has been read by now;
+        // left there, it would stay below everything that follows.
+        pendingMessages: [
+          ...state.pendingMessages.filter(
+            (earlier) =>
+              earlier.status !== "routed" ||
+              earlier.conversationId !== payload.conversationId,
+          ),
+          message,
+        ],
       }));
 
       // A start-task message cannot be echoed before the sandbox is ready;

@@ -20,7 +20,7 @@ export function isLost(node: SessionTeam) {
 export function StartAgain({ node }: { node: SessionTeam }) {
   const { t } = useTranslation("openhands");
   const start = useMutation({
-    mutationFn: () => DirectorClient.startAgain(node.session, node.team_id),
+    mutationFn: () => DirectorClient.startAgain(node.session, node.id),
     meta: { disableToast: true },
   });
 
