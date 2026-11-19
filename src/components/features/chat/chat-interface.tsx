@@ -160,6 +160,8 @@ export function ChatInterface({
   );
   const { t } = useTranslation("openhands");
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  // A /session that is being opened, which a second press does not open twice.
+  const openingSession = React.useRef(false);
   useClampDragSelection(scrollRef);
   // A streamed reply grows inside one event as it is revealed, so follow it
   // frame by frame while it does.
@@ -494,6 +496,11 @@ export function ChatInterface({
         displayErrorToast(t(I18nKey.CHAT_INTERFACE$SESSION_REQUEST_REQUIRED));
         return;
       }
+      if (openingSession.current) {
+        useConversationStore.getState().restoreMessageToInputIfEmpty(content);
+        return;
+      }
+      openingSession.current = true;
       try {
         const { session } = await DirectorClient.openSession({
           text: sessionRequest,
@@ -501,7 +508,6 @@ export function ChatInterface({
         // Only now: a request that was not taken stays to be sent again.
         if (conversationId)
           setConversationState(conversationId, { draftMessage: null });
-        setMessageToSend("");
         displaySuccessToast(
           t(I18nKey.ORG_CHART$SESSION_OPENED, {
             title: session.title,
@@ -521,12 +527,13 @@ export function ChatInterface({
               ? openError.message
               : t(I18nKey.CHAT_INTERFACE$FAILED_TO_SEND_MESSAGE),
           );
-          // The composer was emptied as it was sent: it is to send again.
-          useConversationStore
-            .getState()
-            .setMessageToSend(content, "conversation");
+          // The composer was emptied as it was sent: it is to send again,
+          // unless something else was written there meanwhile.
+          useConversationStore.getState().restoreMessageToInputIfEmpty(content);
           return;
         }
+      } finally {
+        openingSession.current = false;
       }
     }
     // Capture before attachment conversion/upload can yield to a new edit.
