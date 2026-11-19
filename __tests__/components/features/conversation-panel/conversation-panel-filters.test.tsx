@@ -655,6 +655,36 @@ describe("ConversationPanel filters and pagination", () => {
       ]);
     });
 
+    it("leaves the hidden conversations of an org's agents when all are deleted", async () => {
+      const user = userEvent.setup();
+      const deleteSpy = vi
+        .spyOn(AgentServerConversationService, "deleteConversation")
+        .mockResolvedValue();
+      vi.spyOn(
+        AgentServerConversationService,
+        "searchConversations",
+      ).mockResolvedValue({
+        items: [
+          createMockConversation({ id: "mine" }),
+          createMockConversation({
+            id: "manager",
+            tags: { startedby: "director" },
+          }),
+        ],
+        next_page_id: null,
+      });
+      renderConversationPanel();
+      await screen.findByTestId("conversation-card");
+
+      await user.click(screen.getByTestId("conversation-layouts-toggle"));
+      await user.click(screen.getByTestId("delete-all-conversations"));
+      await screen.findByText("CONVERSATION$CONFIRM_DELETE_ALL_DESC 1");
+      await user.click(screen.getByTestId("confirm-button"));
+
+      await waitFor(() => expect(deleteSpy).toHaveBeenCalledTimes(1));
+      expect(deleteSpy.mock.calls[0][0]).toBe("mine");
+    });
+
     it("does not allow a partial delete when a later conversation page fails to load", async () => {
       // Arrange: the list loads, but enumerating the backend fails midway.
       const user = userEvent.setup();
