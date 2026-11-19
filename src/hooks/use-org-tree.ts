@@ -29,7 +29,7 @@ export interface OrgRunState {
 }
 
 type OrgTreeAction =
-  | { kind: "subscribe" }
+  | { kind: "subscribe"; anotherOrg: boolean }
   | { kind: "status"; status: OrgStreamStatus }
   | { kind: "event"; event: OrgEvent };
 
@@ -46,6 +46,8 @@ function reduce(state: OrgTreeState, action: OrgTreeAction): OrgTreeState {
   // A new subscription keeps what is on screen until its snapshot arrives,
   // but may leave the terminal state of the previous one.
   if (action.kind === "subscribe") {
+    // Another backend's org is not this one's: its buttons would act here.
+    if (action.anotherOrg) return INITIAL_STATE;
     return state.status === "not_found"
       ? { ...state, status: "connecting" }
       : state;
@@ -133,9 +135,11 @@ export function useOrgTree(nodeId: NodeId | null, full = false): OrgTreeView {
   const [state, dispatch] = React.useReducer(reduce, INITIAL_STATE);
   // The stream is the active backend's: another backend is another org.
   const backendId = useActiveBackend().backend.id;
+  const shown = React.useRef(backendId);
 
   React.useEffect(() => {
-    dispatch({ kind: "subscribe" });
+    dispatch({ kind: "subscribe", anotherOrg: shown.current !== backendId });
+    shown.current = backendId;
     return subscribeOrgTree(
       nodeId,
       {
