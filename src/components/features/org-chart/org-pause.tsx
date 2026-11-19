@@ -31,13 +31,15 @@ function usePauseSwitch() {
   return useMutation({
     mutationFn: (pause: boolean) =>
       pause ? DirectorClient.pauseOrg() : DirectorClient.resumeOrg(),
-    onSuccess: (recovery) => {
+    // The backend asked, which may no longer be the active one.
+    onMutate: () => ({ asked: backend.id }),
+    onSuccess: (recovery, _, { asked }) => {
       queryClient.setQueryData<OrgSummary>(
-        DIRECTOR_QUERY_KEYS.org(backend.id),
+        DIRECTOR_QUERY_KEYS.org(asked),
         (org) => org && { ...org, paused: recovery.paused },
       );
       queryClient.invalidateQueries({
-        queryKey: DIRECTOR_QUERY_KEYS.recovery(backend.id),
+        queryKey: DIRECTOR_QUERY_KEYS.recovery(asked),
       });
     },
     meta: { disableToast: true },

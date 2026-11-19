@@ -133,8 +133,10 @@ function SettingsForm({
         max_open_sessions: Number(most),
         report_compaction_chars: Number(compaction),
       }),
-    onSuccess: (saved) => {
-      queryClient.setQueryData(DIRECTOR_QUERY_KEYS.settings(backend.id), saved);
+    // The backend asked, which may no longer be the active one.
+    onMutate: () => ({ asked: backend.id }),
+    onSuccess: (saved, _, { asked }) => {
+      queryClient.setQueryData(DIRECTOR_QUERY_KEYS.settings(asked), saved);
       onClose();
     },
     meta: { disableToast: true },
