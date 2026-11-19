@@ -437,6 +437,30 @@ describe("OrgChartView", () => {
       expect(navigate).toHaveBeenCalledTimes(1);
     });
 
+    it("closes a team's details once the page has gone to another team", async () => {
+      server.resetHandlers();
+      const navigate = vi.fn();
+      const user = userEvent.setup();
+      const { rerender } = renderWithProviders(
+        <OrgChartView nodeId="payments" />,
+        { navigation: { navigate } },
+      );
+      await findCard("payments.worker");
+      await user.click(currentCard());
+      expect(await screen.findByTestId("org-message")).toBeInTheDocument();
+
+      rerender(<OrgChartView nodeId="payments.worker" />);
+      await waitFor(() =>
+        expect(screen.queryByTestId("org-message")).toBeNull(),
+      );
+      await user.keyboard("{Alt>}{ArrowUp}{/Alt}");
+      expect(navigate).toHaveBeenCalledWith("/org/payments");
+
+      rerender(<OrgChartView nodeId="payments" />);
+      await findCard("payments.worker");
+      expect(screen.queryByTestId("org-message")).toBeNull();
+    });
+
     it("draws a team without reports on its own", async () => {
       renderWithProviders(<OrgChartView nodeId="search" />);
       await findCard("search");
