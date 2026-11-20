@@ -24,7 +24,8 @@ const DEFAULTS = {
   max_teams: 32,
   max_depth: 8,
   allowed_profiles: [],
-  stall_check_minutes: 120,
+  soft_check_in_minutes: 120,
+  hard_check_in_minutes: 360,
   manager_check_accepted_reviews: 5,
   manager_check_ic_setbacks: 3,
   route_requests: true,
@@ -107,7 +108,10 @@ function SettingsForm({
   const [resumes, setResumes] = React.useState(state.resume_on_start);
   const [routes, setRoutes] = React.useState(state.route_requests);
   // 0 turns a check off.
-  const [stall, setStall] = React.useState(String(state.stall_check_minutes));
+  const [stall, setStall] = React.useState(String(state.soft_check_in_minutes));
+  const [checkIn, setCheckIn] = React.useState(
+    String(state.hard_check_in_minutes),
+  );
   const [reviews, setReviews] = React.useState(
     String(state.manager_check_accepted_reviews),
   );
@@ -160,7 +164,8 @@ function SettingsForm({
         max_depth: Number(depth),
         allowed_profiles: allowed,
         resume_on_start: resumes,
-        stall_check_minutes: Number(stall),
+        soft_check_in_minutes: Number(stall),
+        hard_check_in_minutes: Number(checkIn),
         manager_check_accepted_reviews: Number(reviews),
         manager_check_ic_setbacks: Number(setbacks),
         route_requests: routes,
@@ -193,7 +198,7 @@ function SettingsForm({
     whole(depth, 1) &&
     whole(compaction, LEAST_COMPACTION) &&
     amount(cost) &&
-    [stall, reviews, setbacks, most].every((count) => whole(count, 0));
+    [stall, checkIn, reviews, setbacks, most].every((count) => whole(count, 0));
 
   return (
     <ModalBackdrop
@@ -409,6 +414,13 @@ function SettingsForm({
             onChange={setStall}
           />
           <CountField
+            label={t(I18nKey.ORG_CHART$SETTINGS_HARD_CHECK_IN_MINUTES)}
+            help={t(I18nKey.ORG_CHART$SETTINGS_HARD_CHECK_IN_MINUTES_HELP)}
+            value={checkIn}
+            disabled={save.isPending}
+            onChange={setCheckIn}
+          />
+          <CountField
             label={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_REVIEWS)}
             help={t(I18nKey.ORG_CHART$SETTINGS_MANAGER_CHECK_HELP)}
             value={reviews}
@@ -469,7 +481,8 @@ function SettingsForm({
                 setAllowed(DEFAULTS.allowed_profiles);
                 setResumes(false);
                 setRoutes(DEFAULTS.route_requests);
-                setStall(String(DEFAULTS.stall_check_minutes));
+                setStall(String(DEFAULTS.soft_check_in_minutes));
+                setCheckIn(String(DEFAULTS.hard_check_in_minutes));
                 setReviews(String(DEFAULTS.manager_check_accepted_reviews));
                 setSetbacks(String(DEFAULTS.manager_check_ic_setbacks));
                 setCost(String(DEFAULTS.session_cost_limit));
