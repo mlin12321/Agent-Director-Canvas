@@ -57,6 +57,9 @@ export interface CreateConversationVariables {
   // message, so suppress "Run on first message" routing for this single launch.
   // Non-home callers omit it so they route as usual.
   suppressRouterAtStart?: boolean;
+  // Local: the agent type of the top team, when this message starts an org.
+  // Omitted, the org starts with the server's default type.
+  orgAgentType?: string;
   entryPoint?: string; // analytics only; not forwarded to the service
 }
 
@@ -122,6 +125,7 @@ export const useCreateConversation = ({
         llmProfile,
         sandboxId,
         suppressRouterAtStart,
+        orgAgentType,
       } = variables;
 
       // The active AgentProfile is the default launch profile for new
@@ -175,6 +179,7 @@ export const useCreateConversation = ({
           // pick was made so the payload-snapshot tests stay byte-identical
           // otherwise.
           ...(suppressRouterAtStart ? { suppressRouterAtStart } : {}),
+          ...(orgAgentType ? { orgAgentType } : {}),
         },
       );
 

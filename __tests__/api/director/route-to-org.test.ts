@@ -49,6 +49,16 @@ describe("routeToOrg", () => {
     ]);
   });
 
+  it("names the type of the top team of the org the message starts", async () => {
+    const sent = director(() => HttpResponse.json(ROUTED));
+
+    await routeToOrg("Build it", "/work/shop", CONVERSATION, "researcher");
+
+    expect(sent).toEqual([
+      expect.objectContaining({ text: "Build it", agent_type: "researcher" }),
+    ]);
+  });
+
   it.each([
     ["the folder is not in a git repository", 503],
     ["the folder is outside the org's repository", 422],

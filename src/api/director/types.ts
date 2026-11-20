@@ -8,6 +8,7 @@ export const DIRECTOR_BASE_PATH = "/api/director";
 export type {
   DirectorAcceptedChanges as AcceptedChanges,
   DirectorAgentKind as AgentKind,
+  DirectorAgentTypeInfo as AgentTypeInfo,
   DirectorAgentRef as AgentRef,
   DirectorAgentRole as AgentRole,
   DirectorBoundary as Boundary,
@@ -19,6 +20,8 @@ export type {
   DirectorConversationLink as ConversationLink,
   DirectorConversationPlace as ConversationPlace,
   DirectorConversationRelation as ConversationRelation,
+  DirectorOrgSettings,
+  DirectorOrgSettingsState,
   DirectorSettings,
   DirectorSettingsState,
   DirectorEscalation as Escalation,

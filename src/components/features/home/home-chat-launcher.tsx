@@ -68,6 +68,8 @@ import {
 } from "#/api/director/prepare-folder";
 import { useFolderNeedsGit } from "#/hooks/query/use-folder-needs-git";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
+import { useOrgStartingAgentTypes } from "#/hooks/query/use-org-starting-agent-types";
+import { OrgAgentTypePicker } from "./org-agent-type-picker";
 import { PrepareFolderCommand } from "./prepare-folder-command";
 import { OpenRepositoryDialog } from "./open-repository-dialog";
 import { HomeGitControlBarPreview } from "./home-git-control-bar-preview";
@@ -191,6 +193,22 @@ export function HomeChatLauncher() {
     runtimeWorkspaceMessage ??
     (isLocal ? getWorkspacesUnsupportedMessage(workspacesError, t) : null);
 
+  // The type of the top team, for a first message that starts an org: only
+  // what `createConversation` routes to the org can start one.
+  const orgStartingTypes = useOrgStartingAgentTypes(
+    isLocal &&
+      !isolated &&
+      !isAutomateMode &&
+      effectiveWorkspaceMode !== "docker_container",
+  );
+  const [pickedOrgAgentType, setPickedOrgAgentType] = useState<string | null>(
+    null,
+  );
+  // A pick the server no longer allows is not sent: it would be refused.
+  const orgAgentType =
+    orgStartingTypes?.others.find((type) => type.name === pickedOrgAgentType)
+      ?.name ?? null;
+
   const setWorkspaceMode = (mode: WorkspaceMode) => {
     setPickedWorkspaceMode(mode);
     if (isLocal) writeStoredLocalWorkspaceMode(mode);
@@ -282,6 +300,11 @@ export function HomeChatLauncher() {
     // nothing attaches unless the user picked it.
     if (!isAutomateMode && selectedPlugins.length > 0) {
       variables = { ...variables, plugins: selectedPlugins };
+    }
+
+    // Left out for the server's default type.
+    if (orgAgentType) {
+      variables = { ...variables, orgAgentType };
     }
 
     // A cloud member's home LLM pick (see useChatInputLlmProfileState), unless
@@ -651,6 +674,14 @@ export function HomeChatLauncher() {
             onClick={() => setIsPluginPickerOpen(true)}
             disabled={isCreating || isAutomateMode}
           />
+          {orgStartingTypes && orgStartingTypes.others.length > 0 ? (
+            <OrgAgentTypePicker
+              types={orgStartingTypes}
+              value={orgAgentType}
+              onChange={setPickedOrgAgentType}
+              disabled={isCreating}
+            />
+          ) : null}
         </div>
 
         <div

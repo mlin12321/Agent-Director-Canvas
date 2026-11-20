@@ -110,6 +110,9 @@ export function TeamHoverCard({ node }: TeamHoverCardProps) {
               .join(", ")}
           </Row>
         ) : null}
+        {node.agent_type ? (
+          <Row label={t(I18nKey.ORG_CHART$AGENT_TYPE)}>{node.agent_type}</Row>
+        ) : null}
         {node.agent_profile ? (
           <Row label={t(I18nKey.ORG_CHART$AGENT_PROFILE)}>
             {node.agent_profile}

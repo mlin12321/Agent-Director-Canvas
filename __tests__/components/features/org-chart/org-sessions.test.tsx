@@ -102,8 +102,6 @@ const REVIEW: Review = {
   round: 1,
   summary: "",
   description: "",
-  automated_ran: false,
-  automated: [],
   findings: [],
   at: "2026-11-01T11:00:00+00:00",
 };
