@@ -1,7 +1,7 @@
 <a name="readme-top"></a>
 
 <div align="center">
-  <img src="./public/favicon.svg" alt="Agent Director" width="180">
+  <img src="./src/assets/branding/north-star-logo.svg" alt="Agent Director" width="180">
   <h1 align="center" style="border-bottom: none">Agent Director</h1>
   <p align="center">
     <strong>The page for an organisation of coding agents, built on OpenHands.</strong>
