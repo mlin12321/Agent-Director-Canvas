@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 
 import { http, HttpResponse } from "msw";
 import { server } from "#/mocks/node";
+import { forgetServersWithoutDirector } from "#/api/director/director-client";
 import { HomeChatLauncher } from "#/components/features/home/home-chat-launcher";
 import { DEFAULT_PREPARE_COMMAND } from "#/api/director/prepare-folder";
 import type { WorkspaceMode } from "#/api/conversation-metadata-store";
@@ -147,20 +148,25 @@ vi.mock("#/components/features/chat/custom-chat-input", () => ({
     onSubmit,
     disabled,
     placeholder,
+    startAccessory,
   }: {
     onSubmit: (msg: string) => void;
     disabled?: boolean;
     placeholder?: string;
+    startAccessory?: React.ReactNode;
   }) => (
-    <button
-      type="button"
-      data-testid="stub-chat-submit"
-      data-placeholder={placeholder}
-      disabled={disabled}
-      onClick={() => onSubmit("hello world")}
-    >
-      stub submit
-    </button>
+    <>
+      <button
+        type="button"
+        data-testid="stub-chat-submit"
+        data-placeholder={placeholder}
+        disabled={disabled}
+        onClick={() => onSubmit("hello world")}
+      >
+        stub submit
+      </button>
+      {startAccessory}
+    </>
   ),
 }));
 
@@ -673,6 +679,8 @@ describe("HomeChatLauncher", () => {
 
   /** A director that finds two agent types, with or without an org. */
   function directorWithTypes(rootId: string | null) {
+    // A test before may have found the server to have no director.
+    forgetServersWithoutDirector();
     server.use(
       http.get("*/api/director/org", () =>
         HttpResponse.json({ root_id: rootId, node_count: rootId ? 1 : 0 }),
@@ -701,14 +709,21 @@ describe("HomeChatLauncher", () => {
     const user = userEvent.setup();
     const picker = await screen.findByTestId("org-agent-type-picker");
 
-    // The server's default is what is picked; a type not allowed is not offered.
-    expect(picker).toHaveValue("");
-    expect(within(picker).queryByRole("option", { name: "writer" })).toBeNull();
+    // The server's default is what is picked.
+    expect(picker).toHaveTextContent("software-engineer");
     await user.click(screen.getByTestId("stub-chat-submit"));
     await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
     expect(createSpy.mock.calls[0][0]).not.toHaveProperty("orgAgentType");
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty("skipOrg");
 
-    await user.selectOptions(picker, "researcher");
+    // Each type says what it is for; one that is not allowed is not offered.
+    await user.click(picker);
+    const menu = screen.getByTestId("org-agent-type-popover");
+    expect(within(menu).getByText("Looks into it")).toBeInTheDocument();
+    expect(within(menu).queryByText("writer")).toBeNull();
+    await user.click(
+      screen.getByTestId("org-agent-type-option-type-researcher"),
+    );
     await user.click(screen.getByTestId("stub-chat-submit"));
 
     await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(2));
@@ -717,19 +732,80 @@ describe("HomeChatLauncher", () => {
     });
   });
 
-  it("offers no agent type where the message goes to an org that exists", async () => {
-    let asked = false;
+  it("starts an ordinary conversation, outside the org, once the human picked none", async () => {
+    directorWithTypes(null);
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(makeConversationResponse());
+    renderLauncher();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByTestId("org-agent-type-picker"));
+    await user.click(
+      screen.getByTestId("org-agent-type-option-type-researcher"),
+    );
+    await user.click(screen.getByTestId("org-agent-type-picker"));
+    await user.click(screen.getByTestId("org-agent-type-option-none"));
+    await user.click(screen.getByTestId("stub-chat-submit"));
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+    expect(createSpy.mock.calls[0][0]).toMatchObject({ skipOrg: true });
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty("orgAgentType");
+  });
+
+  it("offers the org that exists, or none, and no agent type", async () => {
     directorWithTypes("root");
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(makeConversationResponse());
+    renderLauncher();
+    const user = userEvent.setup();
+    const picker = await screen.findByTestId("org-agent-type-picker");
+
+    // The message goes to the org unless the human says otherwise.
+    expect(picker).toHaveTextContent("HOME$ORG_CHOICE_ORG");
+    await user.click(picker);
+    expect(screen.getByTestId("org-agent-type-option-org")).toBeInTheDocument();
+    expect(screen.queryByTestId("org-agent-type-option-default")).toBeNull();
+    expect(
+      screen.queryByTestId("org-agent-type-option-type-researcher"),
+    ).toBeNull();
+    await user.click(screen.getByTestId("org-agent-type-option-none"));
+    await user.click(screen.getByTestId("stub-chat-submit"));
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+    expect(createSpy.mock.calls[0][0]).toMatchObject({ skipOrg: true });
+  });
+
+  it("offers nothing about an org on a server without a director", async () => {
+    let asked = false;
     server.use(
-      http.get("*/api/director/org", () => {
+      http.get("*/api/director/*", () => {
         asked = true;
-        return HttpResponse.json({ root_id: "root", node_count: 1 });
+        return HttpResponse.json({ detail: "Not Found" }, { status: 404 });
       }),
     );
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(makeConversationResponse());
     renderLauncher();
+    const user = userEvent.setup();
 
     await waitFor(() => expect(asked).toBe(true));
-    await screen.findByTestId("stub-chat-submit");
+    await user.click(screen.getByTestId("stub-chat-submit"));
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+    expect(screen.queryByTestId("org-agent-type-picker")).toBeNull();
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty("skipOrg");
+  });
+
+  it("does not ask about an org for an automation, which no org takes", async () => {
+    directorWithTypes(null);
+    renderLauncher();
+    const user = userEvent.setup();
+    await screen.findByTestId("org-agent-type-picker");
+
+    await user.click(screen.getByTestId("home-launcher-mode-automate"));
 
     expect(screen.queryByTestId("org-agent-type-picker")).toBeNull();
   });

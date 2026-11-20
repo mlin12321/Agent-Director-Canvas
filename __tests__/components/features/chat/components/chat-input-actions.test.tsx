@@ -378,6 +378,22 @@ describe("ChatInputActions — Switch agent profile gate (OSS-5735)", () => {
     ).toBeInTheDocument();
   });
 
+  it("puts the owner's pill right after the agent profile's", async () => {
+    renderWithProviders(
+      <ChatInputActions
+        disabled={false}
+        startAccessory={<div data-testid="start-accessory-stub" />}
+      />,
+      { navigation: { conversationId: null } },
+    );
+
+    const profile = await screen.findByTestId("agent-profile-pill-stub");
+
+    expect(profile.parentElement?.nextElementSibling?.firstElementChild).toBe(
+      screen.getByTestId("start-accessory-stub"),
+    );
+  });
+
   it("still mounts the agent profile pill when no profile is active", async () => {
     listAgentProfilesMock.mockResolvedValue({
       profiles: [{ id: "p1", name: "default", agent_kind: "openhands" }],

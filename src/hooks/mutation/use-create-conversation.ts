@@ -60,6 +60,9 @@ export interface CreateConversationVariables {
   // Local: the agent type of the top team, when this message starts an org.
   // Omitted, the org starts with the server's default type.
   orgAgentType?: string;
+  // Local: start an ordinary conversation; the message is not offered to the
+  // org.
+  skipOrg?: boolean;
   entryPoint?: string; // analytics only; not forwarded to the service
 }
 
@@ -126,6 +129,7 @@ export const useCreateConversation = ({
         sandboxId,
         suppressRouterAtStart,
         orgAgentType,
+        skipOrg,
       } = variables;
 
       // The active AgentProfile is the default launch profile for new
@@ -180,6 +184,7 @@ export const useCreateConversation = ({
           // otherwise.
           ...(suppressRouterAtStart ? { suppressRouterAtStart } : {}),
           ...(orgAgentType ? { orgAgentType } : {}),
+          ...(skipOrg ? { skipOrg } : {}),
         },
       );
 

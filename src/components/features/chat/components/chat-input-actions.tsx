@@ -58,6 +58,11 @@ interface ChatInputActionsProps {
   onDictationTranscript?: (text: string) => void;
   /** Tracks the text field's editability, not submit availability. */
   isDictationDisabled?: boolean;
+  /**
+   * A pill of the composer's owner, shown beside the agent profile's: what
+   * it chooses belongs with the agent a new conversation starts with.
+   */
+  startAccessory?: React.ReactNode;
 }
 
 export function ChatInputActions({
@@ -70,6 +75,7 @@ export function ChatInputActions({
   handleSubmit = () => {},
   onDictationTranscript,
   isDictationDisabled = false,
+  startAccessory,
 }: ChatInputActionsProps) {
   const { t } = useTranslation("openhands");
   const isComposerDockedMinimal = useComposerDockedMinimal();
@@ -109,6 +115,8 @@ export function ChatInputActions({
   const codeRef = React.useRef<HTMLDivElement>(null);
   const modelRef = React.useRef<HTMLDivElement>(null);
   const agentProfileRef = React.useRef<HTMLDivElement>(null);
+  const startAccessoryRef = React.useRef<HTMLDivElement>(null);
+  const hasStartAccessory = Boolean(startAccessory);
   const overflowTriggerRef = React.useRef<HTMLButtonElement>(null);
   const [actionsRowWidth, setActionsRowWidth] = React.useState<number>(
     Number.POSITIVE_INFINITY,
@@ -118,6 +126,7 @@ export function ChatInputActions({
   const [codeWidth, setCodeWidth] = React.useState(96);
   const [modelWidth, setModelWidth] = React.useState(120);
   const [agentProfileWidth, setAgentProfileWidth] = React.useState(110);
+  const [startAccessoryWidth, setStartAccessoryWidth] = React.useState(0);
   const [isOverflowOpen, setIsOverflowOpen] = React.useState(false);
   const [activeSubmenu, setActiveSubmenu] = React.useState<
     "agent" | "model" | null
@@ -132,6 +141,7 @@ export function ChatInputActions({
     const codeEl = codeRef.current;
     const modelEl = modelRef.current;
     const agentProfileEl = agentProfileRef.current;
+    const startAccessoryEl = startAccessoryRef.current;
 
     if (
       !rowEl ||
@@ -163,6 +173,9 @@ export function ChatInputActions({
         const nextAgentWidth = agentProfileEl.getBoundingClientRect().width;
         if (nextAgentWidth > 0) setAgentProfileWidth(nextAgentWidth);
       }
+      setStartAccessoryWidth(
+        startAccessoryEl?.getBoundingClientRect().width ?? 0,
+      );
     };
 
     const observer = new ResizeObserver(() => {
@@ -179,11 +192,14 @@ export function ChatInputActions({
     if (agentProfileEl) {
       observer.observe(agentProfileEl);
     }
+    if (startAccessoryEl) {
+      observer.observe(startAccessoryEl);
+    }
 
     syncWidths();
 
     return () => observer.disconnect();
-  }, [showChangeAgentButton, showAgentProfileSwitch]);
+  }, [showChangeAgentButton, showAgentProfileSwitch, hasStartAccessory]);
 
   const handlePauseAgent = () => {
     if (!conversationId) return;
@@ -237,8 +253,14 @@ export function ChatInputActions({
     ],
   );
 
+  // The owner's pill has no place in a menu, so it always stays in the row.
   const leftBaseWidth =
-    actionsRowWidth - rightSectionWidth - ROOT_GAP - addFileWidth - INLINE_GAP;
+    actionsRowWidth -
+    rightSectionWidth -
+    ROOT_GAP -
+    addFileWidth -
+    INLINE_GAP -
+    (hasStartAccessory ? startAccessoryWidth + INLINE_GAP : 0);
 
   const fitWithoutOverflow = fitOptionalItems(leftBaseWidth);
   const allOptionalFit =
@@ -532,6 +554,11 @@ export function ChatInputActions({
               className={cn(!showAgentProfileInline && "hidden")}
             >
               <ChatInputAgentProfilePicker />
+            </div>
+          )}
+          {hasStartAccessory && (
+            <div ref={startAccessoryRef} className="min-w-0">
+              {startAccessory}
             </div>
           )}
           <div ref={modelRef} className={cn(!showModelInline && "hidden")}>
