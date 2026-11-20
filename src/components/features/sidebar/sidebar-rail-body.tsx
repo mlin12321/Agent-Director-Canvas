@@ -143,6 +143,10 @@ export function SidebarRailBody({
         >
           <div
             className={cn(
+              // The mark overflows its slot, which leaves it 12px from the
+              // edge of the open sidebar; this doubles that on both sides.
+              // The collapsed rail has no room to spare: the mark is centred.
+              !collapsed && "mx-3",
               collapsed &&
                 showCollapseToggle &&
                 "flex h-full w-full items-center justify-start pl-2.5 transition-opacity duration-150",
