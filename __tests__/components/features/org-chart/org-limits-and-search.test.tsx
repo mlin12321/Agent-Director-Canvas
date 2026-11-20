@@ -4,6 +4,7 @@ import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import type {
+  DirectorOrgSettingsState,
   DirectorSettingsState,
   OrgNode,
   SessionTeam,
@@ -53,6 +54,47 @@ function settingsHandlers(state: DirectorSettingsState = STATE) {
     }),
   );
   return saved;
+}
+
+const TYPES: DirectorOrgSettingsState = {
+  default_agent_type: "software-engineer",
+  allowed_agent_types: [],
+  own: {},
+  agent_types: [
+    {
+      name: "software-engineer",
+      description: "Builds software",
+      allowed: true,
+    },
+    { name: "researcher", description: "Looks into a question", allowed: true },
+  ],
+};
+
+/** What the org sets for its new teams, on a director that has an org. */
+function orgTypesHandlers(
+  state: DirectorOrgSettingsState = TYPES,
+  rootId: string | null = "root",
+) {
+  const saved: unknown[] = [];
+  let now = state;
+  server.use(
+    http.get("*/api/director/org", () =>
+      HttpResponse.json({ root_id: rootId, node_count: rootId ? 1 : 0 }),
+    ),
+    http.get("*/api/director/org/settings", () => HttpResponse.json(now)),
+    http.patch("*/api/director/org/settings", async ({ request }) => {
+      const change = (await request.json()) as Record<string, never>;
+      saved.push(change);
+      now = { ...now, ...change, own: { ...now.own, ...change } };
+      return HttpResponse.json(now);
+    }),
+  );
+  return {
+    saved,
+    find: (found: DirectorOrgSettingsState) => {
+      now = found;
+    },
+  };
 }
 
 async function openSettings(user: ReturnType<typeof userEvent.setup>) {
@@ -269,6 +311,112 @@ describe("OrgSettings", () => {
     ]);
   });
 
+  it("sets only the agent types that were changed, for this org", async () => {
+    const limits = settingsHandlers();
+    const types = orgTypesHandlers();
+    const user = userEvent.setup();
+    renderWithProviders(<OrgSettings />);
+    await openSettings(user);
+    const pick = await screen.findByLabelText(
+      "ORG_CHART$SETTINGS_DEFAULT_AGENT_TYPE",
+    );
+
+    expect(pick).toHaveValue("software-engineer");
+    expect(screen.getByText("Looks into a question")).toBeInTheDocument();
+    await user.selectOptions(pick, "researcher");
+    await user.click(screen.getByRole("button", { name: "BUTTON$SAVE" }));
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("org-settings-modal")).toBeNull(),
+    );
+    expect(limits).toHaveLength(1);
+    expect(types.saved).toEqual([{ default_agent_type: "researcher" }]);
+  });
+
+  it("leaves the org's agent types alone when none was changed", async () => {
+    settingsHandlers();
+    const types = orgTypesHandlers();
+    const user = userEvent.setup();
+    renderWithProviders(<OrgSettings />);
+    await openSettings(user);
+    await screen.findByLabelText("ORG_CHART$SETTINGS_DEFAULT_AGENT_TYPE");
+
+    await user.click(screen.getByRole("button", { name: "BUTTON$SAVE" }));
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("org-settings-modal")).toBeNull(),
+    );
+    expect(types.saved).toEqual([]);
+  });
+
+  it("shows an agent type the server gained since the page was loaded", async () => {
+    settingsHandlers();
+    const types = orgTypesHandlers();
+    const user = userEvent.setup();
+    renderWithProviders(<OrgSettings />);
+    await screen.findByRole("button", { name: "ORG_CHART$SETTINGS" });
+    types.find({
+      ...TYPES,
+      agent_types: [
+        ...TYPES.agent_types,
+        { name: "writer", description: "Writes the docs", allowed: true },
+      ],
+    });
+
+    await openSettings(user);
+
+    expect(
+      await screen.findByRole("checkbox", { name: /writer/ }),
+    ).not.toBeChecked();
+  });
+
+  it("says why the director refused the agent types, and keeps them", async () => {
+    settingsHandlers();
+    orgTypesHandlers();
+    server.use(
+      http.patch("*/api/director/org/settings", () =>
+        HttpResponse.json(
+          { detail: "The default agent type is not allowed" },
+          { status: 422 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<OrgSettings />);
+    await openSettings(user);
+
+    await user.click(
+      await screen.findByRole("checkbox", { name: /researcher/ }),
+    );
+    await user.click(screen.getByRole("button", { name: "BUTTON$SAVE" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The default agent type is not allowed",
+    );
+    expect(screen.getByRole("checkbox", { name: /researcher/ })).toBeChecked();
+  });
+
+  it("offers no agent types to set where there is no org", async () => {
+    settingsHandlers();
+    let asked = false;
+    orgTypesHandlers(TYPES, null);
+    server.use(
+      http.get("*/api/director/org/settings", () => {
+        asked = true;
+        return HttpResponse.json(TYPES);
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<OrgSettings />);
+
+    await waitFor(() => expect(asked).toBe(true));
+    const modal = await openSettings(user);
+
+    expect(
+      within(modal).queryByLabelText("ORG_CHART$SETTINGS_DEFAULT_AGENT_TYPE"),
+    ).toBeNull();
+  });
+
   it("offers nothing on a server without the settings", async () => {
     let asked = false;
     server.use(
@@ -451,6 +599,21 @@ describe("TeamCard", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("codex")).toBeInTheDocument();
+  });
+
+  it("names the type of a team that has one in its hover card", () => {
+    const { rerender } = renderWithProviders(
+      atTeam(
+        {},
+        <TeamHoverCard node={{ ...NODE, agent_type: "researcher" }} />,
+      ),
+    );
+    expect(screen.getByText("researcher")).toBeInTheDocument();
+
+    // A server from before types names none.
+    rerender(atTeam({}, <TeamHoverCard node={NODE} />));
+
+    expect(screen.queryByText("ORG_CHART$AGENT_TYPE")).toBeNull();
   });
 
   it("says in the details why an agent failed", () => {

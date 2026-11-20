@@ -3,7 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Info, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DirectorClient, refusalOf } from "#/api/director/director-client";
-import type { DirectorSettingsState } from "#/api/director/types";
+import type {
+  DirectorOrgSettings,
+  DirectorOrgSettingsState,
+  DirectorSettingsState,
+} from "#/api/director/types";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { Tooltip } from "#/components/shared/tooltip";
@@ -78,11 +82,18 @@ function CountField({
   );
 }
 
+function same(one: string[], other: string[]) {
+  return [...one].sort().join("\n") === [...other].sort().join("\n");
+}
+
 function SettingsForm({
   state,
+  types,
   onClose,
 }: {
   state: DirectorSettingsState;
+  /** What the org sets for its new teams; absent when it cannot be set. */
+  types?: DirectorOrgSettingsState;
   onClose: () => void;
 }) {
   const { t } = useTranslation("openhands");
@@ -109,6 +120,30 @@ function SettingsForm({
   const [compaction, setCompaction] = React.useState(
     String(state.report_compaction_chars),
   );
+  const [defaultType, setDefaultType] = React.useState(
+    types?.default_agent_type ?? "",
+  );
+  const [allowedTypes, setAllowedTypes] = React.useState(
+    types?.allowed_agent_types ?? [],
+  );
+  // Only what was changed is set for the org: the rest stays as the
+  // director's settings say for every org.
+  const ownTypes: DirectorOrgSettings = {
+    ...(types && defaultType !== types.default_agent_type
+      ? { default_agent_type: defaultType }
+      : {}),
+    ...(types && !same(allowedTypes, types.allowed_agent_types)
+      ? { allowed_agent_types: allowedTypes }
+      : {}),
+  };
+  // A type that is set and whose file has since gone can still be changed.
+  const found = types?.agent_types ?? [];
+  const typeRows = [
+    ...found,
+    ...[...new Set([defaultType, ...allowedTypes])]
+      .filter((name) => name && !found.some((type) => type.name === name))
+      .map((name) => ({ name, description: "" })),
+  ];
   const profiles = useAgentProfiles().data;
   // A profile that was allowed and has since been deleted can still be
   // unticked.
@@ -119,8 +154,8 @@ function SettingsForm({
     ]),
   ];
   const save = useMutation({
-    mutationFn: () =>
-      DirectorClient.updateSettings({
+    mutationFn: async () => {
+      const saved = await DirectorClient.updateSettings({
         max_teams: Number(size),
         max_depth: Number(depth),
         allowed_profiles: allowed,
@@ -132,12 +167,24 @@ function SettingsForm({
         session_cost_limit: Number(cost),
         max_open_sessions: Number(most),
         report_compaction_chars: Number(compaction),
-      }),
+      });
+      if (Object.keys(ownTypes).length > 0) {
+        await DirectorClient.updateOrgSettings(ownTypes);
+      }
+      return saved;
+    },
     // The backend asked, which may no longer be the active one.
     onMutate: () => ({ asked: backend.id }),
     onSuccess: (saved, _, { asked }) => {
       queryClient.setQueryData(DIRECTOR_QUERY_KEYS.settings(asked), saved);
       onClose();
+    },
+    onSettled: (_saved, _error, _variables, context) => {
+      if (context) {
+        queryClient.invalidateQueries({
+          queryKey: DIRECTOR_QUERY_KEYS.orgSettings(context.asked),
+        });
+      }
     },
     meta: { disableToast: true },
   });
@@ -256,6 +303,75 @@ function SettingsForm({
                 {t(I18nKey.ORG_CHART$SETTINGS_PROFILES_HELP)}
               </span>
             </fieldset>
+          ) : null}
+          {types && typeRows.length > 0 ? (
+            <>
+              <label className="flex flex-col gap-2 text-sm">
+                {t(I18nKey.ORG_CHART$SETTINGS_DEFAULT_AGENT_TYPE)}
+                <select
+                  data-testid="org-settings-default-agent-type"
+                  value={defaultType}
+                  disabled={save.isPending}
+                  onChange={(event) => setDefaultType(event.target.value)}
+                  className={INPUT}
+                >
+                  {typeRows.map((type) => (
+                    <option
+                      key={type.name}
+                      value={type.name}
+                      title={type.description}
+                      // The director refuses a default that is not allowed.
+                      disabled={
+                        allowedTypes.length > 0 &&
+                        !allowedTypes.includes(type.name) &&
+                        type.name !== defaultType
+                      }
+                    >
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <fieldset className="flex flex-col gap-2 text-sm">
+                <legend className="mb-2">
+                  {t(I18nKey.ORG_CHART$SETTINGS_ALLOWED_AGENT_TYPES)}
+                </legend>
+                {typeRows.map((type) => (
+                  <label
+                    key={type.name}
+                    className="flex items-start gap-2"
+                    title={type.description}
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={allowedTypes.includes(type.name)}
+                      disabled={save.isPending}
+                      onChange={(event) =>
+                        setAllowedTypes(
+                          event.target.checked
+                            ? [...allowedTypes, type.name]
+                            : allowedTypes.filter(
+                                (other) => other !== type.name,
+                              ),
+                        )
+                      }
+                    />
+                    <span className="flex flex-col">
+                      {type.name}
+                      {type.description ? (
+                        <span className="text-xs text-muted">
+                          {type.description}
+                        </span>
+                      ) : null}
+                    </span>
+                  </label>
+                ))}
+                <span className="text-xs text-muted">
+                  {t(I18nKey.ORG_CHART$SETTINGS_AGENT_TYPES_HELP)}
+                </span>
+              </fieldset>
+            </>
           ) : null}
           <label className="flex flex-col gap-2 text-sm">
             <span className="flex items-center gap-2">
@@ -398,6 +514,21 @@ export function OrgSettings() {
     retry: false,
     meta: { disableToast: true },
   });
+  // Asked anew with every opening: a type the server gained since shows.
+  const types = useQuery({
+    queryKey: DIRECTOR_QUERY_KEYS.orgSettings(backend.id),
+    queryFn: () => DirectorClient.getOrgSettings(),
+    retry: false,
+    meta: { disableToast: true },
+  });
+  // An org sets its types for itself; without one there is nothing to set.
+  const org = useQuery({
+    queryKey: DIRECTOR_QUERY_KEYS.org(backend.id),
+    queryFn: () => DirectorClient.getOrg(),
+    retry: false,
+    meta: { disableToast: true },
+  });
+  const orgTypes = org.data?.root_id ? types.data : undefined;
   if (settings.isError && !settings.data) {
     // Without them there is no form to open: say so, and ask again.
     return (
@@ -424,6 +555,7 @@ export function OrgSettings() {
         onClick={() => {
           // The counts in the form are of now.
           settings.refetch();
+          types.refetch();
           setIsOpen(true);
         }}
         className="flex size-8 items-center justify-center rounded-lg border border-border text-text-secondary hover:bg-surface-raised hover:text-contrast"
@@ -439,8 +571,10 @@ export function OrgSettings() {
             teams: 0,
             depth: 0,
             max_concurrent_runs: 0,
+            types: orgTypes,
           })}
           state={settings.data}
+          types={orgTypes}
           onClose={() => setIsOpen(false)}
         />
       ) : null}

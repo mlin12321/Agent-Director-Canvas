@@ -1831,15 +1831,6 @@ describe("OrgChartView", () => {
       round: 2,
       summary: "Tokens are issued.",
       description: "Tokens now carry an **expiry** in `token.py`.",
-      automated_ran: true,
-      automated: [
-        {
-          path: "services/auth/token.py",
-          line: 12,
-          issue: "The token never expires.",
-          evidence: "expires_at = None",
-        },
-      ],
       findings: [
         { path: "", line: null, issue: "Add a refresh test.", evidence: "" },
       ],

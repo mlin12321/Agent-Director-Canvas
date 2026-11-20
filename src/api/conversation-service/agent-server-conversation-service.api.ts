@@ -535,6 +535,16 @@ export interface CreateConversationOptions {
    * needn't read UI state — child/`/new` launches omit it and route as usual.
    */
   suppressRouterAtStart?: boolean;
+  /**
+   * Local only: the agent type of the top team, when this first message
+   * starts an org. Left out, the org starts with the server's default type.
+   */
+  orgAgentType?: string;
+  /**
+   * Local only: do not offer the first message to the org; the conversation
+   * starts as an ordinary one, as on a server without a director.
+   */
+  skipOrg?: boolean;
   /** Local only: the launched ACP profile's server, for the conversation tag. */
   acpServer?: string;
   // The LLM profile the launched agent profile runs. When set and no explicit
@@ -790,11 +800,17 @@ class AgentServerConversationService {
     const firstMessage = initialUserMsg?.trim();
     const routed =
       firstMessage &&
+      !options.skipOrg &&
       !parentConversationId &&
       !automationSetup &&
       !inContainer &&
       agentType !== "plan"
-        ? await routeToOrg(firstMessage, workingDir, request)
+        ? await routeToOrg(
+            firstMessage,
+            workingDir,
+            request,
+            options.orgAgentType,
+          )
         : null;
     const startedAt = new Date().toISOString();
     let data: Pick<DirectConversationInfo, "id" | "created_at" | "updated_at">;

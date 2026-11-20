@@ -464,8 +464,6 @@ describe("a review", () => {
     round: 1,
     summary: "",
     description: "",
-    automated_ran: false,
-    automated: [],
     findings: [],
     at: "2026-11-14T10:00:00+00:00",
   };

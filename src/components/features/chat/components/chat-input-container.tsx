@@ -34,6 +34,7 @@ interface ChatInputContainerProps {
   slashItems?: SlashCommandItem[];
   slashSelectedIndex?: number;
   onSlashSelect?: (item: SlashCommandItem) => void;
+  startAccessory?: React.ReactNode;
 }
 
 export function ChatInputContainer({
@@ -61,6 +62,7 @@ export function ChatInputContainer({
   slashItems = [],
   slashSelectedIndex = 0,
   onSlashSelect,
+  startAccessory,
 }: ChatInputContainerProps) {
   const conversationMode = useConversationStore(
     (state) => state.conversationMode,
@@ -117,6 +119,7 @@ export function ChatInputContainer({
           insertTextAtCaret(chatInputRef.current, text)
         }
         isDictationDisabled={isNewConversationPending}
+        startAccessory={startAccessory}
       />
     </div>
   );

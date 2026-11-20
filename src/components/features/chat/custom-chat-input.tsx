@@ -32,6 +32,8 @@ export interface CustomChatInputProps {
   ) => void;
   className?: React.HTMLAttributes<HTMLDivElement>["className"];
   buttonClassName?: React.HTMLAttributes<HTMLButtonElement>["className"];
+  /** A pill shown beside the agent profile's, in the row under the text. */
+  startAccessory?: React.ReactNode;
 }
 
 export function CustomChatInput({
@@ -47,6 +49,7 @@ export function CustomChatInput({
   onFilesPaste,
   className = "",
   buttonClassName = "",
+  startAccessory,
 }: CustomChatInputProps) {
   const [canSubmit, setCanSubmit] = React.useState(false);
   const {
@@ -211,6 +214,7 @@ export function CustomChatInput({
             closeSlashMenu();
             syncCanSubmit();
           }}
+          startAccessory={startAccessory}
           isSlashMenuOpen={isSlashMenuOpen}
           slashItems={slashItems}
           slashSelectedIndex={slashSelectedIndex}

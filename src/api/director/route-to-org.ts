@@ -26,6 +26,9 @@ export function tellOfRefusal(error: unknown) {
  * one which the director is sure it concerns, and no conversation is
  * started.
  *
+ * @param agentType The type of the top team of the org the message starts;
+ * the server's own when left out. An org that exists takes no notice of it.
+ *
  * @returns Where the message went, or `null` when the conversation is to
  * start as an ordinary one: the server has no director, the folder is not in
  * a git repository, or it is outside the repository of the org the server
@@ -36,6 +39,7 @@ export async function routeToOrg(
   text: string,
   folder: string,
   conversation: NonNullable<RouteMessageRequest["conversation"]>,
+  agentType?: string,
 ): Promise<RoutedMessage | null> {
   try {
     return await DirectorClient.routeMessage({
@@ -43,6 +47,7 @@ export async function routeToOrg(
       path: folder,
       auto: true,
       conversation,
+      ...(agentType ? { agent_type: agentType } : {}),
     });
   } catch (error) {
     // Starting a conversation never depends on the director.

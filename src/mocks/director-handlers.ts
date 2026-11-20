@@ -5,6 +5,9 @@ import {
   type AgentRef,
   type FileSides,
   type HistoryEvent,
+  type AgentTypeInfo,
+  type DirectorOrgSettings,
+  type DirectorOrgSettingsState,
   type DirectorSettingsState,
   type OrgHistory,
   type Recovery,
@@ -223,11 +226,41 @@ const MOCK_REVIEW: Review = {
     "Adds the module's handlers and their tests.\n\n" +
     "- `handlers.ts`: new request handlers.\n" +
     "- `handlers.test.ts`: covers the happy path and bad input.",
-  automated_ran: true,
-  automated: [],
   findings: [],
   at: "2026-11-12T10:00:00+00:00",
 };
+
+const DEFAULT_AGENT_TYPE = "software-engineer";
+/** The agent types the mock director finds, by name. */
+const MOCK_AGENT_TYPES: Record<string, string> = {
+  [DEFAULT_AGENT_TYPE]:
+    "Builds and maintains software: writes code and tests, and reviews changes.",
+  researcher:
+    "Investigates a question and writes up what it found, with its sources.",
+  "technical-writer":
+    "Writes and maintains documentation for what the other teams build.",
+};
+
+/** What the mock org sets for itself; the rest is the server's. */
+let mockOrgSettings: DirectorOrgSettings = {};
+
+function orgSettingsNow(): DirectorOrgSettingsState {
+  const allowed = mockOrgSettings.allowed_agent_types ?? [];
+  const agentTypes: AgentTypeInfo[] = Object.entries(MOCK_AGENT_TYPES).map(
+    ([name, description]) => ({
+      name,
+      description,
+      allowed: allowed.length === 0 || allowed.includes(name),
+    }),
+  );
+  return {
+    default_agent_type:
+      mockOrgSettings.default_agent_type || DEFAULT_AGENT_TYPE,
+    allowed_agent_types: allowed,
+    own: mockOrgSettings,
+    agent_types: agentTypes,
+  };
+}
 
 /** A team of the org: where it is and what it owns. Nobody works at it. */
 function referenceTeam(
@@ -242,6 +275,7 @@ function referenceTeam(
     child_ids: childIds,
     headline: "",
     agent_profile: null,
+    agent_type: DEFAULT_AGENT_TYPE,
     ...given,
     old_specs: [],
   };
@@ -592,6 +626,7 @@ const subscribers = new Set<(event: OrgEvent) => void>();
 export function resetDirectorMockData() {
   tree = buildMockTree();
   mockSessions = buildMockSessions();
+  mockOrgSettings = {};
 }
 
 /** Tell the open streams what the sessions are now, and what waits. */
@@ -770,6 +805,34 @@ export const DIRECTOR_HANDLERS = [
       max_concurrent_runs: null,
     };
     return HttpResponse.json(body);
+  }),
+
+  http.get(`${BASE}/org/settings`, () => HttpResponse.json(orgSettingsNow())),
+
+  http.patch(`${BASE}/org/settings`, async ({ request }) => {
+    const change = (await request.json()) as DirectorOrgSettings;
+    const next = { ...mockOrgSettings, ...change };
+    const allowed = next.allowed_agent_types ?? [];
+    const named = [
+      ...allowed,
+      ...(next.default_agent_type ? [next.default_agent_type] : []),
+    ];
+    const unknown = named.find((name) => !(name in MOCK_AGENT_TYPES));
+    if (unknown) {
+      return HttpResponse.json(
+        { detail: `No agent type is named '${unknown}'` },
+        { status: 422 },
+      );
+    }
+    const chosen = next.default_agent_type || DEFAULT_AGENT_TYPE;
+    if (allowed.length > 0 && !allowed.includes(chosen)) {
+      return HttpResponse.json(
+        { detail: `The default agent type '${chosen}' is not allowed` },
+        { status: 422 },
+      );
+    }
+    mockOrgSettings = next;
+    return HttpResponse.json(orgSettingsNow());
   }),
 
   http.get(`${BASE}/org/sessions`, () => HttpResponse.json(sessionsNow())),

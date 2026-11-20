@@ -68,6 +68,8 @@ import {
 } from "#/api/director/prepare-folder";
 import { useFolderNeedsGit } from "#/hooks/query/use-folder-needs-git";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
+import { useOrgStartChoices } from "#/hooks/query/use-org-start-choices";
+import { OrgAgentTypePicker, type OrgChoice } from "./org-agent-type-picker";
 import { PrepareFolderCommand } from "./prepare-folder-command";
 import { OpenRepositoryDialog } from "./open-repository-dialog";
 import { HomeGitControlBarPreview } from "./home-git-control-bar-preview";
@@ -191,6 +193,32 @@ export function HomeChatLauncher() {
     runtimeWorkspaceMessage ??
     (isLocal ? getWorkspacesUnsupportedMessage(workspacesError, t) : null);
 
+  // Whether the first message is offered to the org, and the type of the top
+  // team of the org it starts: only what `createConversation` routes to the
+  // org is asked about.
+  const orgStartChoices = useOrgStartChoices(
+    isLocal &&
+      !isolated &&
+      !isAutomateMode &&
+      effectiveWorkspaceMode !== "docker_container",
+  );
+  const [pickedOrgChoice, setPickedOrgChoice] = useState<OrgChoice>({
+    org: true,
+    agentType: null,
+  });
+  // A type the server no longer allows is not sent: it would be refused.
+  const orgChoice: OrgChoice = pickedOrgChoice.org
+    ? {
+        org: true,
+        agentType:
+          orgStartChoices?.others.find(
+            (type) => type.name === pickedOrgChoice.agentType,
+          )?.name ?? null,
+      }
+    : pickedOrgChoice;
+  // Without a director nothing was chosen, and nothing is skipped.
+  const skipOrg = orgStartChoices !== null && !orgChoice.org;
+
   const setWorkspaceMode = (mode: WorkspaceMode) => {
     setPickedWorkspaceMode(mode);
     if (isLocal) writeStoredLocalWorkspaceMode(mode);
@@ -284,6 +312,14 @@ export function HomeChatLauncher() {
       variables = { ...variables, plugins: selectedPlugins };
     }
 
+    // Left out for the server's default type.
+    if (orgStartChoices && orgChoice.org && orgChoice.agentType) {
+      variables = { ...variables, orgAgentType: orgChoice.agentType };
+    }
+    if (skipOrg) {
+      variables = { ...variables, skipOrg: true };
+    }
+
     // A cloud member's home LLM pick (see useChatInputLlmProfileState), unless
     // that profile has since gone.
     if (
@@ -334,6 +370,7 @@ export function HomeChatLauncher() {
         // the conditions `createConversation` routes a first message on.
         const prepare =
           offersPrepare &&
+          !skipOrg &&
           variables.query &&
           !variables.automationSetup &&
           variables.workspaceMode !== "docker_container"
@@ -573,16 +610,30 @@ export function HomeChatLauncher() {
                 ? t(I18nKey.HOME$AUTOMATE_PROMPT_PLACEHOLDER)
                 : t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)
             }
+            startAccessory={
+              orgStartChoices && !activeLaunch ? (
+                <OrgAgentTypePicker
+                  choices={orgStartChoices}
+                  value={orgChoice}
+                  onChange={setPickedOrgChoice}
+                  disabled={isCreating}
+                />
+              ) : null
+            }
           />
         </div>
 
-        {!activeLaunch && offersPrepare && !isolated && !isAutomateMode && (
-          <PrepareFolderCommand
-            command={prepareCommand}
-            onChange={setPrepareCommand}
-            onRemove={() => setPrepareCommand(null)}
-          />
-        )}
+        {!activeLaunch &&
+          offersPrepare &&
+          !skipOrg &&
+          !isolated &&
+          !isAutomateMode && (
+            <PrepareFolderCommand
+              command={prepareCommand}
+              onChange={setPrepareCommand}
+              onRemove={() => setPrepareCommand(null)}
+            />
+          )}
 
         {!activeLaunch && isolated && (
           <p role="status" className="text-xs text-text-secondary">

@@ -43,8 +43,6 @@ function work(status: NodeStatus, given: Given = {}): TeamWork {
           round: 1,
           summary: "",
           description: "",
-          automated_ran: true,
-          automated: [],
           findings: [],
           at: "2026-11-13T00:00:00Z",
         }

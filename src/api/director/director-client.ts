@@ -2,6 +2,7 @@ import { isHttpError } from "@openhands/typescript-client";
 import { DirectorClient as SdkDirectorClient } from "@openhands/typescript-client/clients";
 import { getEffectiveLocalBackend } from "../backend-registry/active-store";
 import type {
+  DirectorOrgSettings,
   DirectorSettings,
   NodeId,
   OpenSessionRequest,
@@ -200,6 +201,16 @@ export const DirectorClient = {
 
   updateSettings: (settings: Partial<DirectorSettings>) =>
     call((client) => client.updateSettings(settings)),
+
+  /**
+   * The agent type of a new team and the types one may be, with every type
+   * the director finds now. Without an org, what a new org starts with.
+   */
+  getOrgSettings: () => call((client) => client.getOrgSettings()),
+
+  /** Set them for this org alone. Refused (404) without an org. */
+  updateOrgSettings: (settings: DirectorOrgSettings) =>
+    call((client) => client.updateOrgSettings(settings)),
 
   pauseOrg: () => call((client) => client.pauseOrg()),
 
