@@ -138,6 +138,8 @@ export const DIRECTOR_QUERY_KEYS = {
     ["director", "org-settings", backendId] as const,
   folderIsGit: (backendId: string, folder: string) =>
     ["director", "folder-is-git", backendId, folder] as const,
+  folderGitRoot: (backendId: string, folder: string) =>
+    ["director", "folder-git-root", backendId, folder] as const,
   search: (backendId: string, query: string) =>
     ["director", "search", backendId, query] as const,
   recovery: (backendId: string) => ["director", "recovery", backendId] as const,

@@ -49,6 +49,19 @@ describe("routeToOrg", () => {
     ]);
   });
 
+  it("keeps the org to the folder's own checkout when asked", async () => {
+    const sent = director(() => HttpResponse.json(ROUTED));
+
+    await routeToOrg("Build it", "/work/shop/app", CONVERSATION, undefined, true);
+
+    expect(sent).toEqual([
+      expect.objectContaining({
+        path: "/work/shop/app",
+        at_workspace: true,
+      }),
+    ]);
+  });
+
   it("names the type of the top team of the org the message starts", async () => {
     const sent = director(() => HttpResponse.json(ROUTED));
 

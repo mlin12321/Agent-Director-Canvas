@@ -64,9 +64,13 @@ import { OpenWorkspaceDialog } from "./open-workspace-dialog";
 import { useOpenFolderRequestStore } from "#/stores/open-folder-request-store";
 import {
   DEFAULT_PREPARE_COMMAND,
+  isGitRoot,
   prepareFolder,
 } from "#/api/director/prepare-folder";
-import { useFolderNeedsGit } from "#/hooks/query/use-folder-needs-git";
+import {
+  useFolderGitRoot,
+  useFolderNeedsGit,
+} from "#/hooks/query/use-folder-needs-git";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { useOrgStartChoices } from "#/hooks/query/use-org-start-choices";
 import { OrgAgentTypePicker, type OrgChoice } from "./org-agent-type-picker";
@@ -189,6 +193,16 @@ export function HomeChatLauncher() {
     serverInfoLoading || workspaceModes.includes(workspaceMode)
       ? workspaceMode
       : DEFAULT_WORKSPACE_MODE;
+  // A folder the person opened themselves is judged by the `.git` in it.
+  const ownFolder =
+    isLocal &&
+    !!pendingWorkspace &&
+    !isolated &&
+    !forOrg &&
+    effectiveWorkspaceMode !== "docker_container";
+  const folderGitRoot = useFolderGitRoot(
+    ownFolder && pendingWorkspace ? pendingWorkspace.path : null,
+  );
   const workspacesUnsupportedMessage =
     runtimeWorkspaceMessage ??
     (isLocal ? getWorkspacesUnsupportedMessage(workspacesError, t) : null);
@@ -395,6 +409,31 @@ export function HomeChatLauncher() {
               variables.workingDir,
             ),
           });
+        }
+        // A folder opened in the chat is its own checkout. Without a `.git`
+        // there, one is created and that folder is the new org's root.
+        if (ownFolder && variables.workingDir) {
+          if (!(await isGitRoot(variables.workingDir))) {
+            try {
+              await prepareFolder(
+                variables.workingDir,
+                DEFAULT_PREPARE_COMMAND,
+              );
+            } catch (error) {
+              throw new Error(
+                t(I18nKey.HOME$PREPARE_FOLDER_FAILED, {
+                  reason: error instanceof Error ? error.message : "",
+                }),
+              );
+            }
+            queryClient.invalidateQueries({
+              queryKey: DIRECTOR_QUERY_KEYS.folderGitRoot(
+                backend.id,
+                variables.workingDir,
+              ),
+            });
+          }
+          if (!variables.skipOrg) variables.atWorkspace = true;
         }
         const data = await createConversation(variables);
         isCreated = true;
@@ -634,6 +673,20 @@ export function HomeChatLauncher() {
               onRemove={() => setPrepareCommand(null)}
             />
           )}
+
+        {!activeLaunch && ownFolder && folderGitRoot !== null && (
+          <p
+            role="status"
+            className="text-xs text-text-secondary"
+            data-testid="folder-git-status"
+          >
+            {t(
+              folderGitRoot
+                ? I18nKey.HOME$FOLDER_IS_GIT_REPOSITORY
+                : I18nKey.HOME$FOLDER_NOT_GIT_REPOSITORY,
+            )}
+          </p>
+        )}
 
         {!activeLaunch && isolated && (
           <p role="status" className="text-xs text-text-secondary">

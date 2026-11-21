@@ -3212,6 +3212,15 @@ describe("AgentServerConversationService", () => {
         expect(mockRouteToOrg.mock.calls[0][3]).toBe("researcher");
       });
 
+      it("keeps the org to the opened folder when that folder is the checkout", async () => {
+        await AgentServerConversationService.createConversation({
+          ...launch,
+          atWorkspace: true,
+        });
+
+        expect(mockRouteToOrg.mock.calls[0][4]).toBe(true);
+      });
+
       it("starts an ordinary conversation when asked to stay outside the org", async () => {
         const task = await AgentServerConversationService.createConversation({
           ...launch,

@@ -29,6 +29,12 @@ export async function isGitRepository(folder: string): Promise<boolean> {
   return out.exit_code === 0;
 }
 
+/** Whether `.git` is in this folder, not in a repository above it. */
+export async function isGitRoot(folder: string): Promise<boolean> {
+  const out = await run(folder, "test -e .git", CHECK_TIMEOUT_SECONDS);
+  return out.exit_code === 0;
+}
+
 /**
  * Run the human's command in a folder on the server before a conversation
  * starts there.
