@@ -467,6 +467,24 @@
     "ca": "Aquesta carpeta no és un repositori git. Per iniciar una organització, inicialitza un repositori git aquí o obre l'arrel del repositori. Per defecte es crea un repositori git automàticament i aquesta carpeta esdevé l'arrel de la nova organització.",
     "id": "Folder ini bukan repositori git. Untuk memulai organisasi, inisialisasi repositori git di sini, atau buka akar repositori. Secara bawaan repositori git dibuat secara otomatis, dan folder ini menjadi akar organisasi yang baru."
   },
+  "HOME$FOLDER_GIT_ABOVE": {
+    "en": "A folder with .git was detected in an upper folder at",
+    "zh-CN": "在上层文件夹中检测到带有 .git 的文件夹：",
+    "zh-TW": "在上層資料夾中偵測到含有 .git 的資料夾：",
+    "de": "In einem übergeordneten Ordner wurde ein Ordner mit .git gefunden:",
+    "ko-KR": "상위 폴더에서 .git이 있는 폴더가 감지되었습니다:",
+    "no": "En mappe med .git ble funnet i en mappe over:",
+    "it": "È stata rilevata una cartella con .git in una cartella superiore:",
+    "pt": "Foi detetada uma pasta com .git numa pasta acima:",
+    "es": "Se detectó una carpeta con .git en una carpeta superior:",
+    "ar": "تم اكتشاف مجلد يحتوي على .git في مجلد أعلى:",
+    "fr": "Un dossier contenant .git a été détecté dans un dossier parent :",
+    "tr": "Üst bir klasörde .git içeren bir klasör bulundu:",
+    "ja": "上のフォルダに .git があるフォルダが見つかりました:",
+    "uk": "У верхній папці виявлено папку з .git:",
+    "ca": "S'ha detectat una carpeta amb .git en una carpeta superior:",
+    "id": "Folder dengan .git terdeteksi di folder di atasnya:"
+  },
   "AUTOMATIONS$UNAVAILABLE_AGENT_PROFILE": {
     "en": "Unavailable profile ({{id}})",
     "ja": "利用できないプロファイル ({{id}})",

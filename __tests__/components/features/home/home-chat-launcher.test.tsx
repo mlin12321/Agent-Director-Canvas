@@ -49,6 +49,7 @@ const mockUseConversationWorkspace = vi.fn();
 const mockMarkAutomationSetupHandoff = vi.fn();
 const mockIsGitRepository = vi.fn();
 const mockIsGitRoot = vi.fn();
+const mockGitRootAbove = vi.fn();
 const mockPrepareFolder = vi.fn();
 
 let mockImages: File[] = [];
@@ -74,6 +75,7 @@ vi.mock("#/api/director/prepare-folder", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/api/director/prepare-folder")>()),
   isGitRepository: (...args: unknown[]) => mockIsGitRepository(...args),
   isGitRoot: (...args: unknown[]) => mockIsGitRoot(...args),
+  gitRootAbove: (...args: unknown[]) => mockGitRootAbove(...args),
   prepareFolder: (...args: unknown[]) => mockPrepareFolder(...args),
 }));
 
@@ -446,6 +448,7 @@ describe("HomeChatLauncher", () => {
     enqueueHomeTaskPendingMessage.mockResolvedValue(undefined);
     mockIsGitRepository.mockResolvedValue(true);
     mockIsGitRoot.mockResolvedValue(true);
+    mockGitRootAbove.mockResolvedValue(null);
     mockPrepareFolder.mockResolvedValue(undefined);
     sendMessageWithAttachments.mockResolvedValue({
       text: "hello world",
@@ -998,6 +1001,46 @@ describe("HomeChatLauncher", () => {
     );
     expect(createSpy.mock.calls[0][0]).toMatchObject({ skipOrg: true });
     expect(createSpy.mock.calls[0][0]).not.toHaveProperty("atWorkspace");
+  });
+
+  it("offers the repository above, and opens that folder in this chat when its path is clicked", async () => {
+    mockIsGitRoot.mockImplementation(
+      async (folder: unknown) => folder === "/p",
+    );
+    mockGitRootAbove.mockImplementation(async (folder: unknown) =>
+      folder === "/p/app" ? "/p" : null,
+    );
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(makeConversationResponse());
+    renderLauncher();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId("open-workspace-button"));
+    await user.click(
+      await screen.findByTestId("stub-workspace-dialog-confirm"),
+    );
+
+    const status = await screen.findByTestId("folder-git-status");
+    expect(status).toHaveTextContent("HOME$FOLDER_GIT_ABOVE");
+    expect(status).toHaveTextContent("HOME$FOLDER_NOT_GIT_REPOSITORY");
+    expect(screen.getByTestId("open-git-root-above")).toHaveTextContent("/p");
+    await user.click(screen.getByTestId("open-git-root-above"));
+
+    expect(await screen.findByTestId("folder-git-status")).toHaveTextContent(
+      "HOME$FOLDER_IS_GIT_REPOSITORY",
+    );
+    expect(screen.queryByTestId("open-git-root-above")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("stub-chat-submit"));
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+    expect(mockPrepareFolder).not.toHaveBeenCalled();
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workingDirOverride: "/p",
+        atWorkspace: true,
+      }),
+    );
   });
 
   it("does not judge a folder the org page asked for, and still offers the prepare command", async () => {

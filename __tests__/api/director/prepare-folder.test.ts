@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_PREPARE_COMMAND,
+  gitRootAbove,
   isGitRepository,
   isGitRoot,
   prepareFolder,
@@ -78,9 +79,12 @@ describe("preparing a folder for an org", () => {
     expect(await isGitRepository(nested)).toBe(true);
     expect(await isGitRoot(nested)).toBe(false);
     expect(await isGitRoot(folder)).toBe(true);
+    expect(await gitRootAbove(nested)).toBe(folder);
+    expect(await gitRootAbove(folder)).toBeNull();
 
     const fresh = mkdtempSync(join(tmpdir(), "prepare-folder-"));
     expect(await isGitRoot(fresh)).toBe(false);
+    expect(await gitRootAbove(fresh)).toBeNull();
     await prepareFolder(fresh, DEFAULT_PREPARE_COMMAND);
     expect(await isGitRoot(fresh)).toBe(true);
   });

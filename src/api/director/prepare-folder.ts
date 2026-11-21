@@ -36,6 +36,21 @@ export async function isGitRoot(folder: string): Promise<boolean> {
 }
 
 /**
+ * The checkout above this folder, when this folder has no `.git` of its own
+ * and one does. Null when this folder is the checkout, or is in none.
+ */
+export async function gitRootAbove(folder: string): Promise<string | null> {
+  const out = await run(
+    folder,
+    'root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1; [ "$(realpath "$root")" = "$(realpath .)" ] && exit 2; printf "%s\\n" "$root"',
+    CHECK_TIMEOUT_SECONDS,
+  );
+  if (out.exit_code !== 0) return null;
+  const root = (out.stdout ?? "").trim();
+  return root || null;
+}
+
+/**
  * Run the human's command in a folder on the server before a conversation
  * starts there.
  *

@@ -70,6 +70,7 @@ import {
 import {
   useFolderGitRoot,
   useFolderNeedsGit,
+  useGitRootAbove,
 } from "#/hooks/query/use-folder-needs-git";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { useOrgStartChoices } from "#/hooks/query/use-org-start-choices";
@@ -202,6 +203,11 @@ export function HomeChatLauncher() {
     effectiveWorkspaceMode !== "docker_container";
   const folderGitRoot = useFolderGitRoot(
     ownFolder && pendingWorkspace ? pendingWorkspace.path : null,
+  );
+  const gitRootAbove = useGitRootAbove(
+    ownFolder && folderGitRoot === false && pendingWorkspace
+      ? pendingWorkspace.path
+      : null,
   );
   const workspacesUnsupportedMessage =
     runtimeWorkspaceMessage ??
@@ -674,19 +680,49 @@ export function HomeChatLauncher() {
             />
           )}
 
-        {!activeLaunch && ownFolder && folderGitRoot !== null && (
-          <p
-            role="status"
-            className="text-xs text-text-secondary"
-            data-testid="folder-git-status"
-          >
-            {t(
-              folderGitRoot
-                ? I18nKey.HOME$FOLDER_IS_GIT_REPOSITORY
-                : I18nKey.HOME$FOLDER_NOT_GIT_REPOSITORY,
-            )}
-          </p>
-        )}
+        {!activeLaunch &&
+          ownFolder &&
+          (folderGitRoot === true ||
+            (folderGitRoot === false && gitRootAbove !== undefined)) && (
+            <p
+              role="status"
+              className="text-xs text-text-secondary"
+              data-testid="folder-git-status"
+            >
+              {folderGitRoot ? (
+                t(I18nKey.HOME$FOLDER_IS_GIT_REPOSITORY)
+              ) : (
+                <>
+                  {gitRootAbove && (
+                    <>
+                      {t(I18nKey.HOME$FOLDER_GIT_ABOVE)}{" "}
+                      <button
+                        type="button"
+                        className="underline"
+                        data-testid="open-git-root-above"
+                        onClick={() => {
+                          const name =
+                            gitRootAbove
+                              .replace(/[/\\]+$/, "")
+                              .split(/[/\\]/)
+                              .pop() || gitRootAbove;
+                          setPendingWorkspace({
+                            id: gitRootAbove,
+                            name,
+                            path: gitRootAbove,
+                          });
+                        }}
+                      >
+                        {gitRootAbove}
+                      </button>
+                      {". "}
+                    </>
+                  )}
+                  {t(I18nKey.HOME$FOLDER_NOT_GIT_REPOSITORY)}
+                </>
+              )}
+            </p>
+          )}
 
         {!activeLaunch && isolated && (
           <p role="status" className="text-xs text-text-secondary">
