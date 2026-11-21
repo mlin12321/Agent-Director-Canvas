@@ -63,6 +63,8 @@ export interface CreateConversationVariables {
   // Local: start an ordinary conversation; the message is not offered to the
   // org.
   skipOrg?: boolean;
+  // Local: the opened folder is the checkout. A repository above it is not used.
+  atWorkspace?: boolean;
   entryPoint?: string; // analytics only; not forwarded to the service
 }
 
@@ -130,6 +132,7 @@ export const useCreateConversation = ({
         suppressRouterAtStart,
         orgAgentType,
         skipOrg,
+        atWorkspace,
       } = variables;
 
       // The active AgentProfile is the default launch profile for new
@@ -185,6 +188,7 @@ export const useCreateConversation = ({
           ...(suppressRouterAtStart ? { suppressRouterAtStart } : {}),
           ...(orgAgentType ? { orgAgentType } : {}),
           ...(skipOrg ? { skipOrg } : {}),
+          ...(atWorkspace ? { atWorkspace } : {}),
         },
       );
 

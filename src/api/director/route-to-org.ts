@@ -40,15 +40,20 @@ export async function routeToOrg(
   folder: string,
   conversation: NonNullable<RouteMessageRequest["conversation"]>,
   agentType?: string,
+  atWorkspace = false,
 ): Promise<RoutedMessage | null> {
   try {
-    return await DirectorClient.routeMessage({
+    // `at_workspace` is honored by a director that keeps a chat folder to its
+    // own checkout. A client typed before that field still posts it.
+    const request = {
       text,
       path: folder,
       auto: true,
       conversation,
       ...(agentType ? { agent_type: agentType } : {}),
-    });
+      ...(atWorkspace ? { at_workspace: true } : {}),
+    };
+    return await DirectorClient.routeMessage(request);
   } catch (error) {
     // Starting a conversation never depends on the director.
     if (

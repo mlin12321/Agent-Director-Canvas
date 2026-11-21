@@ -5,7 +5,9 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_PREPARE_COMMAND,
+  gitRootAbove,
   isGitRepository,
+  isGitRoot,
   prepareFolder,
 } from "#/api/director/prepare-folder";
 
@@ -67,6 +69,24 @@ describe("preparing a folder for an org", () => {
     await prepareFolder(folder, DEFAULT_PREPARE_COMMAND);
 
     expect(shell("git rev-list --count HEAD", folder).stdout).toBe("1\n");
+  });
+
+  it("counts only a .git in the folder itself", async () => {
+    shell("git init -b main", folder);
+    const nested = join(folder, "app");
+    shell(`mkdir -p ${nested}`, folder);
+
+    expect(await isGitRepository(nested)).toBe(true);
+    expect(await isGitRoot(nested)).toBe(false);
+    expect(await isGitRoot(folder)).toBe(true);
+    expect(await gitRootAbove(nested)).toBe(folder);
+    expect(await gitRootAbove(folder)).toBeNull();
+
+    const fresh = mkdtempSync(join(tmpdir(), "prepare-folder-"));
+    expect(await isGitRoot(fresh)).toBe(false);
+    expect(await gitRootAbove(fresh)).toBeNull();
+    await prepareFolder(fresh, DEFAULT_PREPARE_COMMAND);
+    expect(await isGitRoot(fresh)).toBe(true);
   });
 
   it("fails with what the command printed", async () => {

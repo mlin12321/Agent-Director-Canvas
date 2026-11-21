@@ -545,6 +545,11 @@ export interface CreateConversationOptions {
    * starts as an ordinary one, as on a server without a director.
    */
   skipOrg?: boolean;
+  /**
+   * Local only: the folder the person opened is the checkout. Do not use a
+   * repository above it.
+   */
+  atWorkspace?: boolean;
   /** Local only: the launched ACP profile's server, for the conversation tag. */
   acpServer?: string;
   // The LLM profile the launched agent profile runs. When set and no explicit
@@ -810,6 +815,7 @@ class AgentServerConversationService {
             workingDir,
             request,
             options.orgAgentType,
+            options.atWorkspace,
           )
         : null;
     const startedAt = new Date().toISOString();
