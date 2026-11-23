@@ -81,6 +81,7 @@ const SESSION = "s1";
  */
 function team(id: string, parentId: string | null, path: string): OrgNodeInput {
   return {
+    agent_type: "software-engineer",
     id,
     parent_id: parentId,
     title: `${id} team`,
@@ -1237,6 +1238,7 @@ describe("OrgChartView", () => {
         pending_split: {
           children: [
             {
+              agent_type: "software-engineer",
               title: "indexer",
               path: "services/search/indexer",
               writable: [],
@@ -1246,6 +1248,7 @@ describe("OrgChartView", () => {
               agent_profile: null,
             },
             {
+              agent_type: "software-engineer",
               title: "query",
               path: "services/search/query",
               writable: [],

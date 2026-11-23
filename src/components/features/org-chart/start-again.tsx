@@ -3,14 +3,22 @@ import { RotateCw } from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { DirectorClient, DirectorError } from "#/api/director/director-client";
-import type { SessionTeam } from "#/api/director/types";
+import type { MemberInfo, SessionTeam } from "#/api/director/types";
 import { I18nKey } from "#/i18n/declaration";
+import { useTeamTypes } from "./team-types";
 
-/** Whether a team's agents are missing here while its work is not done. */
-export function isLost(node: SessionTeam) {
+/**
+ * Whether a team's agents are missing here while its work is not done: the
+ * member that works in the folder has no conversation on this server.
+ */
+export function isLost(node: SessionTeam, members: readonly MemberInfo[]) {
   return (
     node.status !== "done" &&
-    node.agents.some((agent) => agent.role === "ic" && agent.status === "lost")
+    node.agents.some(
+      (agent) =>
+        agent.status === "lost" &&
+        members.some((member) => member.writes && member.name === agent.role),
+    )
   );
 }
 
@@ -18,13 +26,20 @@ export function isLost(node: SessionTeam) {
  * Starts a team again whose agents have no conversation on this server.
  * The server says why when it cannot, e.g. that the team above is lost too.
  */
-export function StartAgain({ node }: { node: SessionTeam }) {
+export function StartAgain({
+  node,
+  agentType,
+}: {
+  node: SessionTeam;
+  /** The type of the team the place is at. */
+  agentType: string;
+}) {
   const { t } = useTranslation("openhands");
   const start = useMutation({
     mutationFn: () => DirectorClient.startAgain(node.session, node.id),
     meta: { disableToast: true },
   });
-  const lost = isLost(node);
+  const lost = isLost(node, useTeamTypes().members(agentType));
   // Started, it may be lost again later and then be started again.
   const { reset } = start;
   React.useEffect(() => {

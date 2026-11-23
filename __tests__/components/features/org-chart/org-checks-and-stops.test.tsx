@@ -23,6 +23,8 @@ import { renderWithProviders } from "test-utils";
 import { atWork } from "./session-fixtures";
 
 const STATE: DirectorSettingsState = {
+  default_agent_type: "software-engineer",
+  allowed_agent_types: [],
   max_teams: 32,
   max_depth: 8,
   teams: 3,
@@ -92,6 +94,7 @@ const IC = {
 
 // A team of the org: nobody works at it itself.
 const NODE: OrgNode = {
+  agent_type: "software-engineer",
   id: "shop",
   parent_id: "root",
   title: "Shop",
@@ -364,6 +367,7 @@ describe("proposed sub-teams", () => {
           pending_split: {
             children: [
               {
+                agent_type: "software-engineer",
                 title: "Orders",
                 path: "shop/api",
                 writable: [],
@@ -410,11 +414,17 @@ describe("proposed sub-teams", () => {
         proposal={{
           children: [
             {
+              agent_type: "software-engineer",
               ...child,
               title: "Orders",
               reason: "The order rules stand alone.",
             },
-            { ...child, title: "Pages", path: "shop/web" },
+            {
+              agent_type: "software-engineer",
+              ...child,
+              title: "Pages",
+              path: "shop/web",
+            },
           ],
           contracts: "",
           reason: "Orders and pages change for different reasons.",

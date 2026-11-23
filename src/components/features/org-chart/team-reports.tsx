@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { OrgNode } from "#/api/director/types";
 import { useTeamMemory } from "#/hooks/query/use-team-memory";
 import { I18nKey } from "#/i18n/declaration";
-import { ROLE_LABEL_KEYS } from "./org-chart-presentation";
+import { useMemberWords, useTeamTypes } from "./team-types";
 
 interface TeamReportsProps {
   node: OrgNode;
@@ -14,6 +14,8 @@ interface TeamReportsProps {
  */
 export function TeamReports({ node }: TeamReportsProps) {
   const { t } = useTranslation("openhands");
+  const types = useTeamTypes();
+  const words = useMemberWords();
   const memory = useTeamMemory(node.id);
 
   let body: React.ReactNode;
@@ -40,11 +42,9 @@ export function TeamReports({ node }: TeamReportsProps) {
                 {report.text}
               </span>
               <span className="text-muted">
-                {t(
-                  report.handed_over
-                    ? I18nKey.ORG_CHART$REPORT_HANDED_OVER
-                    : ROLE_LABEL_KEYS[report.role],
-                )}
+                {report.handed_over
+                  ? t(I18nKey.ORG_CHART$REPORT_HANDED_OVER)
+                  : words.label(types.member(report.role, node.agent_type))}
                 {" · "}
                 <time dateTime={report.at}>
                   {new Date(report.at).toLocaleString()}

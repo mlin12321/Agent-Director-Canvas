@@ -8,9 +8,9 @@ import {
   ESCALATION_LABEL_KEYS,
   externalAgentName,
   ISOLATION_LABEL_KEYS,
-  ROLE_LABEL_KEYS,
   SPLIT_LABEL_KEYS,
 } from "./org-chart-presentation";
+import { useMemberWords, useTeamTypes } from "./team-types";
 
 function Row({
   label,
@@ -41,6 +41,8 @@ export function TeamHoverCard({ node }: TeamHoverCardProps) {
   const work = useTeamWork(node);
   const { boundary } = node;
   const reviewLabel = useReviewLabel();
+  const types = useTeamTypes();
+  const words = useMemberWords();
   const { waiting } = work;
 
   return (
@@ -99,13 +101,19 @@ export function TeamHoverCard({ node }: TeamHoverCardProps) {
                   agent.kind === "acp"
                     ? ` · ${externalAgentName(agent) ?? t(I18nKey.ORG_CHART$EXTERNAL_AGENT)}`
                     : "";
-                return `${t(ROLE_LABEL_KEYS[agent.role])} (${agent.status}${external})`;
+                const member = types.member(agent.role, node.agent_type);
+                return `${words.label(member)} (${agent.status}${external})`;
               })
-              // A Manager starts when something is first written to it.
+              // A member that does not work in the folder starts when
+              // something is first written to it.
               .concat(
-                work.agents.some((agent) => agent.role === "manager")
-                  ? []
-                  : [t(I18nKey.ORG_CHART$MANAGER_NOT_STARTED)],
+                types
+                  .members(node.agent_type)
+                  .filter(
+                    (member) =>
+                      !work.agents.some((agent) => agent.role === member.name),
+                  )
+                  .map(words.notStarted),
               )
               .join(", ")}
           </Row>

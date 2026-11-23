@@ -10,6 +10,7 @@ import { renderWithProviders } from "test-utils";
 
 function team(id: string, title: string, path: string): OrgNode {
   return {
+    agent_type: "software-engineer",
     id,
     parent_id: id === "root" ? null : "root",
     title,

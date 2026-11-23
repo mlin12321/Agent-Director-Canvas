@@ -1,4 +1,5 @@
 import { http, HttpResponse } from "msw";
+import { SHIPPED_MEMBERS } from "./director-members";
 import {
   DIRECTOR_BASE_PATH,
   type AcceptedChanges,
@@ -251,6 +252,8 @@ function orgSettingsNow(): DirectorOrgSettingsState {
       name,
       description,
       allowed: allowed.length === 0 || allowed.includes(name),
+      sas_profile: null,
+      members: SHIPPED_MEMBERS,
     }),
   );
   return {
@@ -791,6 +794,8 @@ export const DIRECTOR_HANDLERS = [
     const body: DirectorSettingsState = {
       max_teams: 120,
       max_depth: 5,
+      default_agent_type: "software-engineer",
+      allowed_agent_types: [],
       allowed_profiles: [],
       resume_on_start: false,
       report_compaction_chars: 24000,

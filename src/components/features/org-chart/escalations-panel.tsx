@@ -11,6 +11,7 @@ import { cn } from "#/utils/utils";
 import { ESCALATION_LABEL_KEYS } from "./org-chart-presentation";
 import { SessionMark } from "./org-sessions";
 import { CollapsibleSection } from "./collapsible-section";
+import { useMemberWords, useTeamTypes } from "./team-types";
 
 interface EscalationsPanelProps {
   /** In the server's order: critical issues first, then longest waiting. */
@@ -24,6 +25,8 @@ interface EscalationsPanelProps {
  */
 function EscalationCard({ item }: { item: OpenEscalation }) {
   const { t } = useTranslation("openhands");
+  const types = useTeamTypes();
+  const words = useMemberWords();
   const { escalation } = item;
   const [draft, setDraft] = React.useState("");
   const inputId = React.useId();
@@ -102,11 +105,9 @@ function EscalationCard({ item }: { item: OpenEscalation }) {
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           rows={2}
-          placeholder={t(
-            escalation.raised_by === "manager"
-              ? I18nKey.ORG_CHART$ESCALATION_ANSWER_TO_MANAGER
-              : I18nKey.ORG_CHART$ESCALATION_ANSWER_TO_IC,
-            { team: titles.get(item.node_id) ?? item.node_id },
+          placeholder={words.answerTo(
+            types.member(escalation.raised_by),
+            titles.get(item.node_id) ?? item.node_id,
           )}
           className="rounded-md border border-border-input bg-field p-2 text-sm text-field-foreground"
         />

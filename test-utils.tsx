@@ -1,4 +1,9 @@
 import React, { PropsWithChildren } from "react";
+import {
+  TeamTypesContext,
+  teamTypesOf,
+} from "#/components/features/org-chart/team-types";
+import { SHIPPED_MEMBERS } from "#/mocks/director-members";
 import { RenderOptions, render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider, initReactI18next } from "react-i18next";
@@ -71,6 +76,17 @@ interface ExtendedRenderOptions extends Omit<RenderOptions, "queries"> {
 
 // Export our own customized renderWithProviders function that renders with QueryClient and i18next providers
 // Since we're using Zustand stores, we don't need a Redux Provider wrapper
+/** The types a server with the shipped types lists, for what shows teams. */
+const SHIPPED_TEAM_TYPES = teamTypesOf(
+  ["software-engineer", "researcher", "research-engineer"].map((name) => ({
+    name,
+    description: "",
+    allowed: true,
+    sas_profile: null,
+    members: SHIPPED_MEMBERS,
+  })),
+);
+
 export function renderWithProviders(
   ui: React.ReactElement,
   renderOptions: ExtendedRenderOptions = {},
@@ -89,7 +105,9 @@ export function renderWithProviders(
       >
         <I18nextProvider i18n={i18n}>
           <NavigationProvider value={navigationValue}>
-            {children}
+            <TeamTypesContext.Provider value={SHIPPED_TEAM_TYPES}>
+              {children}
+            </TeamTypesContext.Provider>
           </NavigationProvider>
         </I18nextProvider>
       </QueryClientProvider>

@@ -46,6 +46,8 @@ export function useOrgStartChoices(enabled: boolean): OrgStartChoices | null {
       name,
       description: "",
       allowed: true,
+      sas_profile: null,
+      members: [],
     },
     others: hasOrg
       ? []
