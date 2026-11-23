@@ -10,6 +10,7 @@ import type {
   SplitProposal,
   Stopped,
 } from "#/api/director/types";
+import type { TeamTypes } from "./team-types";
 
 /** One conversation that goes on at a team. */
 export interface PlaceConversation {
@@ -57,12 +58,13 @@ export function workPlacesAt(
 /**
  * Every conversation at a team: those of the agents each session has
  * there, an IC's hand-over, and the IC that reviews a session from there.
- * The ones the human started at this team are the ICs of the sessions
- * opened here.
+ * The ones the human started at this team are those of the member that
+ * works in the folder, in the sessions opened here.
  */
 export function conversationsAt(
   node: OrgNode,
   sessions: readonly Session[],
+  types: TeamTypes,
 ): PlaceConversation[] {
   const found: PlaceConversation[] = [];
   sessions.forEach((session) => {
@@ -84,7 +86,9 @@ export function conversationsAt(
           handOver: false,
           lost: false,
           mine:
-            !divisionLead && session.team_id === node.id && agent.role === "ic",
+            !divisionLead &&
+            session.team_id === node.id &&
+            types.member(agent.role, node.agent_type).writes,
         });
         if (agent.hand_over) {
           const lost = agent.hand_over.status === "lost";

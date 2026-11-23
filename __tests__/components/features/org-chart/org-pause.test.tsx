@@ -148,6 +148,7 @@ describe("PausedBanner", () => {
 
 describe("a team whose agent was paused while working", () => {
   const NODE: OrgNode = {
+    agent_type: "software-engineer",
     id: "services.api",
     parent_id: "root",
     title: "API",
@@ -211,6 +212,8 @@ describe("a team whose agent was paused while working", () => {
 
 describe("the setting to resume on start", () => {
   const STATE: DirectorSettingsState = {
+    default_agent_type: "software-engineer",
+    allowed_agent_types: [],
     max_teams: 32,
     max_depth: 8,
     teams: 2,

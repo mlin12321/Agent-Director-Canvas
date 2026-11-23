@@ -9,6 +9,7 @@ export type {
   DirectorAcceptedChanges as AcceptedChanges,
   DirectorAgentKind as AgentKind,
   DirectorAgentTypeInfo as AgentTypeInfo,
+  DirectorMemberInfo as MemberInfo,
   DirectorAgentRef as AgentRef,
   DirectorAgentRole as AgentRole,
   DirectorBoundary as Boundary,

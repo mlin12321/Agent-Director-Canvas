@@ -37,6 +37,7 @@ function team(
   rest: Partial<OrgNode> = {},
 ): OrgNode {
   return {
+    agent_type: "software-engineer",
     id,
     parent_id: id === "root" ? null : "root",
     title,

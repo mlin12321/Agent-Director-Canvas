@@ -14,6 +14,7 @@ import { renderWithProviders } from "test-utils";
 import { placeAt } from "./session-fixtures";
 
 const API: OrgNode = {
+  agent_type: "software-engineer",
   id: "services.api",
   parent_id: "root",
   title: "API",
@@ -58,14 +59,24 @@ function team(status: NodeStatus, ic: AgentRef["status"]): SessionTeam {
 describe("StartAgain", () => {
   it("is offered only for a team that is not done and whose IC is lost", () => {
     const { rerender } = renderWithProviders(
-      <StartAgain node={team("working", "idle")} />,
+      <StartAgain
+        agentType="software-engineer"
+        node={team("working", "idle")}
+      />,
     );
     expect(screen.queryByTestId("org-start-again")).toBeNull();
 
-    rerender(<StartAgain node={team("done", "lost")} />);
+    rerender(
+      <StartAgain agentType="software-engineer" node={team("done", "lost")} />,
+    );
     expect(screen.queryByTestId("org-start-again")).toBeNull();
 
-    rerender(<StartAgain node={team("working", "lost")} />);
+    rerender(
+      <StartAgain
+        agentType="software-engineer"
+        node={team("working", "lost")}
+      />,
+    );
     expect(screen.getByTestId("org-start-again")).toBeInTheDocument();
   });
 
@@ -82,7 +93,10 @@ describe("StartAgain", () => {
     );
     const user = userEvent.setup();
     const { rerender } = renderWithProviders(
-      <StartAgain node={team("working", "lost")} />,
+      <StartAgain
+        agentType="software-engineer"
+        node={team("working", "lost")}
+      />,
     );
 
     const button = screen.getByRole("button", {
@@ -97,8 +111,18 @@ describe("StartAgain", () => {
     await waitFor(() => expect(button).toBeDisabled());
 
     // Lost again later, it can be started again.
-    rerender(<StartAgain node={team("working", "idle")} />);
-    rerender(<StartAgain node={team("working", "lost")} />);
+    rerender(
+      <StartAgain
+        agentType="software-engineer"
+        node={team("working", "idle")}
+      />,
+    );
+    rerender(
+      <StartAgain
+        agentType="software-engineer"
+        node={team("working", "lost")}
+      />,
+    );
     expect(
       screen.getByRole("button", { name: "ORG_CHART$START_AGAIN" }),
     ).toBeEnabled();
@@ -116,7 +140,12 @@ describe("StartAgain", () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<StartAgain node={team("working", "lost")} />);
+    renderWithProviders(
+      <StartAgain
+        agentType="software-engineer"
+        node={team("working", "lost")}
+      />,
+    );
 
     await user.click(
       screen.getByRole("button", { name: "ORG_CHART$START_AGAIN" }),

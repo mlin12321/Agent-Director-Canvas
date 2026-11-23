@@ -31,6 +31,7 @@ vi.mock("@monaco-editor/react", () => ({
 
 // What a session has at the API team: the changes are those of its checkout.
 const NODE: SessionTeam = {
+  agent_type: "software-engineer",
   id: "services.api@s1a2b3c",
   session: "s1a2b3c",
   team_id: "services.api",

@@ -30,6 +30,8 @@ vi.mock("#/components/features/org-chart/agent-conversation", () => ({
 }));
 
 const STATE: DirectorSettingsState = {
+  default_agent_type: "software-engineer",
+  allowed_agent_types: [],
   max_teams: 32,
   max_depth: 8,
   teams: 3,
@@ -90,6 +92,7 @@ async function openSettings(user: ReturnType<typeof userEvent.setup>) {
 // A team of the org. Nobody works at a team itself, and no session has
 // been given a task at this one.
 const NOT_STARTED: OrgNode = {
+  agent_type: "software-engineer",
   id: "shop",
   parent_id: "root",
   title: "Shop",

@@ -60,6 +60,7 @@ function work(status: NodeStatus, given: Given = {}): TeamWork {
  */
 function team(id: string, status: NodeStatus, given: Given = {}) {
   const node: OrgNode = {
+    agent_type: "software-engineer",
     id,
     parent_id: id === "root" ? null : "root",
     title: `${id} team`,

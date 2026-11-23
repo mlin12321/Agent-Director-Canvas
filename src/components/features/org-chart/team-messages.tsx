@@ -8,7 +8,7 @@ import type {
 import { teamOfPlace } from "#/constants/org-chart";
 import { useTeamMessages } from "#/hooks/query/use-team-messages";
 import { I18nKey } from "#/i18n/declaration";
-import { ROLE_LABEL_KEYS } from "./org-chart-presentation";
+import { useMemberWords, useTeamTypes } from "./team-types";
 
 interface TeamMessagesProps {
   node: OrgNode;
@@ -25,6 +25,8 @@ interface TeamMessagesProps {
  */
 export function TeamMessages({ node, places, nodes }: TeamMessagesProps) {
   const { t } = useTranslation("openhands");
+  const types = useTeamTypes();
+  const words = useMemberWords();
   const messages = useTeamMessages(places.map((place) => place.id));
 
   // The team's reports explain it when the team memory cannot be read.
@@ -90,7 +92,7 @@ export function TeamMessages({ node, places, nodes }: TeamMessagesProps) {
                     {message.text}
                   </span>
                   <span className="text-muted">
-                    {t(ROLE_LABEL_KEYS[message.sender])}
+                    {words.label(types.member(message.sender))}
                     {" · "}
                     <time dateTime={message.at}>
                       {new Date(message.at).toLocaleString()}

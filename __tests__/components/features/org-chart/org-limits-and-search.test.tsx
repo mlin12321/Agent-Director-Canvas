@@ -21,6 +21,8 @@ import { renderWithProviders } from "test-utils";
 import { atWork } from "./session-fixtures";
 
 const STATE: DirectorSettingsState = {
+  default_agent_type: "software-engineer",
+  allowed_agent_types: [],
   max_teams: 32,
   max_depth: 8,
   teams: 19,
@@ -63,11 +65,19 @@ const TYPES: DirectorOrgSettingsState = {
   own: {},
   agent_types: [
     {
+      sas_profile: null,
+      members: [],
       name: "software-engineer",
       description: "Builds software",
       allowed: true,
     },
-    { name: "researcher", description: "Looks into a question", allowed: true },
+    {
+      sas_profile: null,
+      members: [],
+      name: "researcher",
+      description: "Looks into a question",
+      allowed: true,
+    },
   ],
 };
 
@@ -362,7 +372,13 @@ describe("OrgSettings", () => {
       ...TYPES,
       agent_types: [
         ...TYPES.agent_types,
-        { name: "writer", description: "Writes the docs", allowed: true },
+        {
+          sas_profile: null,
+          members: [],
+          name: "writer",
+          description: "Writes the docs",
+          allowed: true,
+        },
       ],
     });
 
@@ -512,6 +528,7 @@ describe("TeamSearch", () => {
 
 describe("TeamCard", () => {
   const NODE: OrgNode = {
+    agent_type: "software-engineer",
     id: "auth",
     parent_id: "root",
     title: "Auth team",
@@ -605,18 +622,13 @@ describe("TeamCard", () => {
   });
 
   it("names the type of a team that has one in its hover card", () => {
-    const { rerender } = renderWithProviders(
+    renderWithProviders(
       atTeam(
         {},
         <TeamHoverCard node={{ ...NODE, agent_type: "researcher" }} />,
       ),
     );
     expect(screen.getByText("researcher")).toBeInTheDocument();
-
-    // A server from before types names none.
-    rerender(atTeam({}, <TeamHoverCard node={NODE} />));
-
-    expect(screen.queryByText("ORG_CHART$AGENT_TYPE")).toBeNull();
   });
 
   it("says in the details why an agent failed", () => {

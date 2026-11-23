@@ -12,7 +12,7 @@ import { useActiveBackend } from "#/contexts/active-backend-context";
 import { SubChatContext } from "#/context/sub-chat";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { I18nKey } from "#/i18n/declaration";
-import { ROLE_LABEL_KEYS } from "./org-chart-presentation";
+import { useMemberWords, useTeamTypes } from "./team-types";
 
 const RELATIONS: ConversationRelation[] = ["above", "beside", "below"];
 
@@ -40,13 +40,14 @@ function useConversationPlace(conversationId: string | null) {
 
 /** What a conversation is called by where its agent works. */
 export function useLinkLabel() {
-  const { t } = useTranslation("openhands");
+  const types = useTeamTypes();
+  const words = useMemberWords();
   return React.useCallback(
     (link: Pick<ConversationLink, "team" | "role" | "session">) => {
-      const agent = `${link.team} ${t(ROLE_LABEL_KEYS[link.role])}`;
+      const agent = `${link.team} ${words.label(types.member(link.role))}`;
       return link.session ? `${agent} · ${link.session}` : agent;
     },
-    [t],
+    [types, words],
   );
 }
 

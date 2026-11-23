@@ -18,11 +18,11 @@ import { ReviewSummary } from "./review-summary";
 import { SpecAndContracts } from "./spec-and-contracts";
 import { isLost, StartAgain } from "./start-again";
 import { conversationsAt, placesAt, workPlacesAt } from "./team-places";
+import { useMemberWords, useTeamTypes } from "./team-types";
 import { OrgSessionsContext } from "./org-sessions";
 import {
   ENFORCEMENT_LABEL_KEYS,
   externalAgentName,
-  ROLE_LABEL_KEYS,
 } from "./org-chart-presentation";
 
 // The conversation UI pulls in the chat, terminal and diff stack, so it only
@@ -81,7 +81,10 @@ export function AgentInspectorDrawer({
   const { t } = useTranslation("openhands");
   const titleId = React.useId();
   const sessions = React.useContext(OrgSessionsContext);
-  const conversations = conversationsAt(node, sessions);
+  const types = useTeamTypes();
+  const words = useMemberWords();
+  const memberOf = (role: string) => types.member(role, node.agent_type);
+  const conversations = conversationsAt(node, sessions, types);
   // Tracked by key so the drawer follows the conversation across live
   // updates; nothing is open until one is chosen.
   const [openKey, setOpenKey] = React.useState<string | null>(null);
@@ -178,7 +181,7 @@ export function AgentInspectorDrawer({
           place.stopped ||
           place.pending_split ||
           place.review ||
-          isLost(place) ? (
+          isLost(place, types.members(node.agent_type)) ? (
             <section
               key={place.id}
               data-testid={`org-session-work-${place.session}`}
@@ -194,7 +197,7 @@ export function AgentInspectorDrawer({
                   })}
                 </p>
               ) : null}
-              <StartAgain node={place} />
+              <StartAgain node={place} agentType={node.agent_type} />
               {place.pending_split ? (
                 <ProposedTeams
                   proposal={place.pending_split}
@@ -287,12 +290,8 @@ export function AgentInspectorDrawer({
                 >
                   <span className="min-w-0 flex-1 truncate">
                     {candidate.divisionLead
-                      ? t(
-                          candidate.role === "ic"
-                            ? I18nKey.ORG_CHART$DIVISION_LEAD_IC
-                            : I18nKey.ORG_CHART$DIVISION_LEAD_MANAGER,
-                        )
-                      : t(ROLE_LABEL_KEYS[candidate.role])}
+                      ? words.lead(memberOf(candidate.role))
+                      : words.label(memberOf(candidate.role))}
                     {` · ${candidate.session}`}
                     {candidate.handOver
                       ? ` · ${t(I18nKey.ORG_CHART$HAND_OVER_MODE)}`
@@ -380,7 +379,7 @@ export function AgentInspectorDrawer({
             {open.handOver
               ? t(I18nKey.ORG_CHART$HAND_OVER_MODE_HELP)
               : t(I18nKey.ORG_CHART$MESSAGE_AGENT_HINT, {
-                  role: t(ROLE_LABEL_KEYS[open.role]),
+                  role: words.label(memberOf(open.role)),
                 })}
           </p>
           <div className="min-h-0 flex-1">

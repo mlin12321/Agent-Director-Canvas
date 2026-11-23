@@ -1,6 +1,5 @@
 import type {
   AgentRef,
-  AgentRole,
   EscalationKind,
   IsolationMode,
   NodeStatus,
@@ -24,11 +23,6 @@ export const STATUS_DOT_CLASSES: Record<NodeStatus, string> = {
   working: "bg-[#d9730d] dark:bg-[#f08a24]",
   done: "bg-success",
   blocked: "bg-danger",
-};
-
-export const ROLE_LABEL_KEYS: Record<AgentRole, I18nKey> = {
-  ic: I18nKey.ORG_CHART$ROLE_IC,
-  manager: I18nKey.ORG_CHART$ROLE_MANAGER,
 };
 
 export const ISOLATION_LABEL_KEYS: Record<IsolationMode, I18nKey> = {
