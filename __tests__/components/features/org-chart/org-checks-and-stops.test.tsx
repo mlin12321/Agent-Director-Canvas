@@ -61,7 +61,7 @@ function memoryHandlers(threads: Thread[] = []) {
   server.use(
     http.get("*/api/director/org/nodes/:nodeId/memory", () => {
       const body: NodeMemory = {
-        specs: [],
+        documents: [],
         reports: [],
         former_teams: [],
         history: [],

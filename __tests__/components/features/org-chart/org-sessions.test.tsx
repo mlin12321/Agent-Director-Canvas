@@ -155,7 +155,7 @@ function memoryHandlers() {
   server.use(
     http.get("*/api/director/org/nodes/:id/memory", () =>
       HttpResponse.json({
-        specs: [],
+        documents: [],
         reports: [],
         former_teams: [],
         history: [],

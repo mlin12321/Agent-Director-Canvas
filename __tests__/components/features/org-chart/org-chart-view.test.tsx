@@ -191,7 +191,7 @@ function memoryHandlers(reports: Report[] = [], threads: Thread[] = []) {
   server.use(
     http.get("*/api/director/org/nodes/:nodeId/memory", () => {
       const body: NodeMemory = {
-        specs: [],
+        documents: [],
         reports,
         former_teams: [],
         history: [],
@@ -1905,7 +1905,7 @@ describe("OrgChartView", () => {
       server.use(
         http.get("*/api/director/org/nodes/:nodeId/memory", () =>
           HttpResponse.json({
-            specs: [],
+            documents: [],
             former_teams: [],
             history: [],
             ...memory,
@@ -1919,24 +1919,35 @@ describe("OrgChartView", () => {
       renderWithProviders(<OrgChartView nodeId="auth" />);
       await findCard("auth");
       await user.click(currentCard());
-      return screen.findByRole("region", { name: "ORG_CHART$SPEC_TITLE" });
+      return screen.findByRole("region", { name: "ORG_CHART$DOCUMENTS_TITLE" });
     }
 
-    it("lets the team's spec and both sets of contracts be read", async () => {
+    it("lets every document the team reads be read, whatever it is called", async () => {
       specHandlers({
-        specs: [
+        documents: [
           {
+            name: "spec",
             path: "services/auth",
-            spec: "Tokens are opaque.",
-            readonly: false,
-            old: false,
+            text: "Tokens are opaque.",
+            own: true,
           },
-        ],
-        contracts: [
-          { path: "", contracts: "POST /login returns a token.", own: false },
           {
+            name: "contracts",
+            path: "",
+            text: "POST /login returns a token.",
+            own: false,
+          },
+          {
+            name: "contracts",
             path: "services/auth",
-            contracts: "OAuth hands over a user id.",
+            text: "OAuth hands over a user id.",
+            own: true,
+          },
+          // One the org declares itself is listed as the shipped ones are.
+          {
+            name: "design-notes",
+            path: "services/auth",
+            text: "Sessions live in Redis.",
             own: true,
           },
         ],
@@ -1944,24 +1955,28 @@ describe("OrgChartView", () => {
 
       const section = await openSpec();
 
-      expect(section).toHaveTextContent("ORG_CHART$SPEC_OPEN");
-      expect(section).toHaveTextContent("Tokens are opaque.");
+      expect(
+        within(section).getByText("Spec").closest("details"),
+      ).toHaveTextContent("Tokens are opaque.");
       expect(
         within(section)
-          .getByText("ORG_CHART$CONTRACTS_ABOVE")
+          .getByText("ORG_CHART$DOCUMENT_ABOVE")
           .closest("details"),
       ).toHaveTextContent("POST /login returns a token.");
       expect(
-        within(section).getByText("ORG_CHART$CONTRACTS_OWN").closest("details"),
+        within(section).getByText("Contracts").closest("details"),
       ).toHaveTextContent("OAuth hands over a user id.");
+      expect(
+        within(section).getByText("Design notes").closest("details"),
+      ).toHaveTextContent("Sessions live in Redis.");
     });
 
-    it("says so when the team has written no spec", async () => {
+    it("says so when the team has no documents", async () => {
       specHandlers({});
 
       const section = await openSpec();
 
-      expect(section).toHaveTextContent("ORG_CHART$SPEC_EMPTY");
+      expect(section).toHaveTextContent("ORG_CHART$DOCUMENTS_EMPTY");
       expect(within(section).queryByRole("group")).toBeNull();
     });
 
