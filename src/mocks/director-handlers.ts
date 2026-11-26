@@ -424,7 +424,8 @@ function buildMockSessions(): MockSession[] {
             take: null,
           },
           {
-            kind: "contracts",
+            kind: "document",
+            document: "contracts",
             key: "identity",
             gate: "manager",
             session: "Passkeys are verified by the worker.",

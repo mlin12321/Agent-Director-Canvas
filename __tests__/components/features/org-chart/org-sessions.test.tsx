@@ -360,7 +360,8 @@ describe("AgentInspectorDrawer", () => {
               items: [
                 { kind: "code", key: "services/api/routes.ts", gate: "ic" },
                 {
-                  kind: "spec",
+                  kind: "document",
+                  document: "spec",
                   key: "services/api",
                   gate: "ic",
                   session: "# Refunds",
@@ -378,7 +379,8 @@ describe("AgentInspectorDrawer", () => {
                   named: "Refund jobs",
                 },
                 {
-                  kind: "contracts",
+                  kind: "document",
+                  document: "contracts",
                   key: "services",
                   gate: "manager",
                   session: "Refunds go through Jobs.",
@@ -403,12 +405,12 @@ describe("AgentInspectorDrawer", () => {
       within(block).getAllByRole("listitem");
     expect(file).toHaveTextContent("ORG_CHART$MERGE_FILE");
     expect(file).not.toHaveTextContent("ORG_CHART$MERGE_UNDECIDED");
-    expect(spec).toHaveTextContent("ORG_CHART$MERGE_SPEC");
+    expect(spec).toHaveTextContent("ORG_CHART$MERGE_DOCUMENT");
     expect(team).toHaveTextContent("Jobs");
     expect(team).toHaveTextContent("ORG_CHART$MERGE_TAKE_SESSION");
     expect(team).toHaveTextContent("ORG_CHART$MERGE_PLACED");
     expect(team).toHaveTextContent("ORG_CHART$MERGE_NAMED");
-    expect(contracts).toHaveTextContent("ORG_CHART$MERGE_CONTRACTS");
+    expect(contracts).toHaveTextContent("ORG_CHART$MERGE_DOCUMENT");
     expect(contracts).toHaveTextContent("ORG_CHART$MERGE_UNDECIDED");
     expect(
       within(screen.getByTestId("org-node-conversations"))
