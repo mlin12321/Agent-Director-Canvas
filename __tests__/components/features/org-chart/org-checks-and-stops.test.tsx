@@ -23,6 +23,7 @@ import { renderWithProviders } from "test-utils";
 import { atWork } from "./session-fixtures";
 
 const STATE: DirectorSettingsState = {
+  org_kind: "software",
   default_agent_type: "software-engineer",
   allowed_agent_types: [],
   max_teams: 32,
@@ -100,7 +101,7 @@ const NODE: OrgNode = {
   title: "Shop",
   boundary: { path: "shop", writable: [], readonly: [] },
   isolation: "shared",
-  spec_summary: "",
+  purpose: "",
   old_specs: [],
   headline: "",
   agent_profile: null,

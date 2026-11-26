@@ -20,7 +20,7 @@ const API: OrgNode = {
   title: "API",
   boundary: { path: "services/api", writable: ["**"], readonly: [] },
   isolation: "worktree",
-  spec_summary: "",
+  purpose: "",
   old_specs: [],
   headline: "",
   agent_profile: null,

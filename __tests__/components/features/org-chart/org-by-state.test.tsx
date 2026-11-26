@@ -66,7 +66,7 @@ function team(id: string, status: NodeStatus, given: Given = {}) {
     title: `${id} team`,
     boundary: { path: id, writable: ["**"], readonly: [] },
     isolation: "shared",
-    spec_summary: "",
+    purpose: "",
     old_specs: [],
     headline: "",
     agent_profile: null,

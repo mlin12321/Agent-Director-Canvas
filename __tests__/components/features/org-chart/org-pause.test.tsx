@@ -155,7 +155,7 @@ describe("a team whose agent was paused while working", () => {
     boundary: { path: "services/api", writable: ["**"], readonly: [] },
     isolation: "shared",
     headline: "Serves the checkout API",
-    spec_summary: "",
+    purpose: "",
     old_specs: [],
     agent_profile: null,
     child_ids: [],
@@ -212,6 +212,7 @@ describe("a team whose agent was paused while working", () => {
 
 describe("the setting to resume on start", () => {
   const STATE: DirectorSettingsState = {
+    org_kind: "software",
     default_agent_type: "software-engineer",
     allowed_agent_types: [],
     max_teams: 32,

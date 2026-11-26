@@ -21,6 +21,7 @@ import { renderWithProviders } from "test-utils";
 import { atWork } from "./session-fixtures";
 
 const STATE: DirectorSettingsState = {
+  org_kind: "software",
   default_agent_type: "software-engineer",
   allowed_agent_types: [],
   max_teams: 32,
@@ -534,7 +535,7 @@ describe("TeamCard", () => {
     title: "Auth team",
     boundary: { path: "services/auth", writable: [], readonly: [] },
     isolation: "worktree",
-    spec_summary: "",
+    purpose: "",
     headline: "Token refresh",
     old_specs: [],
     agent_profile: null,

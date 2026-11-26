@@ -43,7 +43,7 @@ function team(
     title,
     boundary: { path, writable: ["**"], readonly: [] },
     isolation: "shared",
-    spec_summary: "",
+    purpose: "",
     old_specs: [],
     headline: "",
     agent_profile: null,

@@ -57,7 +57,7 @@ const NODE: SessionTeam = {
     },
   ],
   status: "working",
-  spec_summary: "",
+  purpose: "",
   escalations: [],
   pending_split: null,
   review: null,

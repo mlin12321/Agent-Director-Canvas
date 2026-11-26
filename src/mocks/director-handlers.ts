@@ -272,7 +272,7 @@ function referenceTeam(
   id: NodeId,
   parentId: NodeId | null,
   childIds: NodeId[],
-  given: Pick<OrgNode, "title" | "boundary" | "isolation" | "spec_summary">,
+  given: Pick<OrgNode, "title" | "boundary" | "isolation" | "purpose">,
 ): OrgNode {
   return {
     id,
@@ -294,7 +294,7 @@ function buildMockTree() {
       title: "Root organization",
       boundary: { path: "", writable: [], readonly: ["**"] },
       isolation: "worktree",
-      spec_summary: "Owns cross-domain contracts and the release plan.",
+      purpose: "Owns cross-domain contracts and the release plan.",
     }),
   );
   DOMAINS.forEach((domain) => {
@@ -309,7 +309,7 @@ function buildMockTree() {
           title: `${domain} domain`,
           boundary: { path, writable: [`${path}/*.md`], readonly: [] },
           isolation: "worktree",
-          spec_summary: `Interface contracts between the ${domain} services.`,
+          purpose: `Interface contracts between the ${domain} services.`,
         },
       ),
     );
@@ -325,7 +325,7 @@ function buildMockTree() {
             readonly: [`${path}/contracts/**`],
           },
           isolation: "shared",
-          spec_summary: `Implements ${module} for ${domain}.`,
+          purpose: `Implements ${module} for ${domain}.`,
         }),
       );
     });
@@ -800,6 +800,7 @@ export const DIRECTOR_HANDLERS = [
       allowed_agent_types: [],
       allowed_profiles: [],
       resume_on_start: false,
+      org_kind: "software",
       report_compaction_chars: 24000,
       soft_check_in_minutes: 30,
       hard_check_in_minutes: 360,
