@@ -383,7 +383,7 @@ describe("what a team is given of the teams before it", () => {
       documents: [
         {
           name: "spec",
-          holds: "How the team works.",
+          description: "How the team works.",
           path: "shop",
           text: "# Shop",
           own: true,

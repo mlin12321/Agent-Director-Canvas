@@ -72,7 +72,7 @@ test("shows the org, what waits on the human, and a team's drawer", async ({
   await expect(drawer.getByTestId("org-node-conversations")).toContainText(
     "IC · Release 2.4",
   );
-  await expect(drawer).toContainText("Spec and contracts");
+  await expect(drawer).toContainText("Documents");
 });
 
 test("goes to a team below when its card is chosen", async ({ page }) => {

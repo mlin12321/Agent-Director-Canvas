@@ -136,7 +136,7 @@ const MOCK_DOCUMENTS: Record<NodeId, TeamDocument[]> = {
   payments: [
     {
       name: "spec",
-      holds: "How your team works inside its folder.",
+      description: "How your team works inside its folder.",
       path: "services/payments",
       text: "# Billing\n\nOne service for charges and refunds.",
       own: false,

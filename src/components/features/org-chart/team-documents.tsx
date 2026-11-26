@@ -82,7 +82,7 @@ export function TeamDocuments({ node }: TeamDocumentsProps) {
             note={
               document.left
                 ? t(I18nKey.ORG_CHART$DOCUMENT_LEFT_HELP)
-                : document.holds || undefined
+                : document.description || undefined
             }
           />
         ))
