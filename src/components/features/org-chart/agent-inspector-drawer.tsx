@@ -15,7 +15,7 @@ import { TeamMessages } from "./team-messages";
 import { TeamRecord } from "./team-record";
 import { TeamReports } from "./team-reports";
 import { ReviewSummary } from "./review-summary";
-import { SpecAndContracts } from "./spec-and-contracts";
+import { TeamDocuments } from "./team-documents";
 import { isLost, StartAgain } from "./start-again";
 import { conversationsAt, placesAt, workPlacesAt } from "./team-places";
 import { useMemberWords, useTeamTypes } from "./team-types";
@@ -222,7 +222,7 @@ export function AgentInspectorDrawer({
             />
           ) : null,
         )}
-        <SpecAndContracts node={node} />
+        <TeamDocuments node={node} />
         <TeamReports node={node} />
         <TeamRecord node={node} />
         <TeamMessages node={node} places={places} nodes={nodes} />

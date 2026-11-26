@@ -12,7 +12,7 @@ import {
   type DirectorSettingsState,
   type OrgHistory,
   type Recovery,
-  type InheritedSpec,
+  type TeamDocument,
   type NodeMemory,
   type NodeOwnership,
   type NodeStatus,
@@ -132,13 +132,15 @@ const IDEMPOTENCY_COLLISION: Escalation = {
 };
 
 // A spec the team that had the directory before left; it is shown as old.
-const MOCK_SPECS: Record<NodeId, InheritedSpec[]> = {
+const MOCK_DOCUMENTS: Record<NodeId, TeamDocument[]> = {
   payments: [
     {
+      name: "spec",
+      description: "How your team works inside its folder.",
       path: "services/payments",
-      spec: "# Billing\n\nOne service for charges and refunds.",
-      readonly: false,
-      old: true,
+      text: "# Billing\n\nOne service for charges and refunds.",
+      own: false,
+      left: true,
       left_by: "billing domain",
     },
   ],
@@ -921,7 +923,7 @@ export const DIRECTOR_HANDLERS = [
     const nodeId = String(params.nodeId);
     if (!tree.has(nodeId)) return notFound(nodeId);
     const body: NodeMemory = {
-      specs: MOCK_SPECS[nodeId] ?? [],
+      documents: MOCK_DOCUMENTS[nodeId] ?? [],
       reports: MOCK_REPORTS[nodeId] ?? [],
       former_teams: [],
       history: [],

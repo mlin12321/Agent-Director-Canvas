@@ -11,7 +11,7 @@ import { AgentInspectorDrawer } from "#/components/features/org-chart/agent-insp
 import { TeamHoverCard } from "#/components/features/org-chart/team-hover-card";
 import { OrgSessionsContext } from "#/components/features/org-chart/org-sessions";
 import { OrgSettings } from "#/components/features/org-chart/org-settings";
-import { SpecAndContracts } from "#/components/features/org-chart/spec-and-contracts";
+import { TeamDocuments } from "#/components/features/org-chart/team-documents";
 import {
   countsOf,
   TeamRecord,
@@ -66,7 +66,7 @@ function settingsHandlers(state: DirectorSettingsState) {
 
 function memoryHandlers(
   memory: NodeMemory = {
-    specs: [],
+    documents: [],
     reports: [],
     former_teams: [],
     history: [],
@@ -319,7 +319,7 @@ describe("an IC in hand-over mode", () => {
 describe("what a team is given of the teams before it", () => {
   it("marks what the IC above handed over among its reports", async () => {
     memoryHandlers({
-      specs: [],
+      documents: [],
       reports: [
         {
           at: "2026-11-14T10:00:00+00:00",
@@ -343,41 +343,61 @@ describe("what a team is given of the teams before it", () => {
     expect(own).not.toHaveTextContent("ORG_CHART$REPORT_HANDED_OVER");
   });
 
-  it("names a spec left by an earlier team as old", async () => {
+  it("names a document left by an earlier team as old", async () => {
     memoryHandlers({
-      specs: [
+      documents: [
         {
+          name: "spec",
           path: "shop",
-          spec: "# API by hand",
-          readonly: false,
-          old: true,
+          text: "# API by hand",
+          own: false,
+          left: true,
           left_by: "API",
         },
-        { path: "shop/db", spec: "# Schema", readonly: true, old: true },
+        {
+          name: "spec",
+          path: "shop/db",
+          text: "# Schema",
+          own: false,
+          left: true,
+        },
       ],
       reports: [],
       former_teams: [],
       history: [],
     });
-    renderWithProviders(<SpecAndContracts node={NOT_STARTED} />);
+    renderWithProviders(<TeamDocuments node={NOT_STARTED} />);
 
-    expect(await screen.findByText("ORG_CHART$SPEC_OLD")).toBeInTheDocument();
-    expect(screen.getByText("ORG_CHART$SPEC_OLD_UNKNOWN")).toBeInTheDocument();
-    expect(screen.getAllByText("ORG_CHART$SPEC_OLD_HELP")).toHaveLength(2);
-    expect(screen.queryByText("ORG_CHART$SPEC_OPEN")).toBeNull();
+    expect(
+      await screen.findByText("ORG_CHART$DOCUMENT_LEFT"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("ORG_CHART$DOCUMENT_LEFT_UNKNOWN"),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("ORG_CHART$DOCUMENT_LEFT_HELP")).toHaveLength(2);
+    expect(screen.queryByText("Spec")).toBeNull();
   });
 
-  it("names a team's own spec as before", async () => {
+  it("names a team's own document by its name", async () => {
     memoryHandlers({
-      specs: [{ path: "shop", spec: "# Shop", readonly: false, old: false }],
+      documents: [
+        {
+          name: "spec",
+          description: "How the team works.",
+          path: "shop",
+          text: "# Shop",
+          own: true,
+        },
+      ],
       reports: [],
       former_teams: [],
       history: [],
     });
-    renderWithProviders(<SpecAndContracts node={NOT_STARTED} />);
+    renderWithProviders(<TeamDocuments node={NOT_STARTED} />);
 
-    expect(await screen.findByText("ORG_CHART$SPEC_OPEN")).toBeInTheDocument();
-    expect(screen.queryByText("ORG_CHART$SPEC_OLD_HELP")).toBeNull();
+    expect(await screen.findByText("Spec")).toBeInTheDocument();
+    expect(screen.getByText("How the team works.")).toBeInTheDocument();
+    expect(screen.queryByText("ORG_CHART$DOCUMENT_LEFT_HELP")).toBeNull();
   });
 });
 
@@ -449,7 +469,7 @@ describe("the record of the teams below a team", () => {
 
   it("shows the counts, why the Manager was woken and the removed teams", async () => {
     memoryHandlers({
-      specs: [],
+      documents: [],
       reports: [],
       history: HISTORY,
       former_teams: [
@@ -501,7 +521,7 @@ describe("the record of the teams below a team", () => {
 
   it("shows what a session wrote for a team the org did not take", async () => {
     memoryHandlers({
-      specs: [],
+      documents: [],
       reports: [],
       history: [],
       former_teams: [
