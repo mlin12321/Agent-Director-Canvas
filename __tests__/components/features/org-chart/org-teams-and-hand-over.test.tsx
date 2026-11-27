@@ -100,8 +100,8 @@ const NOT_STARTED: OrgNode = {
   boundary: { path: "shop", writable: [], readonly: [] },
   isolation: "shared",
   headline: "Sells the goods",
-  purpose: "",
-  left_documents: [],
+  summary: "",
+  leftover_documents: [],
   agent_profile: null,
   child_ids: [],
 };

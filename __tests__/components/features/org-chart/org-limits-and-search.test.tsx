@@ -535,9 +535,9 @@ describe("TeamCard", () => {
     title: "Auth team",
     boundary: { path: "services/auth", writable: [], readonly: [] },
     isolation: "worktree",
-    purpose: "",
+    summary: "",
     headline: "Token refresh",
-    left_documents: [],
+    leftover_documents: [],
     agent_profile: null,
     child_ids: [],
   };

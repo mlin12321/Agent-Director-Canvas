@@ -155,8 +155,8 @@ describe("a team whose agent was paused while working", () => {
     boundary: { path: "services/api", writable: ["**"], readonly: [] },
     isolation: "shared",
     headline: "Serves the checkout API",
-    purpose: "",
-    left_documents: [],
+    summary: "",
+    leftover_documents: [],
     agent_profile: null,
     child_ids: [],
   };
