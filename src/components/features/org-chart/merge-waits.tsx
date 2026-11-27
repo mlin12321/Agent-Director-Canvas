@@ -13,10 +13,10 @@ const GATES: ReadonlyArray<[MergeGate, I18nKey]> = [
   ["manager", I18nKey.ORG_CHART$MERGE_FOR_MANAGER],
 ];
 
-const TAKE_KEYS = {
-  org: I18nKey.ORG_CHART$MERGE_TAKE_ORG,
-  session: I18nKey.ORG_CHART$MERGE_TAKE_SESSION,
-  text: I18nKey.ORG_CHART$MERGE_TAKE_TEXT,
+const USE_KEYS = {
+  org: I18nKey.ORG_CHART$MERGE_USE_ORG,
+  session: I18nKey.ORG_CHART$MERGE_USE_SESSION,
+  replacement: I18nKey.ORG_CHART$MERGE_USE_REPLACEMENT,
 } as const;
 
 interface MergeWaitsProps {
@@ -95,14 +95,14 @@ export function MergeWaits({ title, session, merge, nodes }: MergeWaitsProps) {
                   {gate === "manager" ? (
                     <span
                       className={
-                        item.take
+                        item.use
                           ? "block text-text-secondary"
                           : "block text-feedback-warning"
                       }
                     >
                       {t(
-                        item.take
-                          ? TAKE_KEYS[item.take]
+                        item.use
+                          ? USE_KEYS[item.use]
                           : I18nKey.ORG_CHART$MERGE_UNDECIDED,
                       )}
                     </span>

@@ -48707,7 +48707,7 @@
     "ca": "Encara no decidit",
     "id": "Belum diputuskan"
   },
-  "ORG_CHART$MERGE_TAKE_ORG": {
+  "ORG_CHART$MERGE_USE_ORG": {
     "en": "Decided: the org's stays",
     "zh-CN": "已决定：保留组织的",
     "zh-TW": "已決定：保留組織的",
@@ -48725,7 +48725,7 @@
     "ca": "Decidit: es queda el de l'organització",
     "id": "Diputuskan: milik organisasi tetap"
   },
-  "ORG_CHART$MERGE_TAKE_SESSION": {
+  "ORG_CHART$MERGE_USE_SESSION": {
     "en": "Decided: the session's holds",
     "zh-CN": "已决定：采用会话的",
     "zh-TW": "已決定：採用工作階段的",
@@ -48743,7 +48743,7 @@
     "ca": "Decidit: val el de la sessió",
     "id": "Diputuskan: milik sesi berlaku"
   },
-  "ORG_CHART$MERGE_TAKE_TEXT": {
+  "ORG_CHART$MERGE_USE_REPLACEMENT": {
     "en": "Decided: a text written from both",
     "zh-CN": "已决定：采用综合两者写成的文本",
     "zh-TW": "已決定：採用綜合兩者寫成的文字",
