@@ -152,7 +152,6 @@ const MOCK_REPORTS: Record<NodeId, Report[]> = {
       at: "2026-05-12T08:00:00+00:00",
       role: "ic",
       text: "Billing settled on one ledger table; keep it.",
-      handed_over: true,
     },
     {
       at: "2026-05-12T08:15:00+00:00",

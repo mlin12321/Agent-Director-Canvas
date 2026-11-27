@@ -47663,24 +47663,6 @@
     "ca": "Aquest equip està configurat i encara no té agents. S'inicia quan l'IC de l'equip superior li dona una tasca o quan li escrius.",
     "id": "Tim ini sudah disiapkan dan belum memiliki agen. Tim ini mulai saat IC tim di atasnya memberinya tugas, atau saat Anda menulis kepadanya."
   },
-  "ORG_CHART$REPORT_HANDED_OVER": {
-    "en": "Handed over by the IC of the team above",
-    "zh-CN": "由上级团队的工程师移交",
-    "zh-TW": "由上級團隊的工程師移交",
-    "de": "Vom IC des Teams darüber übergeben",
-    "ko-KR": "상위 팀의 IC가 인계함",
-    "no": "Overlevert av IC-en i teamet over",
-    "it": "Consegnato dall'IC del team superiore",
-    "pt": "Repassado pelo IC da equipe acima",
-    "es": "Traspasado por el IC del equipo superior",
-    "ar": "سلّمه مهندس الفريق الأعلى",
-    "fr": "Transmis par l'IC de l'équipe au-dessus",
-    "tr": "Üst ekibin IC'si tarafından devredildi",
-    "ja": "上位チームの IC からの引き継ぎ",
-    "uk": "Передано IC команди вище",
-    "ca": "Traspassat per l'IC de l'equip superior",
-    "id": "Diserahkan oleh IC tim di atasnya"
-  },
   "ORG_CHART$DOCUMENT_LEFT": {
     "en": "{{name}} left by {{team}} (old)",
     "zh-CN": "{{team}} 留下的{{name}}（旧）",
