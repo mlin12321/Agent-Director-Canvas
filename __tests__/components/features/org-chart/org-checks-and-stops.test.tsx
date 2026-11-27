@@ -378,7 +378,7 @@ describe("proposed sub-teams", () => {
                 agent_profile: null,
               },
             ],
-            contracts: "",
+            documents: {},
             status: "proposed",
             keeps: ["shop.web"],
             replaces: ["shop.api"],
@@ -427,7 +427,7 @@ describe("proposed sub-teams", () => {
               path: "shop/web",
             },
           ],
-          contracts: "",
+          documents: {},
           reason: "Orders and pages change for different reasons.",
           status: "proposed",
           proposed_at: "2026-11-15T10:00:00+00:00",
@@ -455,7 +455,7 @@ describe("proposed sub-teams", () => {
         {
           pending_split: {
             children: [],
-            contracts: "",
+            documents: {},
             status: "proposed",
             proposed_at: "2026-11-14T10:00:00+00:00",
           },
