@@ -16,7 +16,7 @@ function team(id: string, title: string, path: string): OrgNode {
     title,
     boundary: { path, writable: ["**"], readonly: [] },
     isolation: "shared",
-    spec_summary: "",
+    purpose: "",
     old_specs: [],
     headline: "",
     agent_profile: null,

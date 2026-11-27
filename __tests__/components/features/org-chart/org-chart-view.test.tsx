@@ -87,7 +87,7 @@ function team(id: string, parentId: string | null, path: string): OrgNodeInput {
     title: `${id} team`,
     boundary: { path, writable: [`${path}/**`], readonly: ["src/types/**"] },
     isolation: parentId === "auth" ? "shared" : "worktree",
-    spec_summary: `Spec for ${id}`,
+    purpose: `Spec for ${id}`,
     old_specs: [],
     headline: "",
     agent_profile: null,

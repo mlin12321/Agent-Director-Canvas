@@ -30,6 +30,7 @@ vi.mock("#/components/features/org-chart/agent-conversation", () => ({
 }));
 
 const STATE: DirectorSettingsState = {
+  org_kind: "software",
   default_agent_type: "software-engineer",
   allowed_agent_types: [],
   max_teams: 32,
@@ -99,7 +100,7 @@ const NOT_STARTED: OrgNode = {
   boundary: { path: "shop", writable: [], readonly: [] },
   isolation: "shared",
   headline: "Sells the goods",
-  spec_summary: "",
+  purpose: "",
   old_specs: [],
   agent_profile: null,
   child_ids: [],
