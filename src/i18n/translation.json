@@ -46997,24 +46997,6 @@
     "ca": "Aquest equip encara no té documents.",
     "id": "Tim ini belum memiliki dokumen."
   },
-  "ORG_CHART$CONTRACTS_OWN": {
-    "en": "Contracts between its sub-teams",
-    "zh-CN": "其子团队之间的契约",
-    "zh-TW": "其子團隊之間的契約",
-    "de": "Verträge zwischen seinen Unterteams",
-    "ko-KR": "하위 팀 간의 계약",
-    "no": "Kontrakter mellom underteamene",
-    "it": "Contratti tra i suoi sotto-team",
-    "pt": "Contratos entre as suas subequipas",
-    "es": "Contratos entre sus subequipos",
-    "ar": "العقود بين فرقه الفرعية",
-    "fr": "Contrats entre ses sous-équipes",
-    "tr": "Alt ekipleri arasındaki sözleşmeler",
-    "ja": "サブチーム間の契約",
-    "uk": "Контракти між його підкомандами",
-    "ca": "Contractes entre els seus subequips",
-    "id": "Kontrak antar sub-timnya"
-  },
   "ORG_CHART$DOCUMENT_ABOVE": {
     "en": "{{name}} (kept by the team above)",
     "zh-CN": "{{name}}（由上级团队维护）",
@@ -48904,24 +48886,6 @@
     "uk": "Не прийнято організацією",
     "ca": "No adoptat per l'organització",
     "id": "Tidak diambil organisasi"
-  },
-  "ORG_CHART$FORMER_TEAM_SPEC": {
-    "en": "The spec its session wrote",
-    "zh-CN": "其会话编写的规格",
-    "zh-TW": "其工作階段撰寫的規格",
-    "de": "Die Spezifikation, die seine Sitzung schrieb",
-    "ko-KR": "세션이 작성한 사양",
-    "no": "Spesifikasjonen økten skrev",
-    "it": "La specifica scritta dalla sua sessione",
-    "pt": "A especificação que a sua sessão escreveu",
-    "es": "La especificación que escribió su sesión",
-    "ar": "المواصفة التي كتبتها جلسته",
-    "fr": "La spécification écrite par sa session",
-    "tr": "Oturumunun yazdığı şartname",
-    "ja": "セッションが書いた仕様",
-    "uk": "Специфікація, яку написав його сеанс",
-    "ca": "L'especificació que va escriure la seva sessió",
-    "id": "Spesifikasi yang ditulis sesinya"
   },
   "ORG_CHART$HISTORY_NOT_TAKEN": {
     "en": "not taken by the org",

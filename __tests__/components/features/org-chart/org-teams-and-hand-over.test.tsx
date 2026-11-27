@@ -482,7 +482,7 @@ describe("the record of the teams below a team", () => {
           ended: "replaced",
           at: at(7),
           compacted_report: "Chose SQLite.",
-          contracts: "db serves http",
+          documents: { contracts: "db serves http" },
         },
       ],
     });
@@ -534,7 +534,7 @@ describe("the record of the teams below a team", () => {
           ended: "not_taken",
           at: at(7),
           compacted_report: "Chose a ledger.",
-          spec: "# Refund jobs",
+          documents: { spec: "# Refund jobs" },
           session: "Refunds",
         },
       ],
@@ -548,7 +548,7 @@ describe("the record of the teams below a team", () => {
     expect(removed).toHaveTextContent(
       "ORG_CHART$FORMER_TEAM_NOT_TAKEN · Refunds",
     );
-    expect(removed).toHaveTextContent("ORG_CHART$FORMER_TEAM_SPEC");
+    expect(removed).toHaveTextContent("spec");
     expect(removed).toHaveTextContent("# Refund jobs");
     expect(removed).toHaveTextContent("Chose a ledger.");
   });
