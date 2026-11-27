@@ -1,3 +1,4 @@
+import React from "react";
 import { useTranslation } from "react-i18next";
 import type { FormerTeam, OrgNode, TeamEvent } from "#/api/director/types";
 import { useTeamMemory } from "#/hooks/query/use-team-memory";
@@ -236,26 +237,16 @@ export function TeamRecord({ node }: TeamRecordProps) {
                           </p>
                         </>
                       ) : null}
-                      {team.spec ? (
-                        <>
-                          <p className="text-muted">
-                            {t(I18nKey.ORG_CHART$FORMER_TEAM_SPEC)}
-                          </p>
-                          <p className="whitespace-pre-wrap break-words">
-                            {team.spec}
-                          </p>
-                        </>
-                      ) : null}
-                      {team.contracts ? (
-                        <>
-                          <p className="text-muted">
-                            {t(I18nKey.ORG_CHART$CONTRACTS_OWN)}
-                          </p>
-                          <p className="whitespace-pre-wrap break-words">
-                            {team.contracts}
-                          </p>
-                        </>
-                      ) : null}
+                      {Object.entries(team.documents ?? {}).map(
+                        ([document, text]) => (
+                          <React.Fragment key={document}>
+                            <p className="text-muted">{document}</p>
+                            <p className="whitespace-pre-wrap break-words">
+                              {text}
+                            </p>
+                          </React.Fragment>
+                        ),
+                      )}
                     </div>
                   </details>
                 </li>
