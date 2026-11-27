@@ -51,8 +51,8 @@ export function TeamHoverCard({ node }: TeamHoverCardProps) {
       {work.headline ? (
         <p className="text-text-secondary">{work.headline}</p>
       ) : null}
-      {node.purpose && node.purpose !== work.headline ? (
-        <p className="text-muted">{node.purpose}</p>
+      {node.summary && node.summary !== work.headline ? (
+        <p className="text-muted">{node.summary}</p>
       ) : null}
       <dl className="flex flex-col gap-1">
         <Row label={t(I18nKey.ORG_CHART$STATUS)}>
