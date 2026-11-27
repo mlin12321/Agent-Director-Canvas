@@ -67,7 +67,7 @@ function team(id: string, status: NodeStatus, given: Given = {}) {
     boundary: { path: id, writable: ["**"], readonly: [] },
     isolation: "shared",
     purpose: "",
-    old_specs: [],
+    left_documents: [],
     headline: "",
     agent_profile: null,
     child_ids: [],

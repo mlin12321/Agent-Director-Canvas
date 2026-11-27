@@ -21,7 +21,7 @@ const API: OrgNode = {
   boundary: { path: "services/api", writable: ["**"], readonly: [] },
   isolation: "worktree",
   purpose: "",
-  old_specs: [],
+  left_documents: [],
   headline: "",
   agent_profile: null,
   child_ids: [],
