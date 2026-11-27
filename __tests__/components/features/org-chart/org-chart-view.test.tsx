@@ -1258,7 +1258,6 @@ describe("OrgChartView", () => {
               agent_profile: null,
             },
           ],
-          contracts: "",
           status: "approved",
           replaces: ["auth"],
           proposed_at: "2026-11-12T00:00:00Z",

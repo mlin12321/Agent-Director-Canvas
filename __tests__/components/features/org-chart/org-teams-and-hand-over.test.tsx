@@ -318,32 +318,6 @@ describe("an IC in hand-over mode", () => {
 });
 
 describe("what a team is given of the teams before it", () => {
-  it("marks what the IC above handed over among its reports", async () => {
-    memoryHandlers({
-      documents: [],
-      reports: [
-        {
-          at: "2026-11-14T10:00:00+00:00",
-          role: "ic",
-          text: "API chose SQLite; keep it.",
-          handed_over: true,
-        },
-        { at: "2026-11-14T11:00:00+00:00", role: "ic", text: "Kept SQLite." },
-      ],
-      former_teams: [],
-      history: [],
-    });
-    renderWithProviders(<TeamReports node={NOT_STARTED} />);
-
-    const [handed, own] = await screen.findAllByRole("listitem");
-
-    expect(handed).toHaveTextContent("API chose SQLite; keep it.");
-    expect(handed).toHaveTextContent("ORG_CHART$REPORT_HANDED_OVER");
-    expect(handed).not.toHaveTextContent("ORG_CHART$ROLE_IC");
-    expect(own).toHaveTextContent("ORG_CHART$ROLE_IC");
-    expect(own).not.toHaveTextContent("ORG_CHART$REPORT_HANDED_OVER");
-  });
-
   it("names a document left by an earlier team as old", async () => {
     memoryHandlers({
       documents: [

@@ -42,9 +42,7 @@ export function TeamReports({ node }: TeamReportsProps) {
                 {report.text}
               </span>
               <span className="text-muted">
-                {report.handed_over
-                  ? t(I18nKey.ORG_CHART$REPORT_HANDED_OVER)
-                  : words.label(types.member(report.role, node.agent_type))}
+                {words.label(types.member(report.role, node.agent_type))}
                 {" · "}
                 <time dateTime={report.at}>
                   {new Date(report.at).toLocaleString()}

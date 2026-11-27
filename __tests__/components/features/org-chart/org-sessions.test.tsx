@@ -374,7 +374,7 @@ describe("AgentInspectorDrawer", () => {
                   title: "Jobs",
                   session: "services/api/jobs, under services.api",
                   org: "services/api/workers, under services.api",
-                  take: "session",
+                  use: "session",
                   under: ROOT.id,
                   named: "Refund jobs",
                 },
@@ -385,7 +385,7 @@ describe("AgentInspectorDrawer", () => {
                   gate: "manager",
                   session: "Refunds go through Jobs.",
                   org: "Orders go through Jobs.",
-                  take: null,
+                  use: null,
                 },
               ],
             },
@@ -407,7 +407,7 @@ describe("AgentInspectorDrawer", () => {
     expect(file).not.toHaveTextContent("ORG_CHART$MERGE_UNDECIDED");
     expect(spec).toHaveTextContent("ORG_CHART$MERGE_DOCUMENT");
     expect(team).toHaveTextContent("Jobs");
-    expect(team).toHaveTextContent("ORG_CHART$MERGE_TAKE_SESSION");
+    expect(team).toHaveTextContent("ORG_CHART$MERGE_USE_SESSION");
     expect(team).toHaveTextContent("ORG_CHART$MERGE_PLACED");
     expect(team).toHaveTextContent("ORG_CHART$MERGE_NAMED");
     expect(contracts).toHaveTextContent("ORG_CHART$MERGE_DOCUMENT");

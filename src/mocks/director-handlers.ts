@@ -152,7 +152,6 @@ const MOCK_REPORTS: Record<NodeId, Report[]> = {
       at: "2026-05-12T08:00:00+00:00",
       role: "ic",
       text: "Billing settled on one ledger table; keep it.",
-      handed_over: true,
     },
     {
       at: "2026-05-12T08:15:00+00:00",
@@ -421,7 +420,7 @@ function buildMockSessions(): MockSession[] {
             title: "identity/worker",
             session: "identity/passkeys, under identity",
             org: "identity/worker, under identity.api",
-            take: null,
+            use: null,
           },
           {
             kind: "document",
@@ -430,8 +429,9 @@ function buildMockSessions(): MockSession[] {
             gate: "manager",
             session: "Passkeys are verified by the worker.",
             org: "Sign-in tokens are issued by the API.",
-            take: "text",
-            text: "Sign-in tokens are issued by the API; passkeys are verified by the worker.",
+            use: "replacement",
+            replacement:
+              "Sign-in tokens are issued by the API; passkeys are verified by the worker.",
           },
         ],
       },
