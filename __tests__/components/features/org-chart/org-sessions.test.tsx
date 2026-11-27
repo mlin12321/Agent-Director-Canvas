@@ -463,7 +463,7 @@ describe("AgentInspectorDrawer", () => {
     expect(team).toHaveTextContent("ORG_CHART$MERGE_UNDECIDED");
   });
 
-  it("says when a session's teams and contracts wait behind an earlier session", () => {
+  it("says when a session's teams wait behind an earlier session", () => {
     memoryHandlers();
     drawer(ROOT, [
       {

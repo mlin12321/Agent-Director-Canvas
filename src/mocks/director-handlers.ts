@@ -70,7 +70,7 @@ const TEAM_AGENTS: AgentRef[] = [
 ];
 
 /** The two agents that take a session's work in: the IC reviews it, the
- * Manager settles its teams and contracts. */
+ * Manager settles its teams and what waits with them. */
 const DIVISION_LEADS: AgentRef[] = [
   {
     role: "ic",
