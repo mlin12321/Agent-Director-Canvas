@@ -19,12 +19,6 @@ const TAKE_KEYS = {
   text: I18nKey.ORG_CHART$MERGE_TAKE_TEXT,
 } as const;
 
-const KIND_KEYS = {
-  code: I18nKey.ORG_CHART$MERGE_FILE,
-  spec: I18nKey.ORG_CHART$MERGE_SPEC,
-  contracts: I18nKey.ORG_CHART$MERGE_CONTRACTS,
-} as const;
-
 interface MergeWaitsProps {
   /** What the session is called. */
   title: string;
@@ -44,10 +38,13 @@ export function MergeWaits({ title, session, merge, nodes }: MergeWaitsProps) {
   if (!items.length && !merge.code_landed && !merge.org_queued) return null;
   const titleOf = (id: NodeId) => nodes?.get(id)?.title ?? id;
 
-  const name = (item: MergeItem) =>
-    item.kind === "team"
-      ? item.title || item.key
-      : t(KIND_KEYS[item.kind], { path: item.key || "/" });
+  const name = (item: MergeItem) => {
+    if (item.kind === "team") return item.title || item.key;
+    const path = item.key || "/";
+    return item.kind === "document"
+      ? t(I18nKey.ORG_CHART$MERGE_DOCUMENT, { document: item.document, path })
+      : t(I18nKey.ORG_CHART$MERGE_FILE, { path });
+  };
 
   return (
     <section data-testid={`merge-${session}`} className="flex flex-col gap-1">
@@ -70,7 +67,7 @@ export function MergeWaits({ title, session, merge, nodes }: MergeWaitsProps) {
             <h4 className="text-xs text-muted">{t(heading)}</h4>
             <ul className="flex flex-col gap-1 text-xs">
               {waiting.map((item) => (
-                <li key={`${item.kind} ${item.key}`}>
+                <li key={`${item.kind} ${item.document ?? ""} ${item.key}`}>
                   <span className="break-words text-contrast">
                     {name(item)}
                   </span>
