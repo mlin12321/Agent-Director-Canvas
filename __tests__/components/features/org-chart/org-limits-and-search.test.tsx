@@ -537,7 +537,7 @@ describe("TeamCard", () => {
     isolation: "worktree",
     purpose: "",
     headline: "Token refresh",
-    old_specs: [],
+    left_documents: [],
     agent_profile: null,
     child_ids: [],
   };

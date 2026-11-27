@@ -101,7 +101,7 @@ const NOT_STARTED: OrgNode = {
   isolation: "shared",
   headline: "Sells the goods",
   purpose: "",
-  old_specs: [],
+  left_documents: [],
   agent_profile: null,
   child_ids: [],
 };

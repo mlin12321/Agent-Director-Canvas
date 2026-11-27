@@ -41,7 +41,7 @@ export type {
   DirectorNodeMemory as NodeMemory,
   DirectorNodeOwnership as NodeOwnership,
   DirectorNodeStatus as NodeStatus,
-  DirectorOldSpec as OldSpec,
+  DirectorLeftDocument as LeftDocument,
   DirectorOpenEscalation as OpenEscalation,
   OpenSessionRequest,
   DirectorOpenedSession as OpenedSession,

@@ -62,7 +62,7 @@ const NODE: SessionTeam = {
   pending_split: null,
   review: null,
   waiting_to_start: false,
-  old_specs: [],
+  left_documents: [],
   headline: "",
   agent_profile: null,
   child_ids: [],

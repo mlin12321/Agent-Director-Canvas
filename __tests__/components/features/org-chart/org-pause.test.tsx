@@ -156,7 +156,7 @@ describe("a team whose agent was paused while working", () => {
     isolation: "shared",
     headline: "Serves the checkout API",
     purpose: "",
-    old_specs: [],
+    left_documents: [],
     agent_profile: null,
     child_ids: [],
   };

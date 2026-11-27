@@ -44,7 +44,7 @@ function team(
     boundary: { path, writable: ["**"], readonly: [] },
     isolation: "shared",
     purpose: "",
-    old_specs: [],
+    left_documents: [],
     headline: "",
     agent_profile: null,
     child_ids: [],

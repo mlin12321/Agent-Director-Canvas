@@ -282,7 +282,7 @@ function referenceTeam(
     agent_profile: null,
     agent_type: DEFAULT_AGENT_TYPE,
     ...given,
-    old_specs: [],
+    left_documents: [],
   };
 }
 
