@@ -114,6 +114,13 @@ const SESSION: Session = {
   team: "API",
   above_id: ROOT.id,
   request: "Add refunds.",
+  source: {
+    kind: "human",
+    name: "",
+    automation_id: "",
+    run_id: "",
+    event_key: "",
+  },
   opened_at: "2026-11-01T10:00:00+00:00",
   branch: "main",
   usage: { input_tokens: 0, output_tokens: 0, cost: 0, unpriced_tokens: 0 },
@@ -615,6 +622,34 @@ describe("AgentInspectorDrawer", () => {
 });
 
 describe("OrgSessionsPanel", () => {
+  it("says which automation opened a session, and nothing of one the human opened", () => {
+    const fromJira: Session = {
+      ...SESSION,
+      id: "s9z8y7x",
+      source: { ...SESSION.source, kind: "automation", name: "Jira" },
+    };
+    const unnamed: Session = {
+      ...SESSION,
+      id: "s5w4v3u",
+      source: { ...SESSION.source, kind: "automation" },
+    };
+    renderWithProviders(
+      <OrgSessionsPanel
+        startsOpen
+        sessions={[SESSION, fromJira, unnamed]}
+        nodes={NODES}
+      />,
+    );
+
+    expect(screen.queryByTestId("org-session-source-s1a2b3c")).toBeNull();
+    expect(screen.getByTestId("org-session-source-s9z8y7x")).toHaveTextContent(
+      "ORG_CHART$SESSION_OPENED_BY",
+    );
+    expect(screen.getByTestId("org-session-source-s5w4v3u")).toHaveTextContent(
+      "ORG_CHART$SESSION_OPENED_BY_AUTOMATION",
+    );
+  });
+
   it("lists the open sessions, links each to its conversation and closes one only after it is confirmed", async () => {
     const closed: string[] = [];
     server.use(

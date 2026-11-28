@@ -261,6 +261,8 @@ function orgSettingsNow(): DirectorOrgSettingsState {
     default_agent_type:
       mockOrgSettings.default_agent_type || DEFAULT_AGENT_TYPE,
     allowed_agent_types: allowed,
+    close_unattended_sessions:
+      mockOrgSettings.close_unattended_sessions ?? true,
     own: mockOrgSettings,
     agent_types: agentTypes,
   };
@@ -558,6 +560,13 @@ function sessionsNow(): Session[] {
         team: opened.title,
         above_id: aboveId,
         request: session.request,
+        source: {
+          kind: "human",
+          name: "",
+          automation_id: "",
+          run_id: "",
+          event_key: "",
+        },
         opened_at: session.opened_at,
         branch: "main",
         usage: {

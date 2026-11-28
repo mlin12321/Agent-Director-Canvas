@@ -212,6 +212,10 @@ export const DirectorClient = {
   updateOrgSettings: (settings: DirectorOrgSettings) =>
     call((client) => client.updateOrgSettings(settings)),
 
+  /** The script automation that opens a session of the org for an event. */
+  getOpenSessionAutomation: () =>
+    call((client) => client.getOpenSessionAutomation()),
+
   pauseOrg: () => call((client) => client.pauseOrg()),
 
   resumeOrg: () => call((client) => client.resumeOrg()),

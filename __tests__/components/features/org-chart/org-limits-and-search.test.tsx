@@ -63,6 +63,7 @@ function settingsHandlers(state: DirectorSettingsState = STATE) {
 const TYPES: DirectorOrgSettingsState = {
   default_agent_type: "software-engineer",
   allowed_agent_types: [],
+  close_unattended_sessions: true,
   own: {},
   agent_types: [
     {
@@ -345,6 +346,24 @@ describe("OrgSettings", () => {
     );
     expect(limits).toHaveLength(1);
     expect(types.saved).toEqual([{ default_agent_type: "researcher" }]);
+  });
+
+  it("lets the org keep the sessions automations open, which close by default", async () => {
+    settingsHandlers();
+    const types = orgTypesHandlers();
+    const user = userEvent.setup();
+    renderWithProviders(<OrgSettings />);
+    await openSettings(user);
+    const closes = await screen.findByTestId("org-settings-close-unattended");
+
+    expect(closes).toBeChecked();
+    await user.click(closes);
+    await user.click(screen.getByRole("button", { name: "BUTTON$SAVE" }));
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("org-settings-modal")).toBeNull(),
+    );
+    expect(types.saved).toEqual([{ close_unattended_sessions: false }]);
   });
 
   it("leaves the org's agent types alone when none was changed", async () => {

@@ -174,6 +174,15 @@ function SessionRow({
           {session.team}
         </NavigationLink>
         <StatusBadge status={session.status} />
+        {session.source?.kind === "automation" ? (
+          <span data-testid={`org-session-source-${session.id}`}>
+            {session.source.name
+              ? t(I18nKey.ORG_CHART$SESSION_OPENED_BY, {
+                  name: session.source.name,
+                })
+              : t(I18nKey.ORG_CHART$SESSION_OPENED_BY_AUTOMATION)}
+          </span>
+        ) : null}
         <span>
           {t(I18nKey.ORG_CHART$SESSION_TEAMS, { count: started.length })}
         </span>
