@@ -10,6 +10,7 @@
 // `translationResources` from `src/i18n/index.ts`, which re-exports from here.
 // The re-export is `export … from`, which rollup is able to drop when the
 // app build does not reference `translationResources`.
+import directorDefinitions from "./director-translation.json";
 import translationDefinitions from "./translation.json";
 
 type TranslationDefinitionMap = Record<string, Partial<Record<string, string>>>;
@@ -40,6 +41,7 @@ const buildTranslationResources = (
 // `/* @__PURE__ */` lets rollup drop both this call *and* the
 // `./translation.json` import when no consumer references
 // `translationResources` — i.e. the standard app build path.
-export const translationResources = /* @__PURE__ */ buildTranslationResources(
-  translationDefinitions as TranslationDefinitionMap,
-);
+export const translationResources = /* @__PURE__ */ buildTranslationResources({
+  ...translationDefinitions,
+  ...directorDefinitions,
+} as TranslationDefinitionMap);
