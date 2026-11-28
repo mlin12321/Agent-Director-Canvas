@@ -80,6 +80,13 @@ export function sessionOf(
     team: opened.title,
     above_id: opened.parent_id?.split("@")[0] ?? opened.team_id,
     request: "",
+    source: {
+      kind: "human",
+      name: "",
+      automation_id: "",
+      run_id: "",
+      event_key: "",
+    },
     opened_at: "2026-11-01T10:00:00+00:00",
     branch: "main",
     usage: { input_tokens: 0, output_tokens: 0, cost: 0, unpriced_tokens: 0 },

@@ -19,6 +19,7 @@ import { useActiveBackend } from "#/contexts/active-backend-context";
 import { DIRECTOR_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import { I18nKey } from "#/i18n/declaration";
+import { EventSessionsAutomation } from "./event-sessions-automation";
 
 const DEFAULTS = {
   max_teams: 32,
@@ -130,9 +131,15 @@ function SettingsForm({
   const [allowedTypes, setAllowedTypes] = React.useState(
     types?.allowed_agent_types ?? [],
   );
+  const [closes, setCloses] = React.useState(
+    types?.close_unattended_sessions ?? true,
+  );
   // Only what was changed is set for the org: the rest stays as the
   // director's settings say for every org.
   const ownTypes: DirectorOrgSettings = {
+    ...(types && closes !== types.close_unattended_sessions
+      ? { close_unattended_sessions: closes }
+      : {}),
     ...(types && defaultType !== types.default_agent_type
       ? { default_agent_type: defaultType }
       : {}),
@@ -406,6 +413,24 @@ function SettingsForm({
               {t(I18nKey.ORG_CHART$SETTINGS_ROUTE_REQUESTS_HELP)}
             </span>
           </label>
+          {types ? (
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  data-testid="org-settings-close-unattended"
+                  checked={closes}
+                  disabled={save.isPending}
+                  onChange={(event) => setCloses(event.target.checked)}
+                />
+                {t(I18nKey.ORG_CHART$SETTINGS_CLOSE_UNATTENDED)}
+              </span>
+              <span className="text-xs text-muted">
+                {t(I18nKey.ORG_CHART$SETTINGS_CLOSE_UNATTENDED_HELP)}
+              </span>
+            </label>
+          ) : null}
+          {types ? <EventSessionsAutomation /> : null}
           <CountField
             label={t(I18nKey.ORG_CHART$SETTINGS_STALL_MINUTES)}
             help={t(I18nKey.ORG_CHART$SETTINGS_STALL_MINUTES_HELP)}

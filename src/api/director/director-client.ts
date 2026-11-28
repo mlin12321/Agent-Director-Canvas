@@ -5,6 +5,7 @@ import type {
   DirectorOrgSettings,
   DirectorSettings,
   NodeId,
+  OpenSessionAutomationSettings,
   OpenSessionRequest,
   OrgEvent,
   RouteMessageRequest,
@@ -211,6 +212,10 @@ export const DirectorClient = {
   /** Set them for this org alone. Refused (404) without an org. */
   updateOrgSettings: (settings: DirectorOrgSettings) =>
     call((client) => client.updateOrgSettings(settings)),
+
+  /** The script automation that opens a session of the org for an event. */
+  getOpenSessionAutomation: (settings: OpenSessionAutomationSettings) =>
+    call((client) => client.getOpenSessionAutomation(settings)),
 
   pauseOrg: () => call((client) => client.pauseOrg()),
 
