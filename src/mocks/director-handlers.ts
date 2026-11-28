@@ -341,6 +341,8 @@ interface MockSession {
   team_id: NodeId;
   request: string;
   opened_at: string;
+  /** The automation that opened it; the human did where there is none. */
+  opened_by?: string;
   /** Sub-teams of it that wait for the Manager of the team above. */
   waits?: Merge;
   /** What it has at each team, the one it was opened at first. */
@@ -411,6 +413,7 @@ function buildMockSessions(): MockSession[] {
       team_id: "identity",
       request: "Let users sign in with a passkey.",
       opened_at: "2026-11-10T08:30:00Z",
+      opened_by: "Jira",
       waits: {
         seq: 2,
         code_landed: true,
@@ -561,8 +564,8 @@ function sessionsNow(): Session[] {
         above_id: aboveId,
         request: session.request,
         source: {
-          kind: "human",
-          name: "",
+          kind: session.opened_by ? "automation" : "human",
+          name: session.opened_by ?? "",
           automation_id: "",
           run_id: "",
           event_key: "",
