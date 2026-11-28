@@ -30,6 +30,7 @@ import {
 } from "./canvas-extensions-handlers";
 
 import { DIRECTOR_HANDLERS, resetDirectorMockData } from "./director-handlers";
+import { PROJECTS_HANDLERS, resetMockProjects } from "./projects-handlers";
 
 export const handlers = [
   ...FILE_SERVICE_HANDLERS,
@@ -46,6 +47,7 @@ export const handlers = [
   ...WORKSPACES_HANDLERS,
   ...CANVAS_EXTENSIONS_HANDLERS,
   ...DIRECTOR_HANDLERS,
+  ...PROJECTS_HANDLERS,
 ];
 
 export {
@@ -55,6 +57,7 @@ export {
   resetMockWorkspaces,
   resetCanvasExtensionsMockData,
   resetDirectorMockData,
+  resetMockProjects,
 };
 
 export {

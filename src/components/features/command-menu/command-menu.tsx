@@ -6,9 +6,13 @@ import { I18nKey } from "#/i18n/declaration";
 import { DirectorClient } from "#/api/director/director-client";
 import type { TeamMatch } from "#/api/director/types";
 import { orgNodePath } from "#/constants/org-chart";
-import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useNavigation } from "#/context/navigation-context";
+import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useCloseOnEscape } from "#/hooks/use-close-on-escape";
+import {
+  SIDEBAR_RAIL_COLLAPSE_MAX_WIDTH,
+  useBreakpoint,
+} from "#/hooks/use-breakpoint";
 import { useCommandMenuStore } from "#/stores/command-menu-store";
 import { useSidebarStore } from "#/stores/sidebar-store";
 import { cn } from "#/utils/utils";
@@ -92,6 +96,7 @@ function useTeamMatches(query: string, enabled: boolean) {
 export function CommandMenu() {
   const { t } = useTranslation("openhands");
   const { navigate } = useNavigation();
+  const { backend } = useActiveBackend();
   const isOpen = useCommandMenuStore((state) => state.isOpen);
   const open = useCommandMenuStore((state) => state.open);
   const close = useCommandMenuStore((state) => state.close);
@@ -99,6 +104,7 @@ export function CommandMenu() {
   const [activeIndex, setActiveIndex] = React.useState(0);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const optionRefs = React.useRef(new Map<string, HTMLElement>());
+  const isSidebarRailHidden = useBreakpoint(SIDEBAR_RAIL_COLLAPSE_MAX_WIDTH);
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -144,11 +150,12 @@ export function CommandMenu() {
     () =>
       createCommandMenuItems({
         toggleSidebar: () => useSidebarStore.getState().toggleCollapsed(),
+        backendKind: backend.kind,
+        includeDesktopSidebarToggle: !isSidebarRailHidden,
       }),
-    [],
+    [backend.kind, isSidebarRailHidden],
   );
 
-  const { backend } = useActiveBackend();
   const teamQuery = query.trim();
   const teams = useTeamMatches(
     teamQuery,

@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SidebarMobileNavProvider } from "#/components/features/sidebar/sidebar-mobile-nav-context";
@@ -8,6 +8,7 @@ import {
 } from "#/context/navigation-context";
 import { requestAutomationSetupAgent } from "#/components/features/automations/setup/automation-setup-agent-request";
 import { markAutomationSetupHandoff } from "#/api/automation-setup-handoff-store";
+import { initializeAutomationFormSession } from "#/api/automation-form-session";
 
 // Mutable mock state for controlling breakpoint
 let mockIsMobile = false;
@@ -147,9 +148,11 @@ vi.mock(
     return {
       AutomationSetupPanel: ({
         conversationId,
+        draft,
         toolbarPortal,
       }: {
         conversationId?: string | null;
+        draft?: { form?: { name?: string } };
         toolbarPortal?: HTMLElement | null;
       }) => {
         automationSetupPanelRender(conversationId);
@@ -168,7 +171,10 @@ vi.mock(
               data-testid="automation-setup-panel"
               data-conversation-id={conversationId ?? ""}
             >
-              <input aria-label={automationDraftLabel} defaultValue="" />
+              <input
+                aria-label={automationDraftLabel}
+                defaultValue={draft?.form?.name ?? ""}
+              />
             </div>
           </>
         );
@@ -285,6 +291,46 @@ describe("ConversationMain - Layout Transition Stability", () => {
     expect(
       screen.queryByTestId("conversation-mobile-back-button"),
     ).not.toBeInTheDocument();
+  });
+
+  it("opens the navigation drawer on a rightward swipe from the chat's left third", () => {
+    mockIsMobile = true;
+    renderConversationMain();
+    vi.spyOn(
+      screen.getByTestId("conversation-chat-panel"),
+      "getBoundingClientRect",
+    ).mockReturnValue({ left: 0, top: 0, width: 390, height: 844 } as DOMRect);
+    const chat = screen.getByTestId("chat-interface");
+
+    fireEvent.touchStart(chat, {
+      touches: [{ identifier: 0, clientX: 40, clientY: 400 }],
+    });
+    fireEvent.touchEnd(chat, {
+      touches: [],
+      changedTouches: [{ identifier: 0, clientX: 200, clientY: 404 }],
+    });
+
+    expect(screen.getByTestId("sidebar-mobile-menu-toggle")).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+  });
+
+  it("renders at desktop width without the app shell's mobile navigation", () => {
+    render(
+      <NavigationProvider
+        value={{
+          currentPath: "/conversations/conv-1",
+          conversationId: "conv-1",
+          isNavigating: false,
+          navigate: mockNavigate,
+        }}
+      >
+        <ConversationMain />
+      </NavigationProvider>,
+    );
+
+    expect(screen.getByTestId("chat-interface")).toBeInTheDocument();
   });
 
   it.each([
@@ -452,7 +498,7 @@ describe("ConversationMain - Layout Transition Stability", () => {
     );
   });
 
-  it("retains unsaved phone form edits across view switches and discards them on exit", async () => {
+  it("retains unsaved phone form edits across view switches and after returning", async () => {
     const user = userEvent.setup();
     mockIsMobile = true;
     mockActiveConversationTags = { automation_setup: "true" };
@@ -469,12 +515,18 @@ describe("ConversationMain - Layout Transition Stability", () => {
     expect(
       screen.getByRole("textbox", { name: "Unsaved automation name" }),
     ).toHaveValue("Keep my draft");
+    // The real panel keeps its edits in the conversation's form session.
+    initializeAutomationFormSession("conv-1", {
+      prompt: "",
+      kind: "prompt",
+      form: { name: "Keep my draft" },
+    });
     rendered.unmount();
     markAutomationSetupHandoff("conv-1");
     renderConversationMain();
     expect(
       await screen.findByRole("textbox", { name: "Unsaved automation name" }),
-    ).toHaveValue("");
+    ).toHaveValue("Keep my draft");
   });
 
   it("expands the automation form to full width when hiding the agent", async () => {
