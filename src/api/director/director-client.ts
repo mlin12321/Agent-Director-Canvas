@@ -5,6 +5,7 @@ import type {
   DirectorOrgSettings,
   DirectorSettings,
   NodeId,
+  OpenSessionAutomationSettings,
   OpenSessionRequest,
   OrgEvent,
   RouteMessageRequest,
@@ -213,8 +214,8 @@ export const DirectorClient = {
     call((client) => client.updateOrgSettings(settings)),
 
   /** The script automation that opens a session of the org for an event. */
-  getOpenSessionAutomation: () =>
-    call((client) => client.getOpenSessionAutomation()),
+  getOpenSessionAutomation: (settings: OpenSessionAutomationSettings) =>
+    call((client) => client.getOpenSessionAutomation(settings)),
 
   pauseOrg: () => call((client) => client.pauseOrg()),
 

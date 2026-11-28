@@ -15,18 +15,21 @@ const BUNDLE = {
 };
 
 function bundleHandler() {
+  const asked: Record<string, string>[] = [];
   server.use(
-    http.get("*/api/director/automations/open-session", () =>
-      HttpResponse.json(BUNDLE),
-    ),
+    http.get("*/api/director/automations/open-session", ({ request }) => {
+      asked.push(Object.fromEntries(new URL(request.url).searchParams));
+      return HttpResponse.json(BUNDLE);
+    }),
   );
+  return asked;
 }
 
 afterEach(() => vi.restoreAllMocks());
 
 describe("EventSessionsAutomation", () => {
   it("adds the director's script for the events of a webhook source, turned off, and links to it", async () => {
-    bundleHandler();
+    const asked = bundleHandler();
     const create = vi
       .spyOn(AutomationService, "createAutomation")
       .mockResolvedValue({ id: "a-1" } as Automation);
@@ -45,12 +48,19 @@ describe("EventSessionsAutomation", () => {
       screen.getByLabelText("ORG_CHART$EVENT_AUTOMATION_ON"),
       "issue.created",
     );
+    await user.type(
+      screen.getByLabelText("ORG_CHART$EVENT_AUTOMATION_KEY"),
+      "{{issue.key}",
+    );
     await user.click(add);
 
     const added = await screen.findByRole("link", {
       name: "ORG_CHART$EVENT_AUTOMATION_ADDED",
     });
     expect(added).toHaveAttribute("href", "/automations/a-1");
+    // What it is set to is asked of the director, which writes it into
+    // the bundle.
+    expect(asked).toEqual([{ key: "{issue.key}", source: "jira" }]);
     expect(create).toHaveBeenCalledWith(
       {
         name: BUNDLE.name,

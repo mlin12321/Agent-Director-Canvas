@@ -6,6 +6,9 @@ import { NavigationLink } from "#/components/shared/navigation-link";
 import { useImportAutomation } from "#/hooks/query/use-automations";
 import { I18nKey } from "#/i18n/declaration";
 
+/** How a field of the event is named in a setting. */
+const FIELD_EXAMPLE = "{issue.key}";
+
 const INPUT =
   "rounded-md border border-border bg-transparent px-2 py-1 text-contrast";
 
@@ -18,10 +21,20 @@ export function EventSessionsAutomation() {
   const { t } = useTranslation("openhands");
   const [source, setSource] = React.useState("");
   const [on, setOn] = React.useState("");
+  const [title, setTitle] = React.useState("");
+  const [key, setKey] = React.useState("");
+  const [text, setText] = React.useState("");
   const { mutateAsync: importAutomation } = useImportAutomation();
   const add = useMutation({
     mutationFn: async () => {
-      const script = await DirectorClient.getOpenSessionAutomation();
+      // The automation service sets nothing for one automation alone: what
+      // this one is set to is written into the script's bundle.
+      const script = await DirectorClient.getOpenSessionAutomation({
+        ...(title.trim() ? { title: title.trim() } : {}),
+        ...(key.trim() ? { key: key.trim() } : {}),
+        ...(text.trim() ? { text: text.trim() } : {}),
+        source: source.trim(),
+      });
       return importAutomation({
         name: script.name,
         trigger: { type: "event", source: source.trim(), on: on.trim() },
@@ -63,6 +76,28 @@ export function EventSessionsAutomation() {
           className={INPUT}
         />
       </label>
+      {(
+        [
+          [I18nKey.ORG_CHART$EVENT_AUTOMATION_TITLE, title, setTitle],
+          [I18nKey.ORG_CHART$EVENT_AUTOMATION_KEY, key, setKey],
+          [I18nKey.ORG_CHART$EVENT_AUTOMATION_TEXT, text, setText],
+        ] as const
+      ).map(([label, value, set]) => (
+        <label key={label} className="flex flex-col gap-1">
+          {t(label)}
+          <input
+            value={value}
+            disabled={add.isPending}
+            onChange={(event) => set(event.target.value)}
+            className={INPUT}
+          />
+        </label>
+      ))}
+      <span className="text-xs text-muted">
+        {t(I18nKey.ORG_CHART$EVENT_AUTOMATION_FIELDS_HELP, {
+          example: FIELD_EXAMPLE,
+        })}
+      </span>
       <button
         type="button"
         onClick={() => add.mutate()}

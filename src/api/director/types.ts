@@ -20,6 +20,7 @@ export type {
   DirectorConversationLink as ConversationLink,
   DirectorConversationPlace as ConversationPlace,
   DirectorConversationRelation as ConversationRelation,
+  DirectorOpenSessionAutomationSettings as OpenSessionAutomationSettings,
   DirectorOrgSettings,
   DirectorOrgSettingsState,
   DirectorSettings,
