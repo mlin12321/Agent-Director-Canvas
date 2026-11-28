@@ -159,7 +159,10 @@ module.exports = {
 if (require.main === module) {
   // Load the translation file
   const translationJsonPath = path.join(__dirname, '../src/i18n/translation.json');
-  const translationJson = require(translationJsonPath);
+  const translationJson = {
+    ...require(translationJsonPath),
+    ...require(path.join(__dirname, '../src/i18n/director-translation.json')),
+  };
 
   const { missingTranslations, extraLanguages, untranslatedKeys } =
     checkTranslations(translationJson, getSupportedLanguageCodes());
