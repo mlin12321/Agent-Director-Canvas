@@ -5,6 +5,7 @@ import { useGripResize } from "#/hooks/chat/use-grip-resize";
 import { useChatInputEvents } from "#/hooks/chat/use-chat-input-events";
 import { useChatSubmission } from "#/hooks/chat/use-chat-submission";
 import { useSlashCommand } from "#/hooks/chat/use-slash-command";
+import { useConversationMentionPicker } from "#/hooks/chat/use-conversation-mention-picker";
 import { ChatInputGrip } from "./components/chat-input-grip";
 import { ChatInputContainer } from "./components/chat-input-container";
 import { HiddenFileInput } from "./components/hidden-file-input";
@@ -154,6 +155,18 @@ export function CustomChatInput({
     closeMenu: closeSlashMenu,
   } = useSlashCommand(chatInputRef as React.RefObject<HTMLDivElement | null>);
 
+  const {
+    isMenuOpen: isMentionMenuOpen,
+    items: mentionItems,
+    selectedIndex: mentionSelectedIndex,
+    updateMentionMenu,
+    selectItem: selectMentionItem,
+    handleMentionKeyDown,
+    closeMenu: closeMentionMenu,
+  } = useConversationMentionPicker(
+    chatInputRef as React.RefObject<HTMLDivElement | null>,
+  );
+
   // Cleanup: reset suggestions visibility when component unmounts
   useEffect(
     () => () => {
@@ -200,18 +213,21 @@ export function CustomChatInput({
           onInput={() => {
             handleInput();
             updateSlashMenu();
+            updateMentionMenu();
             saveDraft();
             syncCanSubmit();
           }}
           onPaste={handlePaste}
           onKeyDown={(e) => {
             if (handleSlashKeyDown(e)) return;
+            if (handleMentionKeyDown(e)) return;
             handleKeyDown(e, isDisabled, handleSubmitAndSync);
           }}
           onFocus={handleFocus}
           onBlur={() => {
             handleBlur();
             closeSlashMenu();
+            closeMentionMenu();
             syncCanSubmit();
           }}
           startAccessory={startAccessory}
@@ -219,6 +235,10 @@ export function CustomChatInput({
           slashItems={slashItems}
           slashSelectedIndex={slashSelectedIndex}
           onSlashSelect={selectSlashItem}
+          isMentionMenuOpen={isMentionMenuOpen}
+          mentionItems={mentionItems}
+          mentionSelectedIndex={mentionSelectedIndex}
+          onMentionSelect={selectMentionItem}
         />
       </div>
     </div>

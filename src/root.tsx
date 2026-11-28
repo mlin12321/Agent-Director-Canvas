@@ -31,7 +31,11 @@ import {
   redirectToMainAppLogin,
   shouldUseMainAppCookieAuth,
 } from "#/api/main-app-auth";
-import { getEffectiveLocalBackend } from "#/api/backend-registry/active-store";
+import {
+  getEffectiveLocalBackend,
+  isNoBackend,
+} from "#/api/backend-registry/active-store";
+import type { Backend } from "#/api/backend-registry/types";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
 import {
   isCloudBackendApiKeyOrNetworkHealthError,
@@ -41,13 +45,17 @@ import {
 import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useConfig } from "#/hooks/query/use-config";
+import { useSettings } from "#/hooks/query/use-settings";
 import { useRestoreMarsTunnels } from "#/hooks/use-mars-tunnel-backend";
 import { QUERY_KEYS } from "#/hooks/query/query-keys";
 import { AgentServerUIRoot } from "#/components/providers";
 import { TelemetryConsentBanner } from "#/components/features/analytics/telemetry-consent-banner";
 import { buildAgentCanvasPath } from "#/utils/base-path";
 import { useOnboardingCompletion } from "#/components/features/onboarding/use-onboarding-completion";
-import { NavigationProvider } from "#/context/navigation-context";
+import {
+  NavigationProvider,
+  useCurrentPathGetter,
+} from "#/context/navigation-context";
 import {
   applyColorTheme,
   COLOR_THEME_BOOTSTRAP_SCRIPT,
@@ -171,6 +179,7 @@ function FirstRunOnboardingScreen({ onClose }: { onClose: () => void }) {
   const routerNavigation = useRouterNavigation();
   const conversationId =
     location.pathname.match(/^\/conversations\/([^/]+)/)?.[1] ?? null;
+  const getCurrentPath = useCurrentPathGetter(location.pathname);
   const navigationValue = React.useMemo(
     () => ({
       currentPath: location.pathname,
@@ -178,8 +187,15 @@ function FirstRunOnboardingScreen({ onClose }: { onClose: () => void }) {
       isNavigating: Boolean(routerNavigation.location),
       navigate: (to: string, options?: { replace?: boolean }) =>
         navigate(to, options),
+      getCurrentPath,
     }),
-    [conversationId, location.pathname, navigate, routerNavigation.location],
+    [
+      conversationId,
+      location.pathname,
+      navigate,
+      routerNavigation.location,
+      getCurrentPath,
+    ],
   );
 
   const lockedCloudHost = getLockedCloudHost();
@@ -218,6 +234,63 @@ function FirstRunOnboardingScreen({ onClose }: { onClose: () => void }) {
         </React.Suspense>
       </NavigationProvider>
     </main>
+  );
+}
+
+function LocalFirstRunOnboardingSequence({
+  backend,
+  onClose,
+}: {
+  backend: Backend;
+  onClose: () => void;
+}) {
+  const settings = useSettings();
+  const [hasAnsweredTelemetry, setHasAnsweredTelemetry] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasAnsweredTelemetry(false);
+  }, [backend.id]);
+
+  const needsTelemetryChoice =
+    settings.isSuccess &&
+    settings.data?.user_consents_to_analytics === null &&
+    !hasAnsweredTelemetry;
+
+  if (needsTelemetryChoice) {
+    return (
+      <>
+        <AgentServerBootstrapLoading />
+        <TelemetryConsentBanner
+          onChoice={() => setHasAnsweredTelemetry(true)}
+        />
+      </>
+    );
+  }
+
+  if (settings.isLoading) {
+    return <AgentServerBootstrapLoading />;
+  }
+
+  return <FirstRunOnboardingScreen onClose={onClose} />;
+}
+
+function FirstRunOnboardingSequence({
+  backend,
+  onClose,
+}: {
+  backend: Backend;
+  onClose: () => void;
+}) {
+  if (
+    getLockedCloudHost() !== null ||
+    backend.kind !== "local" ||
+    isNoBackend(backend)
+  ) {
+    return <FirstRunOnboardingScreen onClose={onClose} />;
+  }
+
+  return (
+    <LocalFirstRunOnboardingSequence backend={backend} onClose={onClose} />
   );
 }
 
@@ -385,10 +458,10 @@ export default function App() {
 
   if (showFirstRunOnboarding) {
     return (
-      <>
-        <FirstRunOnboardingScreen onClose={markCompleted} />
-        <TelemetryConsentBanner />
-      </>
+      <FirstRunOnboardingSequence
+        backend={active.backend}
+        onClose={markCompleted}
+      />
     );
   }
 

@@ -62,6 +62,12 @@ export interface PendingUserMessage {
   routedTo?: RoutedTo;
   /** Taken by the director, which delivers it: it can no longer be stopped. */
   taken?: boolean;
+  /**
+   * Set for a cloud start-task message (enqueued under `task-{uuid}`). The
+   * server already has it when its conversation opens, so history that
+   * extends past the loaded page settles it (see `removeStartTaskMessages`).
+   */
+  isStartTaskMessage?: boolean;
 }
 
 interface OptimisticUserMessageState {
@@ -113,6 +119,12 @@ interface OptimisticUserMessageActions {
     content: string,
     event: Pick<BaseEvent, "id" | "timestamp">,
   ) => PendingUserMessage | null;
+  /**
+   * Drop a conversation's start-task messages once its history extends past
+   * the loaded page: their echo is in the older, unloaded events, so neither
+   * the page nor the socket replay can confirm them.
+   */
+  removeStartTaskMessages: (conversationId: string) => void;
   /** Wipe all queued messages (e.g., when changing conversations). */
   clearPendingMessages: () => void;
   /**
@@ -185,6 +197,7 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
 
     enqueuePendingMessage: (payload) => {
       const id = generatePendingId();
+      const isStartTaskMessage = payload.conversationId.startsWith("task-");
       const message: PendingUserMessage = {
         id,
         conversationId: payload.conversationId,
@@ -196,6 +209,7 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
         timestamp: payload.timestamp ?? new Date().toISOString(),
         draftRevision: payload.draftRevision,
         afterTimestamp: latestServerTimestamp(payload.conversationId),
+        isStartTaskMessage: isStartTaskMessage || undefined,
       };
       set((state) => ({
         // A note of where an earlier message went has been read by now;
@@ -212,7 +226,7 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
 
       // A start-task message cannot be echoed before the sandbox is ready;
       // its watchdog starts when the entry is reassigned to the real id.
-      if (!payload.conversationId.startsWith("task-")) {
+      if (!isStartTaskMessage) {
         scheduleSendTimeout(get, id);
       }
 
@@ -254,6 +268,8 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
                 status: "sending",
                 errorMessage: undefined,
                 afterTimestamp: latestServerTimestamp(message.conversationId),
+                // A retry is a new send that needs its own echo.
+                isStartTaskMessage: undefined,
               }
             : message,
         ),
@@ -307,6 +323,18 @@ export const useOptimisticUserMessageStore = create<OptimisticUserMessageStore>(
       });
       return consumed;
     },
+
+    removeStartTaskMessages: (conversationId) =>
+      set((state) => ({
+        pendingMessages: state.pendingMessages.filter(
+          (message) =>
+            !message.isStartTaskMessage ||
+            !matchesPendingConversationId(
+              conversationId,
+              message.conversationId,
+            ),
+        ),
+      })),
 
     clearPendingMessages: () =>
       set(() => ({ pendingMessages: [], confirmedEventIds: new Set() })),
